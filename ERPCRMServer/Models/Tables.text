@@ -1,0 +1,468 @@
+﻿-- ERP + CRM Canonical Schema Blueprint (Single Source)
+-- Keep this file as the normalized reference schema.
+
+-- =========================================================
+-- 1) Core Platform
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS "Companies" (
+  "Id" SERIAL PRIMARY KEY,
+  "CompanyName" VARCHAR(255) NOT NULL,
+  "Email" VARCHAR(255) UNIQUE NOT NULL,
+  "Phone" VARCHAR(20),
+  "BusinessType" VARCHAR(100),
+  "GstNumber" VARCHAR(40),
+  "Address" TEXT,
+  "City" VARCHAR(100),
+  "State" VARCHAR(100),
+  "Country" VARCHAR(100),
+  "PostalCode" VARCHAR(20),
+  "Website" VARCHAR(255),
+  "OwnerName" VARCHAR(255),
+  "LogoUrl" VARCHAR(255),
+  "IsActive" BOOLEAN DEFAULT TRUE,
+  "Flag" BOOLEAN DEFAULT TRUE,
+  "IsDelete" BOOLEAN DEFAULT FALSE,
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "Roles" (
+  "Id" SERIAL PRIMARY KEY,
+  "RoleName" VARCHAR(100) UNIQUE NOT NULL,
+  "IsActive" BOOLEAN DEFAULT TRUE,
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "Modules" (
+  "Id" SERIAL PRIMARY KEY,
+  "ModuleName" VARCHAR(120) NOT NULL,
+  "Code" VARCHAR(80) UNIQUE NOT NULL,
+  "IsActive" BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS "Permissions" (
+  "Id" SERIAL PRIMARY KEY,
+  "PermissionName" VARCHAR(150) NOT NULL,
+  "Code" VARCHAR(120) UNIQUE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "RolePermissions" (
+  "Id" SERIAL PRIMARY KEY,
+  "RoleId" INT REFERENCES "Roles"("Id") ON DELETE CASCADE,
+  "ModuleId" INT REFERENCES "Modules"("Id") ON DELETE CASCADE,
+  "PermissionId" INT REFERENCES "Permissions"("Id") ON DELETE CASCADE,
+  "Allowed" BOOLEAN DEFAULT TRUE,
+  UNIQUE ("RoleId", "ModuleId", "PermissionId")
+);
+
+CREATE TABLE IF NOT EXISTS "UserPermissions" (
+  "Id" SERIAL PRIMARY KEY,
+  "UserId" INT REFERENCES "Users"("UserId") ON DELETE CASCADE,
+  "PermissionId" INT REFERENCES "Permissions"("Id") ON DELETE CASCADE,
+  "Allowed" BOOLEAN DEFAULT TRUE,
+  UNIQUE ("UserId", "PermissionId")
+);
+
+CREATE TABLE IF NOT EXISTS "Departments" (
+  "Id" SERIAL PRIMARY KEY,
+  "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+  "DepartmentName" VARCHAR(150) NOT NULL,
+  "ParentDepartmentId" INT REFERENCES "Departments"("Id") ON DELETE SET NULL,
+  UNIQUE ("CompanyId", "DepartmentName")
+);
+
+CREATE TABLE IF NOT EXISTS "Designations" (
+  "Id" SERIAL PRIMARY KEY,
+  "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+  "DesignationName" VARCHAR(150) NOT NULL,
+  "LevelOrder" INT DEFAULT 0,
+  UNIQUE ("CompanyId", "DesignationName")
+);
+
+CREATE TABLE IF NOT EXISTS "Users" (
+  "UserId" SERIAL PRIMARY KEY,
+  "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+  "RoleId" INT REFERENCES "Roles"("Id"),
+  "Name" VARCHAR(255) NOT NULL,
+  "Email" VARCHAR(255) UNIQUE NOT NULL,
+  "Password" VARCHAR(255) NOT NULL,
+  "MobileNumber" VARCHAR(20),
+  "ReportingManagerId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+  "DepartmentId" INT REFERENCES "Departments"("Id") ON DELETE SET NULL,
+  "DesignationId" INT REFERENCES "Designations"("Id") ON DELETE SET NULL,
+  "HierarchyLevel" INT DEFAULT 0,
+  "Address" TEXT,
+  "City" VARCHAR(100),
+  "State" VARCHAR(100),
+  "Country" VARCHAR(100),
+  "PostalCode" VARCHAR(20),
+  "userImage" TEXT,
+  "IsActive" BOOLEAN DEFAULT TRUE,
+  "Flag" BOOLEAN DEFAULT TRUE,
+  "IsDelete" BOOLEAN DEFAULT FALSE,
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Recursive hierarchy query (manager + descendants)
+-- Replace :managerId with the selected manager user id.
+--
+-- WITH RECURSIVE "UserHierarchy" AS (
+--   SELECT "UserId", "Name", "ReportingManagerId", 0 AS "Level"
+--   FROM "Users"
+--   WHERE "UserId" = :managerId
+--   UNION ALL
+--   SELECT child."UserId", child."Name", child."ReportingManagerId", uh."Level" + 1
+--   FROM "Users" child
+--   INNER JOIN "UserHierarchy" uh ON child."ReportingManagerId" = uh."UserId"
+-- )
+-- SELECT * FROM "UserHierarchy" ORDER BY "Level", "UserId";
+
+-- =========================================================
+-- 2) CRM
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS "LeadSources" (
+  "Id" SERIAL PRIMARY KEY,
+  "Name" VARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "FollowupTypes" (
+  "Id" SERIAL PRIMARY KEY,
+  "Name" VARCHAR(255) UNIQUE NOT NULL,
+  "IsActive" BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS "Industries" (
+  "Id" SERIAL PRIMARY KEY,
+  "Name" VARCHAR(255) UNIQUE NOT NULL,
+  "IsActive" BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS "SalesStages" (
+  "Id" SERIAL PRIMARY KEY,
+  "Name" VARCHAR(255) UNIQUE NOT NULL,
+  "SortOrder" INT DEFAULT 0,
+  "IsWon" BOOLEAN DEFAULT FALSE,
+  "IsLost" BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS "TaskTypes" (
+  "Id" SERIAL PRIMARY KEY,
+  "Name" VARCHAR(100) UNIQUE NOT NULL,
+  "DefaultDurationMinutes" INT,
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "Accounts" (
+  "Id" SERIAL PRIMARY KEY,
+  "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+  "Name" VARCHAR(255) NOT NULL,
+  "Website" VARCHAR(255),
+  "Description" TEXT,
+  "IndustryId" INT REFERENCES "Industries"("Id"),
+  "AnnualRevenue" NUMERIC(15,2),
+  "EmployeeCount" INT,
+  "AccountOwnerId" INT REFERENCES "Users"("UserId"),
+  "CreatedBy" INT REFERENCES "Users"("UserId"),
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "IsActive" BOOLEAN DEFAULT TRUE,
+  "IsDeleted" BOOLEAN DEFAULT FALSE,
+  "Flag" BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS "Contacts" (
+  "Id" SERIAL PRIMARY KEY,
+  "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+  "AccountId" INT REFERENCES "Accounts"("Id") ON DELETE SET NULL,
+  "FirstName" VARCHAR(100),
+  "MiddleName" VARCHAR(100),
+  "LastName" VARCHAR(100),
+  "Email" VARCHAR(255),
+  "Phone" VARCHAR(50),
+  "AltPhone" VARCHAR(50),
+  "LinkedinUrl" VARCHAR(500),
+  "Title" VARCHAR(255),
+  "AssignedTo" INT REFERENCES "Users"("UserId"),
+  "CreatedBy" INT REFERENCES "Users"("UserId"),
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "IsActive" BOOLEAN DEFAULT TRUE,
+  "IsDeleted" BOOLEAN DEFAULT FALSE,
+  "Flag" BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS "Leads" (
+  "Id" SERIAL PRIMARY KEY,
+  "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+  "AccountId" INT REFERENCES "Accounts"("Id") ON DELETE SET NULL,
+  "ContactId" INT REFERENCES "Contacts"("Id") ON DELETE SET NULL,
+  "LeadSourceId" INT REFERENCES "LeadSources"("Id"),
+  "ProductCategoryId" INT REFERENCES "ProductCategories"("Id"),
+  "FollowupTypeId" INT REFERENCES "FollowupTypes"("Id"),
+  "IndustryId" INT REFERENCES "Industries"("Id"),
+  "Status" VARCHAR(50) DEFAULT 'New',
+  "Rating" INT,
+  "FollowUpDate" DATE,
+  "ExpectedValue" NUMERIC(15,2),
+  "ConvertedAt" TIMESTAMP,
+  "LostReason" TEXT,
+  "Description" TEXT,
+  "Comments" TEXT,
+  "AssignedTo" INT REFERENCES "Users"("UserId"),
+  "AssignedFrom" INT REFERENCES "Users"("UserId"),
+  "CreatedBy" INT REFERENCES "Users"("UserId"),
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "IsActive" BOOLEAN DEFAULT TRUE,
+  "IsDeleted" BOOLEAN DEFAULT FALSE,
+  "Flag" BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS "Opportunities" (
+  "Id" SERIAL PRIMARY KEY,
+  "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+  "AccountId" INT REFERENCES "Accounts"("Id") ON DELETE SET NULL,
+  "ContactId" INT REFERENCES "Contacts"("Id") ON DELETE SET NULL,
+  "OpportunityName" VARCHAR(255) NOT NULL,
+  "SalesStageId" INT REFERENCES "SalesStages"("Id"),
+  "LeadSourceId" INT REFERENCES "LeadSources"("Id"),
+  "ProductCategoryId" INT REFERENCES "ProductCategories"("Id"),
+  "IndustryId" INT REFERENCES "Industries"("Id"),
+  "BudgetAmount" NUMERIC(15,2),
+  "EstCloseDate" DATE,
+  "Probability" NUMERIC(5,2),
+  "Description" TEXT,
+  "QualificationComments" TEXT,
+  "DetailedSummary" TEXT,
+  "WonAt" TIMESTAMP,
+  "LostAt" TIMESTAMP,
+  "CloseReason" VARCHAR(255),
+  "AssignedTo" INT REFERENCES "Users"("UserId"),
+  "AssignedFrom" INT REFERENCES "Users"("UserId"),
+  "CreatedBy" INT REFERENCES "Users"("UserId"),
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "IsActive" BOOLEAN DEFAULT TRUE,
+  "IsDeleted" BOOLEAN DEFAULT FALSE,
+  "Flag" BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS "Presales" (
+  "Id" SERIAL PRIMARY KEY,
+  "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+  "LeadId" INT REFERENCES "Leads"("Id") ON DELETE SET NULL,
+  "OpportunityId" INT REFERENCES "Opportunities"("Id") ON DELETE SET NULL,
+  "ClientName" VARCHAR(255),
+  "RelatedTo" VARCHAR(255),
+  "StartDate" TIMESTAMP,
+  "EndDate" TIMESTAMP,
+  "ETA" TIMESTAMP,
+  "DurationMinutes" INT,
+  "Status" VARCHAR(50) DEFAULT 'Pending',
+  "Hyperscaler" VARCHAR(100),
+  "FollowUpTriggerStatus" VARCHAR(50),
+  "TaskTypeId" INT REFERENCES "TaskTypes"("Id"),
+  "DetailedSummary" TEXT,
+  "Description" TEXT,
+  "Comments" TEXT,
+  "AssignedTo" INT REFERENCES "Users"("UserId"),
+  "AssignedFrom" INT REFERENCES "Users"("UserId"),
+  "CreatedBy" INT REFERENCES "Users"("UserId"),
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "IsActive" BOOLEAN DEFAULT TRUE,
+  "IsDeleted" BOOLEAN DEFAULT FALSE,
+  "Flag" BOOLEAN DEFAULT TRUE
+);
+
+-- =========================================================
+-- 3) ERP (existing + enterprise additions)
+-- =========================================================
+
+-- Keep existing: ProductCategories, Units, Products, Warehouses,
+-- ProductStockPerWarehouse, StockMovements, Suppliers,
+-- PurchaseOrders, PurchaseOrderItems, Customers, SalesOrders,
+-- SalesOrderItems, Taxes, ProductTaxMap, ProfitLossReports.
+
+-- Add calculation-ready columns and new financial tables.
+
+-- =========================================================
+-- 4) Internal Platform
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS "Notifications" (
+  "Id" SERIAL PRIMARY KEY,
+  "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+  "UserId" INT REFERENCES "Users"("UserId") ON DELETE CASCADE,
+  "Title" VARCHAR(200) NOT NULL,
+  "Message" TEXT NOT NULL,
+  "Type" VARCHAR(80) NOT NULL,
+  "Severity" VARCHAR(30) DEFAULT 'info',
+  "EntityType" VARCHAR(80),
+  "EntityId" INT,
+  "IsRead" BOOLEAN DEFAULT FALSE,
+  "ReadAt" TIMESTAMP,
+  "ExpiresAt" TIMESTAMP,
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "ApiIntegrations" (
+  "Id" SERIAL PRIMARY KEY,
+  "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+  "IntegrationName" VARCHAR(150) NOT NULL,
+  "BaseUrl" VARCHAR(500) NOT NULL,
+  "AuthType" VARCHAR(50) DEFAULT 'none',
+  "IsActive" BOOLEAN DEFAULT TRUE,
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "ApiEndpoints" (
+  "Id" SERIAL PRIMARY KEY,
+  "IntegrationId" INT REFERENCES "ApiIntegrations"("Id") ON DELETE CASCADE,
+  "EndpointName" VARCHAR(150) NOT NULL,
+  "Method" VARCHAR(10) NOT NULL,
+  "EndpointUrl" VARCHAR(500) NOT NULL,
+  "TimeoutSeconds" INT DEFAULT 30,
+  "ExpectedStatusCode" INT DEFAULT 200,
+  "IsCritical" BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS "ApiExecutionLogs" (
+  "Id" SERIAL PRIMARY KEY,
+  "IntegrationId" INT REFERENCES "ApiIntegrations"("Id") ON DELETE SET NULL,
+  "EndpointId" INT REFERENCES "ApiEndpoints"("Id") ON DELETE SET NULL,
+  "RequestId" VARCHAR(100),
+  "RequestPayload" JSONB,
+  "ResponsePayload" JSONB,
+  "ResponseStatusCode" INT,
+  "IsSuccess" BOOLEAN DEFAULT FALSE,
+  "ErrorMessage" TEXT,
+  "DurationMs" INT,
+  "TriggeredByUserId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+  "TriggerType" VARCHAR(30) DEFAULT 'Manual',
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "ApiFailureAlerts" (
+  "Id" SERIAL PRIMARY KEY,
+  "ApiExecutionLogId" INT REFERENCES "ApiExecutionLogs"("Id") ON DELETE CASCADE,
+  "AlertType" VARCHAR(80) NOT NULL,
+  "AlertSentToUserId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+  "AlertChannel" VARCHAR(30) DEFAULT 'InApp',
+  "AlertStatus" VARCHAR(30) DEFAULT 'Pending',
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "Documents" (
+  "Id" SERIAL PRIMARY KEY,
+  "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+  "EntityType" VARCHAR(80) NOT NULL,
+  "EntityId" INT NOT NULL,
+  "FileName" VARCHAR(255) NOT NULL,
+  "OriginalFileName" VARCHAR(255),
+  "FileExtension" VARCHAR(20),
+  "MimeType" VARCHAR(120),
+  "FileSizeKb" INT,
+  "FileUrl" TEXT NOT NULL,
+  "ThumbnailUrl" TEXT,
+  "Category" VARCHAR(80),
+  "IsImage" BOOLEAN DEFAULT FALSE,
+  "VersionNo" INT DEFAULT 1,
+  "UploadedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+  "UploadedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "IsDeleted" BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS "DocumentAccessLogs" (
+  "Id" SERIAL PRIMARY KEY,
+  "DocumentId" INT REFERENCES "Documents"("Id") ON DELETE CASCADE,
+  "AccessedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+  "AccessType" VARCHAR(30) NOT NULL,
+  "AccessedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "DocumentVersions" (
+  "Id" SERIAL PRIMARY KEY,
+  "DocumentId" INT REFERENCES "Documents"("Id") ON DELETE CASCADE,
+  "VersionNo" INT NOT NULL,
+  "FileUrl" TEXT NOT NULL,
+  "UploadedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+  "UploadedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE ("DocumentId", "VersionNo")
+);
+
+CREATE TABLE IF NOT EXISTS "ApprovalWorkflows" (
+  "Id" SERIAL PRIMARY KEY,
+  "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+  "EntityType" VARCHAR(80) NOT NULL,
+  "WorkflowName" VARCHAR(200) NOT NULL,
+  "IsActive" BOOLEAN DEFAULT TRUE,
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "ApprovalSteps" (
+  "Id" SERIAL PRIMARY KEY,
+  "WorkflowId" INT REFERENCES "ApprovalWorkflows"("Id") ON DELETE CASCADE,
+  "StepNo" INT NOT NULL,
+  "RoleId" INT REFERENCES "Roles"("Id") ON DELETE SET NULL,
+  "MinAmount" NUMERIC(15,2),
+  "MaxAmount" NUMERIC(15,2),
+  "IsMandatory" BOOLEAN DEFAULT TRUE,
+  UNIQUE ("WorkflowId", "StepNo")
+);
+
+CREATE TABLE IF NOT EXISTS "ApprovalTransactions" (
+  "Id" SERIAL PRIMARY KEY,
+  "EntityType" VARCHAR(80) NOT NULL,
+  "EntityId" INT NOT NULL,
+  "WorkflowId" INT REFERENCES "ApprovalWorkflows"("Id") ON DELETE SET NULL,
+  "CurrentStepNo" INT DEFAULT 1,
+  "Status" VARCHAR(40) DEFAULT 'Pending',
+  "RequestedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+  "RequestedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "ApprovalActions" (
+  "Id" SERIAL PRIMARY KEY,
+  "ApprovalTransactionId" INT REFERENCES "ApprovalTransactions"("Id") ON DELETE CASCADE,
+  "StepNo" INT NOT NULL,
+  "ActionBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+  "ActionType" VARCHAR(40) NOT NULL,
+  "Comments" TEXT,
+  "ActionAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "SecurityLogs" (
+  "Id" SERIAL PRIMARY KEY,
+  "UserId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+  "EventType" VARCHAR(100) NOT NULL,
+  "IpAddress" VARCHAR(64),
+  "UserAgent" TEXT,
+  "DeviceInfo" TEXT,
+  "Status" VARCHAR(30) DEFAULT 'Success',
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS "UserSessions" (
+  "Id" SERIAL PRIMARY KEY,
+  "UserId" INT REFERENCES "Users"("UserId") ON DELETE CASCADE,
+  "Device" VARCHAR(120),
+  "Browser" VARCHAR(120),
+  "IpAddress" VARCHAR(64),
+  "StartedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "EndedAt" TIMESTAMP,
+  "IsActive" BOOLEAN DEFAULT TRUE
+);
+
+-- =========================================================
+-- Freeze Rule
+-- =========================================================
+-- Remove duplicate legacy/experimental definitions from production migration flow:
+-- 1) users1
+-- 2) roles (lowercase)
+-- 3) duplicate Companies/Users/AuditLogs blocks
+-- 4) duplicated Products/Customers/SalesOrders/PurchaseOrders definitions
+-- 5) old mixed security model (UserTypes-only access)

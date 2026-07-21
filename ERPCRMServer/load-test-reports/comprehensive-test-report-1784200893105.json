@@ -1,0 +1,205 @@
+{
+  "timestamp": "2026-07-16T11:21:33.105Z",
+  "baseUrl": "http://localhost:5351",
+  "summary": {
+    "total": 38,
+    "passed": 21,
+    "failed": 4,
+    "skipped": 5,
+    "blocked": 0,
+    "notImplemented": 8,
+    "passRate": "84.0"
+  },
+  "details": [
+    {
+      "name": "1.1 Health endpoint responds",
+      "status": "PASS",
+      "details": "Expected: 200, Got: 200"
+    },
+    {
+      "name": "1.2 Health reports OK",
+      "status": "PASS",
+      "details": ""
+    },
+    {
+      "name": "2.1 Auth middleware blocks unauthenticated requests",
+      "status": "PASS",
+      "details": "Got 401"
+    },
+    {
+      "name": "2.2 Invalid token rejected",
+      "status": "PASS",
+      "details": "Got 401"
+    },
+    {
+      "name": "2.3 Login with known credentials",
+      "status": "SKIP",
+      "details": "Login failed: Invalid credentials"
+    },
+    {
+      "name": "3.1 Products list",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.2 Suppliers list",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.3 Customers list",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.4 Warehouses list",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.5 Stock movements",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.6 Purchase orders",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.7 Sales orders",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.8 Dashboard",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.9 CRM Accounts",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.10 CRM Leads",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.11 CRM Opportunities",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.12 CRM Contacts",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.13 Product categories",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.14 Units",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.15 Brands",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "3.16 Taxes",
+      "status": "PASS",
+      "details": "Endpoint exists, returns 401"
+    },
+    {
+      "name": "4.1-4.6 CRM CRUD",
+      "status": "SKIP",
+      "details": "Auth error: Authentication required"
+    },
+    {
+      "name": "5.1 Create Product",
+      "status": "FAIL",
+      "details": "Status 401: Authentication required"
+    },
+    {
+      "name": "5.2 Get Products list",
+      "status": "FAIL",
+      "details": "Request failed with status code 401"
+    },
+    {
+      "name": "5.3 Create Supplier",
+      "status": "FAIL",
+      "details": "Authentication required"
+    },
+    {
+      "name": "5.4 Create Customer",
+      "status": "FAIL",
+      "details": "Authentication required"
+    },
+    {
+      "name": "6.1-6.4 Purchase orders",
+      "status": "SKIP",
+      "details": "No supplier ID available"
+    },
+    {
+      "name": "7.1-7.3 Sales orders",
+      "status": "SKIP",
+      "details": "No customer ID available"
+    },
+    {
+      "name": "8.1 Unauthenticated request returns 401",
+      "status": "PASS",
+      "details": "Got 401"
+    },
+    {
+      "name": "8.2 Authenticated request",
+      "status": "SKIP",
+      "details": "No access token"
+    },
+    {
+      "name": "8.3 Customer role restrictions",
+      "status": "NOT_IMPLEMENTED",
+      "details": "Need separate customer token"
+    },
+    {
+      "name": "8.4 Auditor role restrictions",
+      "status": "NOT_IMPLEMENTED",
+      "details": "Need separate auditor token"
+    },
+    {
+      "name": "9.1 Stock consistency check",
+      "status": "NOT_IMPLEMENTED",
+      "details": "Need GRN workflow execution to verify"
+    },
+    {
+      "name": "9.2 AvailableQuantity = Quantity - ReservedQuantity",
+      "status": "NOT_IMPLEMENTED",
+      "details": "Verify generated column"
+    },
+    {
+      "name": "9.3 Products.StockQuantity matches warehouse sum",
+      "status": "NOT_IMPLEMENTED",
+      "details": "Trigger/migration may not exist"
+    },
+    {
+      "name": "10.1 Company isolation for CRM records",
+      "status": "NOT_IMPLEMENTED",
+      "details": "Need second company token"
+    },
+    {
+      "name": "10.2 Hierarchy-based access",
+      "status": "NOT_IMPLEMENTED",
+      "details": "Need manager/employee tokens"
+    },
+    {
+      "name": "10.3 Group visibility",
+      "status": "NOT_IMPLEMENTED",
+      "details": "EntityVisibility table exists but not tested"
+    }
+  ]
+}

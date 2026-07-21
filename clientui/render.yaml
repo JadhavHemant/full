@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: erpcrm-client
+    runtime: static
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false

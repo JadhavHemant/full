@@ -1,0 +1,25 @@
+import { INVENTORY_ENDPOINTS } from "../config/endpoints";
+import { createCrudService } from "./inventoryApi";
+
+export const productService = createCrudService(INVENTORY_ENDPOINTS.products);
+export const categoryService = createCrudService(INVENTORY_ENDPOINTS.productCategories);
+export const unitService = createCrudService(INVENTORY_ENDPOINTS.units);
+export const warehouseService = createCrudService(INVENTORY_ENDPOINTS.warehouses);
+export const productStockService = createCrudService(INVENTORY_ENDPOINTS.productStock);
+export const stockMovementService = createCrudService(INVENTORY_ENDPOINTS.stockMovements);
+export const supplierService = createCrudService(INVENTORY_ENDPOINTS.suppliers);
+export const purchaseOrderService = createCrudService(INVENTORY_ENDPOINTS.purchaseOrders);
+export const purchaseOrderItemService = createCrudService(INVENTORY_ENDPOINTS.purchaseOrderItems);
+export const customerService = createCrudService(INVENTORY_ENDPOINTS.customers);
+export const salesOrderService = createCrudService(INVENTORY_ENDPOINTS.salesOrders);
+export const brandService = createCrudService(INVENTORY_ENDPOINTS.brands);
+export const taxService = createCrudService(INVENTORY_ENDPOINTS.taxes);
+export const productTaxMapService = createCrudService(INVENTORY_ENDPOINTS.productTaxMap);
+export const auditLogService = createCrudService(INVENTORY_ENDPOINTS.auditLogs);
+export const profitLossReportService = createCrudService(INVENTORY_ENDPOINTS.profitLossReports);
+export const stockTransferService = createCrudService(INVENTORY_ENDPOINTS.stockTransfers);
+export const stockAdjustmentService = createCrudService(INVENTORY_ENDPOINTS.stockAdjustments);
+export const grnService = createCrudService(INVENTORY_ENDPOINTS.grn);
+export const batchService = createCrudService(INVENTORY_ENDPOINTS.batches);
+export const serialNumberService = createCrudService(INVENTORY_ENDPOINTS.serialNumbers);
+export const erpModuleService = createCrudService(INVENTORY_ENDPOINTS.erpModules);

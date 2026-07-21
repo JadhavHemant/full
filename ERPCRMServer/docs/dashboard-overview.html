@@ -1,0 +1,813 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0d1117;color:#e6edf3;padding:16px}
+.db{display:flex;flex-direction:column;gap:14px;max-width:1400px;margin:0 auto}
+.row{display:grid;gap:14px}
+.r4{grid-template-columns:repeat(4,1fr)}
+.r3{grid-template-columns:repeat(3,1fr)}
+.r2{grid-template-columns:1fr 1fr}
+.card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:16px}
+.label{font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;font-weight:600}
+.big{font-size:28px;font-weight:700;color:#f0f6fc;line-height:1.1}
+.delta{font-size:12px;margin-top:4px;font-weight:500}
+.up{color:#3fb950}.dn{color:#f85149}.neu{color:#8b949e}
+.section-label{font-size:13px;font-weight:600;color:#8b949e;padding:4px 0 2px;border-bottom:1px solid #21262d;margin-bottom:4px;margin-top:8px}
+.section-label:first-child{margin-top:0}
+
+/* Sparkline */
+.spark-wrap{width:100%;height:40px;margin-top:10px;position:relative}
+.spark-canvas{width:100%;height:40px;display:block}
+
+/* Bars */
+.bar-wrap{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:13px}
+.bar-bg{flex:1;height:10px;background:#21262d;border-radius:5px;overflow:hidden}
+.bar-fill{height:100%;border-radius:5px;transition:width .6s ease}
+.bar-val{min-width:40px;text-align:right;font-size:12px;color:#8b949e;font-weight:500}
+.bar-label{min-width:36px}
+
+/* Donut */
+.donut-wrap{display:flex;align-items:center;gap:16px;margin-top:8px}
+.donut-ring{position:relative;width:72px;height:72px;flex-shrink:0}
+.donut-ring svg{width:72px;height:72px;transform:rotate(-90deg)}
+.donut-ring circle{fill:none;stroke-width:6;stroke-linecap:round}
+.donut-bg{stroke:#21262d}
+.donut-txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#f0f6fc}
+.donut-meta{font-size:13px;line-height:1.5}
+.donut-meta span{color:#8b949e}
+
+/* Gauge */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;margin-top:6px}
+.gauge-svg{width:100px;height:64px}
+.gauge-val{font-size:24px;font-weight:700;margin-top:2px}
+
+/* Latency grouped bars */
+.latency-bars{display:flex;align-items:flex-end;gap:6px;height:80px;margin-top:10px;padding:0 4px}
+.latency-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.latency-bar{width:100%;border-radius:4px 4px 0 0;min-height:6px;transition:height .6s ease}
+
+/* Heatmap */
+.heat-row{display:flex;gap:3px;margin-top:10px;flex-wrap:wrap}
+.heat-cell{width:16px;height:16px;border-radius:3px;transition:all .2s}
+.heat-cell:hover{transform:scale(1.4);z-index:2;box-shadow:0 0 6px rgba(255,255,255,.3)}
+
+/* Pills */
+.pill{display:inline-block;font-size:11px;padding:2px 10px;border-radius:12px;font-weight:600}
+.p-ok{background:#0d2b1c;color:#3fb950;border:1px solid #3fb95044}
+.p-warn{background:#2b1d0d;color:#d29922;border:1px solid #d2992244}
+.p-err{background:#2b0d0d;color:#f85149;border:1px solid #f8514944}
+.p-info{background:#0d1b2b;color:#58a6ff;border:1px solid #58a6ff44}
+.p-purple{background:#1b0d2b;color:#bc8cff;border:1px solid #bc8cff44}
+.p-mint{background:#0d2b1c;color:#7ee787;border:1px solid #7ee78744}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+th{text-align:left;font-size:11px;color:#8b949e;font-weight:600;padding:6px 8px;border-bottom:1px solid #21262d;text-transform:uppercase;letter-spacing:.04em}
+td{padding:8px 8px;border-bottom:1px solid #21262d;color:#e6edf3}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#1c2128}
+.mono{font-family:'SF Mono','Fira Code',monospace;font-size:12px;color:#8b949e}
+
+/* Meter */
+.meter{height:10px;background:#21262d;border-radius:5px;overflow:hidden;margin-top:10px}
+.meter-fill{height:100%;border-radius:5px;transition:width .6s ease}
+
+/* Activity bars */
+.activity-chart{display:flex;align-items:flex-end;gap:3px;height:50px;margin-top:8px}
+.activity-bar{flex:1;border-radius:2px 2px 0 0;min-height:3px;transition:height .6s ease}
+
+/* Stat grid */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.stat-item{text-align:center;padding:6px;background:#0d1117;border-radius:6px}
+.stat-num{font-size:20px;font-weight:700}
+.stat-lbl{font-size:10px;color:#8b949e;text-transform:uppercase;margin-top:2px}
+
+/* Mini table inside card */
+.mini-table{font-size:12px;margin-top:6px}
+.mini-table td{padding:4px 6px}
+.mini-table th{padding:3px 6px;font-size:10px}
+
+/* Mini progress dots */
+.dot-row{display:flex;gap:3px;margin-top:8px;flex-wrap:wrap}
+.dot{width:10px;height:10px;border-radius:2px}
+
+/* Trend arrows */
+.trend-up{color:#3fb950}
+.trend-down{color:#f85149}
+.trend-flat{color:#8b949e}
+
+/* Inline stat row */
+.inline-stats{display:flex;gap:16px;margin-top:10px;flex-wrap:wrap}
+.inline-stat{text-align:center;flex:1;min-width:60px;padding:6px 4px;background:#0d1117;border-radius:6px}
+.inline-stat .num{font-size:18px;font-weight:700;display:block}
+.inline-stat .lbl{font-size:10px;color:#8b949e;text-transform:uppercase}
+</style>
+
+<div class="db">
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- ROW 1: API Overview Stats -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="section-label">API Overview — last 1 hour</div>
+
+<div class="row r4">
+  <div class="card">
+    <div class="label">Total requests</div>
+    <div class="big">1,243,867</div>
+    <div class="delta up">▲ +8.3% vs prev hour</div>
+    <div class="spark-wrap"><canvas class="spark-canvas" id="spark1"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="label">Requests / sec</div>
+    <div class="big">342</div>
+    <div class="delta up">▲ +12 rps since 5m ago</div>
+    <div class="spark-wrap"><canvas class="spark-canvas" id="spark2"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="label">Error rate</div>
+    <div class="big" style="color:#f85149">2.1%</div>
+    <div class="delta dn">▼ +0.4% spike at 14:32</div>
+    <div class="spark-wrap"><canvas class="spark-canvas" id="spark3"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="label">p99 latency</div>
+    <div class="big" style="color:#d29922">438ms</div>
+    <div class="delta dn">▼ +62ms vs baseline</div>
+    <div class="spark-wrap"><canvas class="spark-canvas" id="spark4"></canvas></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- ROW 2: HTTP Status, Latency, Apdex -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="row r3">
+  <div class="card">
+    <div class="label">HTTP status breakdown</div>
+    <div class="bar-wrap">
+      <div class="bar-row"><span class="bar-label" style="color:#3fb950">2xx</span><div class="bar-bg"><div class="bar-fill" style="width:78%;background:#3fb950"></div></div><span class="bar-val">78%</span></div>
+      <div class="bar-row"><span class="bar-label" style="color:#58a6ff">3xx</span><div class="bar-bg"><div class="bar-fill" style="width:8%;background:#58a6ff"></div></div><span class="bar-val">8%</span></div>
+      <div class="bar-row"><span class="bar-label" style="color:#d29922">4xx</span><div class="bar-bg"><div class="bar-fill" style="width:12%;background:#d29922"></div></div><span class="bar-val">12%</span></div>
+      <div class="bar-row"><span class="bar-label" style="color:#f85149">5xx</span><div class="bar-bg"><div class="bar-fill" style="width:2%;background:#f85149"></div></div><span class="bar-val">2%</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Latency percentiles</div>
+    <div class="latency-bars" id="latencyBars"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:#8b949e;padding:0 4px">
+      <span>p50 <strong style="color:#58a6ff">84ms</strong></span>
+      <span>p90 <strong style="color:#1f6feb">214ms</strong></span>
+      <span>p95 <strong style="color:#9e6ff7">312ms</strong></span>
+      <span>p99 <strong style="color:#f85149">438ms</strong></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Apdex score</div>
+    <div class="donut-wrap">
+      <div class="donut-ring">
+        <svg viewBox="0 0 72 72">
+          <circle class="donut-bg" cx="36" cy="36" r="27"/>
+          <circle cx="36" cy="36" r="27" stroke="#3fb950" stroke-dasharray="127.2 42.4" style="stroke-dashoffset:0"/>
+        </svg>
+        <div class="donut-txt">0.87</div>
+      </div>
+      <div class="donut-meta">
+        <div>Satisfied <span>(<100ms)</span></div>
+        <div style="font-weight:600;font-size:15px;color:#3fb950;margin:2px 0">68% of requests</div>
+        <div style="margin-top:4px">Tolerating <span>(<400ms)</span></div>
+        <div style="font-weight:600;font-size:15px;color:#d29922">27% of requests</div>
+      </div>
+    </div>
+    <div style="margin-top:10px"><span class="pill p-ok">Good (0.87)</span></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- SECTION: INVENTORY MODULE -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="section-label">📦 Inventory Module</div>
+
+<div class="row r4">
+  <div class="card">
+    <div class="label">Products</div>
+    <div class="big">2,847</div>
+    <div class="delta up">▲ 48 created today</div>
+    <div class="stat-grid">
+      <div class="stat-item"><div class="stat-num" style="color:#3fb950">2,341</div><div class="stat-lbl">Active</div></div>
+      <div class="stat-item"><div class="stat-num" style="color:#d29922">506</div><div class="stat-lbl">Inactive</div></div>
+      <div class="stat-item"><div class="stat-num" style="color:#f85149">47</div><div class="stat-lbl">Low stock</div></div>
+      <div class="stat-item"><div class="stat-num" style="color:#bc8cff">12</div><div class="stat-lbl">Categories</div></div>
+    </div>
+    <div class="activity-chart" id="prodChart" style="height:30px;margin-top:6px"></div>
+  </div>
+
+  <div class="card">
+    <div class="label">Stock & Warehouses</div>
+    <div class="big">6</div>
+    <div class="delta neu">warehouses</div>
+    <div class="bar-wrap" style="margin-top:8px;gap:5px">
+      <div class="bar-row"><span class="bar-label" style="color:#58a6ff">Main WH</span><div class="bar-bg"><div class="bar-fill" style="width:42%;background:#58a6ff"></div></div><span class="bar-val">42%</span></div>
+      <div class="bar-row"><span class="bar-label" style="color:#3fb950">East WH</span><div class="bar-bg"><div class="bar-fill" style="width:28%;background:#3fb950"></div></div><span class="bar-val">28%</span></div>
+      <div class="bar-row"><span class="bar-label" style="color:#d29922">West WH</span><div class="bar-bg"><div class="bar-fill" style="width:18%;background:#d29922"></div></div><span class="bar-val">18%</span></div>
+      <div class="bar-row"><span class="bar-label" style="color:#9e6ff7">Others</span><div class="bar-bg"><div class="bar-fill" style="width:12%;background:#9e6ff7"></div></div><span class="bar-val">12%</span></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:#8b949e">
+      <span>Low stock: <strong style="color:#f85149">47</strong></span>
+      <span>Out of stock: <strong style="color:#f85149">12</strong></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Purchase Orders</div>
+    <div class="big">342</div>
+    <div class="delta up">▲ this month</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num trend-up">128</span><span class="lbl">Pending</span></div>
+      <div class="inline-stat"><span class="num" style="color:#58a6ff">156</span><span class="lbl">Received</span></div>
+      <div class="inline-stat"><span class="num" style="color:#f85149">38</span><span class="lbl">Overdue</span></div>
+      <div class="inline-stat"><span class="num" style="color:#8b949e">20</span><span class="lbl">Cancelled</span></div>
+    </div>
+    <div style="margin-top:8px;font-size:12px">
+      <span>Avg. lead time: <strong>6.2 days</strong></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Sales Orders</div>
+    <div class="big">521</div>
+    <div class="delta up">▲ this month</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num trend-up">89</span><span class="lbl">Pending</span></div>
+      <div class="inline-stat"><span class="num" style="color:#3fb950">312</span><span class="lbl">Completed</span></div>
+      <div class="inline-stat"><span class="num" style="color:#bc8cff">74</span><span class="lbl">Processing</span></div>
+      <div class="inline-stat"><span class="num" style="color:#f85149">46</span><span class="lbl">Overdue</span></div>
+    </div>
+    <div style="margin-top:8px;font-size:12px">
+      <span>Revenue this month: <strong style="color:#3fb950">₹84.2L</strong></span>
+    </div>
+  </div>
+</div>
+
+<div class="row r2">
+  <div class="card">
+    <div class="label">Suppliers</div>
+    <table class="mini-table">
+      <thead><tr><th>Supplier</th><th>Orders</th><th>Pending</th><th>On-time %</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">Acme Corp</td><td style="font-weight:600">64</td><td>12</td><td style="color:#3fb950">94%</td></tr>
+        <tr><td class="mono">Global Parts</td><td style="font-weight:600">51</td><td>8</td><td style="color:#d29922">87%</td></tr>
+        <tr><td class="mono">TechSupply</td><td style="font-weight:600">43</td><td>5</td><td style="color:#3fb950">96%</td></tr>
+        <tr><td class="mono">RawMats Ltd</td><td style="font-weight:600">38</td><td>14</td><td style="color:#f85149">72%</td></tr>
+        <tr><td class="mono">FastShip Inc</td><td style="font-weight:600">29</td><td>3</td><td style="color:#3fb950">98%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="label">Customers (Top by Outstanding)</div>
+    <table class="mini-table">
+      <thead><tr><th>Customer</th><th>Orders</th><th>Balance</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">Mega Retail</td><td>42</td><td style="color:#d29922">₹5.2L</td><td><span class="pill p-warn">Overdue</span></td></tr>
+        <tr><td class="mono">ShopNGo</td><td>38</td><td style="color:#3fb950">₹3.8L</td><td><span class="pill p-ok">Current</span></td></tr>
+        <tr><td class="mono">CityMart</td><td>31</td><td style="color:#f85149">₹8.1L</td><td><span class="pill p-err">Critical</span></td></tr>
+        <tr><td class="mono">EcomPlus</td><td>27</td><td style="color:#3fb950">₹1.2L</td><td><span class="pill p-ok">Current</span></td></tr>
+        <tr><td class="mono">DistributorX</td><td>24</td><td style="color:#d29922">₹2.9L</td><td><span class="pill p-warn">Overdue</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row r4">
+  <div class="card">
+    <div class="label">Stock movements (today)</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num trend-up">84</span><span class="lbl">Inbound</span></div>
+      <div class="inline-stat"><span class="num trend-down">62</span><span class="lbl">Outbound</span></div>
+      <div class="inline-stat"><span class="num" style="color:#d29922">18</span><span class="lbl">Transfers</span></div>
+      <div class="inline-stat"><span class="num" style="color:#f85149">4</span><span class="lbl">Adjust</span></div>
+    </div>
+    <div class="spark-wrap"><canvas class="spark-canvas" id="sparkStock"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="label">Profit & Loss (this month)</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num trend-up">₹1.42Cr</span><span class="lbl">Revenue</span></div>
+      <div class="inline-stat"><span class="num trend-down">₹94L</span><span class="lbl">Costs</span></div>
+      <div class="inline-stat"><span class="num" style="color:#3fb950">₹48L</span><span class="lbl">Gross P/L</span></div>
+    </div>
+    <div style="margin-top:10px;font-size:12px">
+      <div class="bar-row"><span style="min-width:52px">Margin</span><div class="bar-bg"><div class="bar-fill" style="width:34%;background:#3fb950"></div></div><span class="bar-val">33.8%</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Units & Taxes</div>
+    <table class="mini-table">
+      <thead><tr><th>Type</th><th>Count</th><th>Active</th></tr></thead>
+      <tbody>
+        <tr><td>Units of measure</td><td style="font-weight:600">24</td><td style="color:#3fb950">24</td></tr>
+        <tr><td>Tax rates</td><td style="font-weight:600">8</td><td style="color:#3fb950">8</td></tr>
+        <tr><td>Product-tax maps</td><td style="font-weight:600">2,847</td><td style="color:#3fb950">2,341</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:8px;font-size:12px">
+      <span class="pill p-info">GST 18%</span>
+      <span class="pill p-info" style="margin-left:4px">GST 12%</span>
+      <span class="pill p-info" style="margin-left:4px">GST 5%</span>
+      <span class="pill p-info" style="margin-left:4px">IGST 18%</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Audit Log (24h activity)</div>
+    <div class="dot-row" id="auditDots"></div>
+    <div style="margin-top:8px;font-size:12px;display:flex;justify-content:space-between">
+      <span>Created: <strong style="color:#3fb950">184</strong></span>
+      <span>Updated: <strong style="color:#58a6ff">312</strong></span>
+      <span>Deleted: <strong style="color:#f85149">23</strong></span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- SECTION: CRM MODULE -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="section-label">👥 CRM Module</div>
+
+<div class="row r4">
+  <div class="card">
+    <div class="label">Accounts</div>
+    <div class="big">1,245</div>
+    <div class="delta up">▲ +18 this week</div>
+    <div class="bar-wrap" style="margin-top:8px;gap:5px">
+      <div class="bar-row"><span style="color:#3fb950">Active</span><div class="bar-bg"><div class="bar-fill" style="width:82%;background:#3fb950"></div></div><span class="bar-val">82%</span></div>
+      <div class="bar-row"><span style="color:#d29922">Inactive</span><div class="bar-bg"><div class="bar-fill" style="width:18%;background:#d29922"></div></div><span class="bar-val">18%</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Leads</div>
+    <div class="big">892</div>
+    <div class="delta up">▲ +42 new today</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num" style="color:#d29922">324</span><span class="lbl">New</span></div>
+      <div class="inline-stat"><span class="num" style="color:#58a6ff">218</span><span class="lbl">Contacted</span></div>
+      <div class="inline-stat"><span class="num" style="color:#bc8cff">156</span><span class="lbl">Qualified</span></div>
+      <div class="inline-stat"><span class="num" style="color:#3fb950">194</span><span class="lbl">Converted</span></div>
+    </div>
+    <div style="margin-top:6px;font-size:11px;color:#8b949e">Conversion rate: 21.7%</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Opportunities</div>
+    <div class="big">423</div>
+    <div class="delta up">▲ pipeline ₹3.2Cr</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num" style="color:#d29922">98</span><span class="lbl">Prospecting</span></div>
+      <div class="inline-stat"><span class="num" style="color:#58a6ff">142</span><span class="lbl">Negotiation</span></div>
+      <div class="inline-stat"><span class="num" style="color:#bc8cff">124</span><span class="lbl">Closing</span></div>
+      <div class="inline-stat"><span class="num" style="color:#3fb950">59</span><span class="lbl">Won</span></div>
+    </div>
+    <div style="margin-top:6px;display:flex;justify-content:space-between;font-size:11px;color:#8b949e">
+      <span>Win rate: 42%</span>
+      <span>Avg deal: ₹76K</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Cases</div>
+    <div class="big">187</div>
+    <div class="delta dn">▲ +12 escalated today</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num" style="color:#d29922">64</span><span class="lbl">Open</span></div>
+      <div class="inline-stat"><span class="num" style="color:#58a6ff">38</span><span class="lbl">In Progress</span></div>
+      <div class="inline-stat"><span class="num" style="color:#f85149">12</span><span class="lbl">Escalated</span></div>
+      <div class="inline-stat"><span class="num" style="color:#3fb950">73</span><span class="lbl">Resolved</span></div>
+    </div>
+    <div style="margin-top:6px;font-size:11px;color:#8b949e">Avg resolution: 2.4 hrs</div>
+  </div>
+</div>
+
+<div class="row r4">
+  <div class="card">
+    <div class="label">Contacts</div>
+    <div class="big">3,842</div>
+    <div class="delta up">▲ +24 this week</div>
+    <div style="margin-top:8px;font-size:12px;display:flex;justify-content:space-between">
+      <span>Primary: <strong>2,104</strong></span>
+      <span>Secondary: <strong>1,738</strong></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Activities</div>
+    <div class="big">2,418</div>
+    <div class="delta up">▲ this month</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num" style="color:#58a6ff">1,124</span><span class="lbl">Calls</span></div>
+      <div class="inline-stat"><span class="num" style="color:#3fb950">684</span><span class="lbl">Meetings</span></div>
+      <div class="inline-stat"><span class="num" style="color:#bc8cff">610</span><span class="lbl">Emails</span></div>
+    </div>
+    <div class="activity-chart" id="activityChart" style="height:30px;margin-top:6px"></div>
+  </div>
+
+  <div class="card">
+    <div class="label">Quotes & Invoices</div>
+    <div style="display:flex;gap:16px;margin-top:6px">
+      <div><div class="label" style="margin-bottom:0">Quotes</div><div class="big" style="font-size:22px">164</div></div>
+      <div><div class="label" style="margin-bottom:0">Invoices</div><div class="big" style="font-size:22px">312</div></div>
+    </div>
+    <div class="inline-stats" style="margin-top:6px">
+      <div class="inline-stat"><span class="num" style="color:#3fb950">₹46L</span><span class="lbl">Invoiced</span></div>
+      <div class="inline-stat"><span class="num" style="color:#d29922">₹12L</span><span class="lbl">Pending</span></div>
+      <div class="inline-stat"><span class="num" style="color:#f85149">₹8L</span><span class="lbl">Overdue</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Payments & Retention</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num" style="color:#3fb950">286</span><span class="lbl">Payments</span></div>
+      <div class="inline-stat"><span class="num" style="color:#58a6ff">₹38L</span><span class="lbl">Collected</span></div>
+      <div class="inline-stat"><span class="num" style="color:#bc8cff">12</span><span class="lbl">Retentions</span></div>
+    </div>
+    <div style="margin-top:8px;font-size:12px">
+      <div class="bar-row"><span style="min-width:52px">Retention</span><div class="bar-bg"><div class="bar-fill" style="width:78%;background:#bc8cff"></div></div><span class="bar-val">78%</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="row r2">
+  <div class="card">
+    <div class="label">Presales & Opportunity Products</div>
+    <div style="display:flex;gap:16px;margin-top:6px">
+      <div><div class="label" style="margin-bottom:0">Presales</div><div class="big" style="font-size:22px">87</div></div>
+      <div><div class="label" style="margin-bottom:0">Opp Products</div><div class="big" style="font-size:22px">642</div></div>
+    </div>
+    <div style="margin-top:8px;font-size:12px;display:flex;justify-content:space-between">
+      <span>Active presales: <strong>62</strong></span>
+      <span>Products per opp: <span class="trend-flat">1.5 avg</span></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Case Emails & Follow-ups</div>
+    <div style="display:flex;gap:16px;margin-top:6px">
+      <div><div class="label" style="margin-bottom:0">Emails sent</div><div class="big" style="font-size:22px">1,847</div></div>
+      <div><div class="label" style="margin-bottom:0">Follow-ups</div><div class="big" style="font-size:22px">423</div></div>
+    </div>
+    <div style="margin-top:8px;font-size:12px;display:flex;justify-content:space-between">
+      <span>Open follow-ups: <strong style="color:#d29922">128</strong></span>
+      <span>Overdue: <strong style="color:#f85149">34</strong></span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- SECTION: SYSTEM & USER MODULE -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="section-label">⚙️ System & User Module</div>
+
+<div class="row r4">
+  <div class="card">
+    <div class="label">Users</div>
+    <div class="big">186</div>
+    <div class="delta up">▲ +3 today</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num" style="color:#3fb950">142</span><span class="lbl">Active</span></div>
+      <div class="inline-stat"><span class="num" style="color:#d29922">38</span><span class="lbl">Inactive</span></div>
+      <div class="inline-stat"><span class="num" style="color:#f85149">6</span><span class="lbl">Locked</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Roles & Permissions</div>
+    <div class="big">8</div>
+    <div class="delta neu">roles defined</div>
+    <div style="margin-top:8px;font-size:12px;display:flex;gap:4px;flex-wrap:wrap">
+      <span class="pill p-ok">Admin</span>
+      <span class="pill p-info">Manager</span>
+      <span class="pill p-purple">Supervisor</span>
+      <span class="pill p-warn">Operator</span>
+      <span class="pill p-ok">Viewer</span>
+      <span class="pill p-info">Auditor</span>
+      <span class="pill p-mint">Support</span>
+      <span class="pill p-err">Restricted</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">User Types</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num" style="color:#3fb950">4</span><span class="lbl">Types</span></div>
+      <div class="inline-stat"><span class="num" style="color:#58a6ff">3</span><span class="lbl">Companies</span></div>
+    </div>
+    <div style="margin-top:10px;font-size:12px">
+      <div class="bar-row"><span style="min-width:40px">Internal</span><div class="bar-bg"><div class="bar-fill" style="width:65%;background:#3fb950"></div></div><span class="bar-val">65%</span></div>
+      <div class="bar-row"><span style="min-width:40px">External</span><div class="bar-bg"><div class="bar-fill" style="width:35%;background:#58a6ff"></div></div><span class="bar-val">35%</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Session & Token</div>
+    <div class="big" style="color:#3fb950">Online: 47</div>
+    <div class="delta neu">Active sessions</div>
+    <div style="margin-top:8px;font-size:12px;display:flex;justify-content:space-between">
+      <span>Tokens issued: <strong>1,284</strong></span>
+      <span>Expired: <strong style="color:#d29922">38</strong></span>
+    </div>
+  </div>
+</div>
+
+<div class="row r4">
+  <div class="card">
+    <div class="label">Api Monitoring</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num" style="color:#3fb950">99.2%</span><span class="lbl">Uptime</span></div>
+      <div class="inline-stat"><span class="num" style="color:#d29922">2.1%</span><span class="lbl">Errors</span></div>
+      <div class="inline-stat"><span class="num" style="color:#58a6ff">342</span><span class="lbl">RPS</span></div>
+    </div>
+    <div class="spark-wrap"><canvas class="spark-canvas" id="sparkMon"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="label">Reports & Schedulers</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num" style="color:#3fb950">12</span><span class="lbl">Report types</span></div>
+      <div class="inline-stat"><span class="num" style="color:#58a6ff">6</span><span class="lbl">Scheduled</span></div>
+      <div class="inline-stat"><span class="num" style="color:#bc8cff">4</span><span class="lbl">Digests</span></div>
+    </div>
+    <div style="margin-top:8px;font-size:12px">
+      <span>Last digest ran: <span class="trend-flat">5 min ago</span></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Company Settings</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num" style="color:#3fb950">3</span><span class="lbl">Companies</span></div>
+      <div class="inline-stat"><span class="num" style="color:#58a6ff">24</span><span class="lbl">Settings</span></div>
+    </div>
+    <div style="margin-top:8px;font-size:12px;display:flex;gap:4px;flex-wrap:wrap">
+      <span class="pill p-info">ERP Main</span>
+      <span class="pill p-purple">CRM Branch</span>
+      <span class="pill p-mint">Inventory</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">Notification Prefs</div>
+    <div class="inline-stats">
+      <div class="inline-stat"><span class="num" style="color:#3fb950">186</span><span class="lbl">Users</span></div>
+      <div class="inline-stat"><span class="num" style="color:#58a6ff">8</span><span class="lbl">Channels</span></div>
+    </div>
+    <div style="margin-top:8px;font-size:12px;display:flex;gap:4px;flex-wrap:wrap">
+      <span class="pill p-ok">Email</span>
+      <span class="pill p-info">In-App</span>
+      <span class="pill p-warn">SMS</span>
+      <span class="pill p-purple">Slack</span>
+    </div>
+  </div>
+</div>
+
+<div class="row r2">
+  <div class="card">
+    <div class="label">Audit Events (last 24h)</div>
+    <table class="mini-table">
+      <thead><tr><th>Event</th><th>Count</th><th>Severity</th><th>Trend</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">User login</td><td>847</td><td><span class="pill p-ok">Info</span></td><td class="trend-up">▲ +12%</td></tr>
+        <tr><td class="mono">Data export</td><td>124</td><td><span class="pill p-info">Audit</span></td><td class="trend-flat">— 0%</td></tr>
+        <tr><td class="mono">Permission change</td><td>18</td><td><span class="pill p-warn">Warning</span></td><td class="trend-down">▼ +5%</td></tr>
+        <tr><td class="mono">Failed login</td><td>43</td><td><span class="pill p-err">Critical</span></td><td class="trend-down">▼ +8%</td></tr>
+        <tr><td class="mono">Data deletion</td><td>12</td><td><span class="pill p-err">Critical</span></td><td class="trend-flat">— 0%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="label">Table CRUD Operations (today)</div>
+    <table class="mini-table">
+      <thead><tr><th>Module</th><th>Create</th><th>Update</th><th>Delete</th><th>Total</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">Inventory</td><td style="color:#3fb950">142</td><td style="color:#58a6ff">284</td><td style="color:#f85149">12</td><td><strong>438</strong></td></tr>
+        <tr><td class="mono">CRM</td><td style="color:#3fb950">218</td><td style="color:#58a6ff">342</td><td style="color:#f85149">8</td><td><strong>568</strong></td></tr>
+        <tr><td class="mono">System</td><td style="color:#3fb950">24</td><td style="color:#58a6ff">86</td><td style="color:#f85149">3</td><td><strong>113</strong></td></tr>
+        <tr><td class="mono">Users</td><td style="color:#3fb950">6</td><td style="color:#58a6ff">42</td><td style="color:#f85149">1</td><td><strong>49</strong></td></tr>
+        <tr style="border-top:1px solid #30363d"><td class="mono" style="font-weight:600">Total</td><td style="color:#3fb950;font-weight:600">390</td><td style="color:#58a6ff;font-weight:600">754</td><td style="color:#f85149;font-weight:600">24</td><td><strong style="font-weight:700">1,168</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- SECTION: INFRASTRUCTURE -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="section-label">🖥️ Infrastructure & Saturation</div>
+
+<div class="row r4">
+  <div class="card">
+    <div class="label">Active connections</div>
+    <div class="big">1,284</div>
+    <div class="delta neu">of 5,000 max (25.7%)</div>
+    <div class="meter"><div class="meter-fill" style="width:26%;background:#3fb950"></div></div>
+    <div class="activity-chart" id="connChart"></div>
+  </div>
+  <div class="card">
+    <div class="label">Upstream timeout rate</div>
+    <div class="big" style="color:#d29922">0.7%</div>
+    <div class="delta dn">▼ +0.2% in last 10m</div>
+    <div class="spark-wrap"><canvas class="spark-canvas" id="spark5"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="label">Circuit breaker</div>
+    <div class="gauge-wrap">
+      <svg class="gauge-svg" viewBox="0 0 100 64">
+        <path d="M10,58 A45,45 0 0,1 90,58" fill="none" stroke="#21262d" stroke-width="8" stroke-linecap="round"/>
+        <path d="M10,58 A45,45 0 0,1 90,58" fill="none" stroke="#3fb950" stroke-width="8" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="30"/>
+        <line x1="50" y1="58" x2="72" y2="20" stroke="#3fb950" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="50" cy="58" r="4" fill="#3fb950"/>
+      </svg>
+      <div class="gauge-val" style="color:#3fb950">Closed</div>
+    </div>
+    <div style="text-align:center;font-size:12px;color:#8b949e;margin-top:4px">All services healthy</div>
+  </div>
+  <div class="card">
+    <div class="label">Rate limit hits / min</div>
+    <div class="big" style="color:#f85149">43</div>
+    <div class="delta dn">▲ 429 responses rising</div>
+    <div class="spark-wrap"><canvas class="spark-canvas" id="spark6"></canvas></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- ERROR HEATMAP -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="section-label">🔥 Error Heatmap — last 60 min</div>
+
+<div class="card">
+  <div class="label">5xx errors per minute</div>
+  <div class="heat-row" id="heatmap"></div>
+  <div style="display:flex;align-items:center;gap:12px;margin-top:10px;font-size:11px;color:#8b949e">
+    <span>Low</span>
+    <div style="display:flex;gap:2px">
+      <div style="width:14px;height:14px;background:#0d2b1c;border-radius:2px"></div>
+      <div style="width:14px;height:14px;background:#3fb95044;border-radius:2px"></div>
+      <div style="width:14px;height:14px;background:#d29922;border-radius:2px"></div>
+      <div style="width:14px;height:14px;background:#d2691e;border-radius:2px"></div>
+      <div style="width:14px;height:14px;background:#f85149;border-radius:2px"></div>
+      <div style="width:14px;height:14px;background:#a82424;border-radius:2px"></div>
+    </div>
+    <span>High</span>
+    <span style="margin-left:auto">Peak: 12 errors at 14:52</span>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ── Canvas sparklines ──
+function drawSpark(canvasId, data, color) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * 2;
+  canvas.height = 80;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const pad = 4;
+  const ch = h - pad * 2;
+  const cw = w - pad * 2;
+  ctx.beginPath();
+  ctx.moveTo(pad, h - pad);
+  data.forEach((v, i) => {
+    const x = pad + (i / (data.length - 1)) * cw;
+    const y = h - pad - (v / 100) * ch;
+    ctx.lineTo(x, y);
+  });
+  ctx.lineTo(pad + cw, h - pad);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, pad, 0, h);
+  grad.addColorStop(0, color + '33');
+  grad.addColorStop(1, color + '05');
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.beginPath();
+  data.forEach((v, i) => {
+    const x = pad + (i / (data.length - 1)) * cw;
+    const y = h - pad - (v / 100) * ch;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  const sx = pad, sy = h - pad - (data[0] / 100) * ch;
+  const ex = pad + cw, ey = h - pad - (data[data.length - 1] / 100) * ch;
+  [sx, ex].forEach((x, i) => {
+    const y = i === 0 ? sy : ey;
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  });
+}
+
+function genData(peak, direction) {
+  const n = 50;
+  const d = [];
+  for (let i = 0; i < n; i++) {
+    const trend = direction === 'up' ? (i / n) : (direction === 'down' ? (1 - i / n) : 0.5);
+    const noise = Math.random() * 15 - 5;
+    let v = peak * (0.2 + trend * 0.6) + noise;
+    if (direction === 'spike') {
+      if (i > 30 && i < 38) v += peak * (0.3 + Math.random() * 0.4);
+    }
+    v = Math.max(5, Math.min(100, v));
+    d.push(v);
+  }
+  return d;
+}
+
+drawSpark('spark1', genData(75, 'up'), '#3fb950');
+drawSpark('spark2', genData(70, 'up'), '#3fb950');
+drawSpark('spark3', genData(40, 'spike'), '#f85149');
+drawSpark('spark4', genData(50, 'spike'), '#d29922');
+drawSpark('spark5', genData(35, 'spike'), '#d29922');
+drawSpark('spark6', genData(55, 'spike'), '#f85149');
+drawSpark('sparkStock', genData(60, 'up'), '#58a6ff');
+drawSpark('sparkMon', genData(70, 'up'), '#3fb950');
+
+// ── Latency grouped bars ──
+(function() {
+  const container = document.getElementById('latencyBars');
+  const data = [
+    { label: 'p50', value: 84, h: 25, color: '#58a6ff' },
+    { label: 'p90', value: 214, h: 50, color: '#1f6feb' },
+    { label: 'p95', value: 312, h: 68, color: '#9e6ff7' },
+    { label: 'p99', value: 438, h: 85, color: '#f85149' },
+  ];
+  container.innerHTML = data.map(d =>
+    `<div class="latency-col">
+      <div class="latency-bar" style="height:${d.h}px;background:${d.color};opacity:${0.5 + d.h/170}"></div>
+      <div class="latency-label">${d.label}</div>
+    </div>`
+  ).join('');
+})();
+
+// ── Product activity bars ──
+(function() {
+  const data = [12,18,14,22,16,20,24,18,26,22,18,14,20,16,22,18,24,20,16,12,18,22,20,24,18,14,20,16,22,18];
+  document.getElementById('prodChart').innerHTML = data.map(v =>
+    `<div class="activity-bar" style="height:${v/30*100}%;background:#58a6ff;opacity:${0.4 + (v/30)*0.6}"></div>`
+  ).join('');
+})();
+
+// ── Activity chart ──
+(function() {
+  const data = [8,14,11,18,13,16,10,19,15,12,14,17,9,16,13,18,11,15,14,10,16,12,17,14,13,11,15,12,18,14];
+  document.getElementById('activityChart').innerHTML = data.map(v =>
+    `<div class="activity-bar" style="height:${v/20*100}%;background:#bc8cff;opacity:${0.4 + (v/20)*0.6}"></div>`
+  ).join('');
+})();
+
+// ── Connection activity bars ──
+(function() {
+  const data = [18,22,25,20,24,26,22,28,30,24,20,26,28,22,25,18,22,26,24,28,32,26,22,20,18,24,22,26,28,24];
+  document.getElementById('connChart').innerHTML = data.map(v =>
+    `<div class="activity-bar" style="height:${v/32*100}%;background:${v > 28 ? '#d29922' : '#3fb950'};opacity:${0.4 + (v/32)*0.6}"></div>`
+  ).join('');
+})();
+
+// ── Audit activity dots (24h) ──
+(function() {
+  const container = document.getElementById('auditDots');
+  const data = [1,1,0,0,2,1,0,0,1,2,3,1,0,1,0,0,2,1,1,0,1,2,1,0,0,1,1,0,1,0,0,1,2,1,0,0,1,0,0,1,1,0,2,1,3,2,1,0,1,0,0,1,1,0,0,1,0,1,2,1,0,0,1,1,2,0,0,1,1,0,1,0];
+  const colors = ['#0d1117','#3fb95044','#3fb95088','#d29922','#d2691e','#f85149'];
+  data.forEach(v => {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.style.background = colors[Math.min(v, colors.length-1)];
+    d.title = v === 0 ? 'No activity' : `${v} events`;
+    container.appendChild(d);
+  });
+})();
+
+// ── Error heatmap ──
+(function() {
+  const hm = document.getElementById('heatmap');
+  const vals = [0,0,1,0,0,2,1,0,0,0,1,0,0,0,2,3,1,0,0,1,0,0,0,1,2,1,0,0,0,1,0,0,2,1,0,0,0,0,1,0,0,0,1,2,8,12,6,3,2,1,0,1,0,0,1,0,0,0,1,0];
+  const colors = ['#0d2b1c','#3fb95044','#3fb95088','#d29922','#d2691e','#f85149','#a82424'];
+  vals.forEach((v,i) => {
+    const d = document.createElement('div');
+    d.className = 'heat-cell';
+    const ci = v===0?0:v<2?1:v<4?2:v<7?3:v<10?4:v<15?5:6;
+    d.style.background = colors[ci];
+    d.title = `${i}m ago: ${v} error${v!==1?'s':''}`;
+    hm.appendChild(d);
+  });
+})();
+</script>
+</write_to_file>

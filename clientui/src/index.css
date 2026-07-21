@@ -1,0 +1,177 @@
+/* src/index.css */
+/* Global CSS styles and resets for the application */
+
+/* Import Tailwind CSS for utility classes */
+@import "tailwindcss";
+
+/* ===== MODERN SaaS DAY MODE CSS VARIABLES ===== */
+/* 
+ * Color palette inspired by Salesforce, HubSpot, Linear, Notion, and Stripe.
+ * Professional CRM / ERP color scheme with excellent readability.
+ * Auto-switches at 7:00 AM (day) and 7:00 PM (night).
+ */
+
+:root {
+  /* Primary font settings */
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* ===== DAY MODE TOKENS ===== */
+  --primary: #2563EB;
+  --secondary: #4F46E5;
+  --accent: #F97316;
+  --bg: #F8FAFC;
+  --card: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-secondary: #64748B;
+  --border: #E2E8F0;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+}
+
+/* ===== NIGHT MODE TOKENS ===== */
+[data-theme="dark"] {
+  --primary: #3B82F6;
+  --secondary: #6366F1;
+  --accent: #FB923C;
+  --bg: #0F172A;
+  --card: #1E293B;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --border: #334155;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+}
+
+/* Legacy dark class support */
+.dark {
+  --primary: #3B82F6;
+  --secondary: #6366F1;
+  --accent: #FB923C;
+  --bg: #0F172A;
+  --card: #1E293B;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --border: #334155;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+}
+
+/* Global box-sizing reset for consistent sizing */
+* {
+  box-sizing: border-box;
+}
+
+/* Ensure full height for html, body, and root elements */
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+/* Body styles - background and text colors using theme variables */
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--bg, #F8FAFC);
+  color: var(--text-primary, #0F172A);
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+/* Link styles - inherit color and remove underline */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Form element styles - inherit font from parent */
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+/* Selection color */
+::selection {
+  background: var(--primary, #2563EB);
+  color: #FFFFFF;
+}
+
+/* Focus visible for accessibility */
+:focus-visible {
+  outline: 2px solid var(--primary, #2563EB);
+  outline-offset: 2px;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ===== macOS-style TitleBar Styles ===== */
+.macos-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 38px;
+  padding: 0 12px;
+  background: #F3F4F6;
+  border-bottom: 1px solid #E5E7EB;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dark .macos-titlebar {
+  background: #1F2937;
+  border-bottom: 1px solid #374151;
+}
+
+.macos-window-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.macos-window-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+.macos-window-btn:hover {
+  transform: scale(1.1);
+}
+
+.macos-window-btn:active {
+  transform: scale(0.95);
+}
+
+.macos-titlebar-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B7280;
+  margin-left: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .macos-titlebar-title {
+  color: #9CA3AF;
+}

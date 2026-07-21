@@ -1,0 +1,3342 @@
+const { appPool } = require("../../config/db")
+
+const Accounts = async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "Accounts" (
+    "Id" SERIAL PRIMARY KEY,
+    "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+    "Name" VARCHAR(255) NOT NULL,
+    "Website" VARCHAR(255),
+    "Description" TEXT,
+    "IndustryId" INT REFERENCES "Industries"("Id") ON DELETE CASCADE,
+    "AnnualRevenue" NUMERIC(15,2),
+    "EmployeeCount" INT,
+    "AccountOwnerId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+    "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE CASCADE,
+    "CreatedAt" TIMESTAMP DEFAULT NOW(),
+    "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+    "IsActive" BOOLEAN DEFAULT TRUE,
+    "IsDeleted" BOOLEAN DEFAULT FALSE,
+    "Flag" BOOLEAN DEFAULT FALSE
+);
+    
+    `
+    await appPool.query(query);
+    await appPool.query('ALTER TABLE "Accounts" ADD COLUMN IF NOT EXISTS "AnnualRevenue" NUMERIC(15,2);');
+    await appPool.query('ALTER TABLE "Accounts" ADD COLUMN IF NOT EXISTS "EmployeeCount" INT;');
+    await appPool.query('ALTER TABLE "Accounts" ADD COLUMN IF NOT EXISTS "AccountOwnerId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "Accounts" ADD COLUMN IF NOT EXISTS "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "Accounts" ALTER COLUMN "Flag" SET DEFAULT FALSE;');
+    console.log("✅ Accounts table ready")
+}
+
+module.exports = { Accounts };
+const { appPool } = require("../../config/db");
+
+const Activities = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "Activities" (
+      "Id" SERIAL PRIMARY KEY,
+      "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "LeadId" INT REFERENCES "Leads"("Id") ON DELETE SET NULL,
+      "AccountId" INT REFERENCES "Accounts"("Id") ON DELETE SET NULL,
+      "ContactId" INT REFERENCES "Contacts"("Id") ON DELETE SET NULL,
+      "OpportunityId" INT REFERENCES "Opportunities"("Id") ON DELETE SET NULL,
+      "Type" VARCHAR(50) NOT NULL,
+      "Subject" VARCHAR(255) NOT NULL,
+      "Description" TEXT,
+      "DueDate" TIMESTAMP,
+      "Status" VARCHAR(50) DEFAULT 'Pending',
+      "Priority" VARCHAR(50) DEFAULT 'Medium',
+      "AssignedTo" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "ReminderAt" TIMESTAMP,
+      "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+      "IsActive" BOOLEAN DEFAULT TRUE,
+      "IsDeleted" BOOLEAN DEFAULT FALSE,
+      "Flag" BOOLEAN DEFAULT FALSE
+    );
+  `;
+
+  await appPool.query(query);
+  await appPool.query('ALTER TABLE "Activities" ALTER COLUMN "Flag" SET DEFAULT FALSE;');
+  console.log("Activities table ready");
+};
+
+module.exports = { Activities };
+const { appPool } = require("../../config/db")
+
+const  Addresses= async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "Addresses" (
+    "Id" SERIAL PRIMARY KEY,
+    "EntityType" VARCHAR(50) NOT NULL,
+    "EntityId" INT NOT NULL,
+    "Street" VARCHAR(255),
+    "City" VARCHAR(100),
+    "State" VARCHAR(100),
+    "Region" VARCHAR(100),
+    "PostalCode" VARCHAR(20),
+    "Country" VARCHAR(100),
+    "CreatedAt" TIMESTAMP DEFAULT NOW()
+);
+    `
+    await appPool.query(query);
+    console.log("✅ Addresses table ready")
+}
+
+module.exports = { Addresses };
+const { appPool } = require("../../config/db")
+
+const Assignments = async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "Assignments" (
+    "Id" SERIAL PRIMARY KEY,
+    "EntityType" VARCHAR(50) NOT NULL,
+    "EntityId" INT NOT NULL,
+    "AssignedTo" INT REFERENCES "Users"("UserId"),
+    "AssignedFrom" INT REFERENCES "Users"("UserId"),
+    "ChangedBy" INT REFERENCES "Users"("UserId"),
+    "ChangedAt" TIMESTAMP DEFAULT NOW()
+);
+    `
+    await appPool.query(query);
+    console.log("✅ Assignments table ready")
+}
+
+module.exports = { Assignments };
+const { appPool } = require("../../config/db");
+
+const AuditLogs = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "AuditLogs" (
+      "Id" SERIAL PRIMARY KEY,
+      "TableName" VARCHAR(100),
+      "RecordId" INT,
+      "Action" VARCHAR(20),
+      "ChangedBy" INT REFERENCES "Users"("UserId"),
+      "ChangeTime" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "Changes" JSONB
+    );
+  `;
+
+  await appPool.query(query);
+  console.log("AuditLogs table ready");
+};
+
+module.exports = { AuditLogs };
+const { appPool } = require("../../config/db");
+
+const Cases = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "Cases" (
+      "Id" SERIAL PRIMARY KEY,
+      "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "AccountId" INT REFERENCES "Accounts"("Id") ON DELETE SET NULL,
+      "ContactId" INT REFERENCES "Contacts"("Id") ON DELETE SET NULL,
+      "LeadId" INT REFERENCES "Leads"("Id") ON DELETE SET NULL,
+      "OpportunityId" INT REFERENCES "Opportunities"("Id") ON DELETE SET NULL,
+      "Subject" VARCHAR(255) NOT NULL,
+      "Status" VARCHAR(50) DEFAULT 'Open',
+      "Priority" VARCHAR(50) DEFAULT 'Medium',
+      "Description" TEXT,
+      "Resolution" TEXT,
+      "AssignedTo" INT REFERENCES "Users"("UserId"),
+      "AssignedFrom" INT REFERENCES "Users"("UserId"),
+      "CreatedBy" INT REFERENCES "Users"("UserId"),
+      "UpdatedBy" INT REFERENCES "Users"("UserId"),
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+      "IsActive" BOOLEAN DEFAULT TRUE,
+      "IsDeleted" BOOLEAN DEFAULT FALSE,
+      "Flag" BOOLEAN DEFAULT FALSE
+    );
+  `;
+
+  await appPool.query(query);
+  console.log("Cases table ready");
+};
+
+module.exports = { Cases };
+const { appPool } = require("../../config/db")
+
+const Comments = async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "Comments" (
+    "Id" SERIAL PRIMARY KEY,
+    "EntityType" VARCHAR(50) NOT NULL,
+    "EntityId" INT NOT NULL,
+    "CommentText" TEXT NOT NULL,
+    "CommentedBy" INT REFERENCES "Users"("UserId"),
+    "CreatedAt" TIMESTAMP DEFAULT NOW()
+);
+    `
+    await appPool.query(query);
+    console.log("✅ Comments table ready")
+}
+
+module.exports = { Comments };
+const { appPool } = require("../../config/db")
+
+const  Contacts= async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "Contacts" (
+    "Id" SERIAL PRIMARY KEY,
+    "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+    "AccountId" INT REFERENCES "Accounts"("Id") ON DELETE SET NULL,
+    "FirstName" VARCHAR(100),
+    "MiddleName" VARCHAR(100),
+    "LastName" VARCHAR(100),
+    "Email" VARCHAR(255),
+    "Phone" VARCHAR(50),
+    "AltPhone" VARCHAR(50),
+    "LinkedinUrl" VARCHAR(500),
+    "Title" VARCHAR(255),
+    "AssignedTo" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+    "CreatedBy" INT REFERENCES "Users"("UserId"),
+    "CreatedAt" TIMESTAMP DEFAULT NOW(),
+    "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+    "IsActive" BOOLEAN DEFAULT TRUE,
+    "IsDeleted" BOOLEAN DEFAULT FALSE,
+    "Flag" BOOLEAN DEFAULT FALSE
+);
+    `
+    await appPool.query(query);
+    await appPool.query('ALTER TABLE "Contacts" ADD COLUMN IF NOT EXISTS "AssignedTo" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "Contacts" ADD COLUMN IF NOT EXISTS "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "Contacts" ALTER COLUMN "Flag" SET DEFAULT FALSE;');
+    console.log("✅ Contacts table ready")
+}
+
+module.exports = { Contacts };
+const { appPool } = require("../../config/db")
+
+const EntityVisibility = async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "EntityVisibility" (
+    "Id" SERIAL PRIMARY KEY,
+    "EntityType" VARCHAR(50) NOT NULL,
+    "EntityId" INT NOT NULL,
+    "VisibilityType" VARCHAR(50) NOT NULL DEFAULT 'Private',
+    "UserId" INT REFERENCES "Users"("UserId") ON DELETE CASCADE,
+    "GroupId" INT REFERENCES "Groups"("Id") ON DELETE CASCADE,
+    "CreatedAt" TIMESTAMP DEFAULT NOW()
+);
+    `
+    await appPool.query(query);
+    console.log("✅ EntityVisibility table ready")
+}
+
+module.exports = { EntityVisibility };
+const { appPool } = require("../../config/db")
+
+const  FollowupTypes= async () => {
+    const query = `CREATE TABLE IF NOT EXISTS "FollowupTypes" (
+    "Id" SERIAL PRIMARY KEY,
+    "Name" VARCHAR(255) UNIQUE NOT NULL,
+    "IsActive" BOOLEAN DEFAULT TRUE,
+    "IsDeleted" BOOLEAN DEFAULT FALSE
+);`
+    await appPool.query(query);
+    await appPool.query('ALTER TABLE "FollowupTypes" ADD COLUMN IF NOT EXISTS "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "FollowupTypes" ADD COLUMN IF NOT EXISTS "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "FollowupTypes" ADD COLUMN IF NOT EXISTS "CreatedAt" TIMESTAMP DEFAULT NOW();');
+    await appPool.query('ALTER TABLE "FollowupTypes" ADD COLUMN IF NOT EXISTS "UpdatedAt" TIMESTAMP DEFAULT NOW();');
+    await appPool.query('ALTER TABLE "FollowupTypes" ADD COLUMN IF NOT EXISTS "IsActive" BOOLEAN DEFAULT TRUE;');
+    await appPool.query('ALTER TABLE "FollowupTypes" ADD COLUMN IF NOT EXISTS "IsDeleted" BOOLEAN DEFAULT FALSE;');
+    console.log("✅ FollowupTypes table ready")
+}
+
+module.exports = { FollowupTypes };
+const { appPool } = require("../../config/db")
+
+const  GroupMembers= async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "GroupMembers" (
+    "Id" SERIAL PRIMARY KEY,
+    "GroupId" INT REFERENCES "Groups"("Id") ON DELETE CASCADE,
+    "UserId" INT REFERENCES "Users"("UserId") ON DELETE CASCADE,
+    "AddedAt" TIMESTAMP DEFAULT NOW()
+);
+    `
+    await appPool.query(query);
+    console.log("✅ GroupMembers table ready")
+}
+
+module.exports = { GroupMembers };
+const { appPool } = require("../../config/db")
+
+const  Groups= async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "Groups" (
+    "Id" SERIAL PRIMARY KEY,
+    "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+    "Name" VARCHAR(255) NOT NULL,
+    "Description" TEXT,
+    "CreatedBy" INT REFERENCES "Users"("UserId"),
+    "CreatedAt" TIMESTAMP DEFAULT NOW(),
+    "UpdatedAt" TIMESTAMP DEFAULT NOW()
+);    
+    `
+    await appPool.query(query);
+    console.log("✅ Groups table ready")
+}
+
+module.exports = { Groups };
+const { appPool } = require("../../config/db")
+
+const  Industries= async () => {
+    const query = `CREATE TABLE IF NOT EXISTS "Industries" (
+    "Id" SERIAL PRIMARY KEY,
+    "Name" VARCHAR(255) UNIQUE NOT NULL,
+    "IsActive" BOOLEAN DEFAULT TRUE,
+    "IsDeleted" BOOLEAN DEFAULT FALSE
+);`
+    await appPool.query(query);
+    await appPool.query('ALTER TABLE "Industries" ADD COLUMN IF NOT EXISTS "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "Industries" ADD COLUMN IF NOT EXISTS "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "Industries" ADD COLUMN IF NOT EXISTS "CreatedAt" TIMESTAMP DEFAULT NOW();');
+    await appPool.query('ALTER TABLE "Industries" ADD COLUMN IF NOT EXISTS "UpdatedAt" TIMESTAMP DEFAULT NOW();');
+    await appPool.query('ALTER TABLE "Industries" ADD COLUMN IF NOT EXISTS "IsActive" BOOLEAN DEFAULT TRUE;');
+    await appPool.query('ALTER TABLE "Industries" ADD COLUMN IF NOT EXISTS "IsDeleted" BOOLEAN DEFAULT FALSE;');
+    console.log("✅ Industries table ready")
+}
+
+module.exports = { Industries };
+const { appPool } = require("../../config/db");
+
+const Invoices = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "Invoices" (
+      "Id" SERIAL PRIMARY KEY,
+      "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "InvoiceNumber" VARCHAR(100) NOT NULL,
+      "AccountId" INT REFERENCES "Accounts"("Id") ON DELETE SET NULL,
+      "OpportunityId" INT REFERENCES "Opportunities"("Id") ON DELETE SET NULL,
+      "QuoteId" INT REFERENCES "Quotes"("Id") ON DELETE SET NULL,
+      "Subtotal" NUMERIC(15,2) DEFAULT 0,
+      "TaxAmount" NUMERIC(15,2) DEFAULT 0,
+      "TotalAmount" NUMERIC(15,2) DEFAULT 0,
+      "PaymentStatus" VARCHAR(50) DEFAULT 'Pending',
+      "PaymentMethod" VARCHAR(100),
+      "DueDate" DATE,
+      "GeneratedDate" DATE DEFAULT CURRENT_DATE,
+      "Notes" TEXT,
+      "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+      "IsActive" BOOLEAN DEFAULT TRUE,
+      "IsDeleted" BOOLEAN DEFAULT FALSE,
+      "Flag" BOOLEAN DEFAULT FALSE
+    );
+  `;
+
+  await appPool.query(query);
+  await appPool.query('CREATE UNIQUE INDEX IF NOT EXISTS "idx_invoices_company_invoice_number" ON "Invoices" ("CompanyId", "InvoiceNumber");');
+  await appPool.query('ALTER TABLE "Invoices" ALTER COLUMN "Flag" SET DEFAULT FALSE;');
+  console.log("Invoices table ready");
+};
+
+module.exports = { Invoices };
+const { appPool } = require("../../config/db")
+
+const  Leads= async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "Leads" (
+    "Id" SERIAL PRIMARY KEY,
+    "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+    "AccountId" INT REFERENCES "Accounts"("Id") ON DELETE SET NULL,
+    "ContactId" INT REFERENCES "Contacts"("Id") ON DELETE SET NULL,
+    "LeadSourceId" INT REFERENCES "LeadSources"("Id"),
+    "ProductCategoryId" INT REFERENCES "ProductCategories"("Id"),
+    "FollowupTypeId" INT REFERENCES "FollowupTypes"("Id"),
+    "IndustryId" INT REFERENCES "Industries"("Id"),
+    "ProspectAccountName" VARCHAR(255),
+    "ProspectAccountWebsite" VARCHAR(255),
+    "ProspectContactFirstName" VARCHAR(100),
+    "ProspectContactLastName" VARCHAR(100),
+    "ProspectContactEmail" VARCHAR(255),
+    "ProspectContactPhone" VARCHAR(50),
+    "ProspectContactTitle" VARCHAR(255),
+    "Status" VARCHAR(50) DEFAULT 'New',
+    "Rating" INT,
+    "ProgressPercentage" NUMERIC(5,2) DEFAULT 0,
+    "FollowUpDate" DATE,
+    "ExpectedValue" NUMERIC(15,2),
+    "ConvertedAt" TIMESTAMP,
+    "LostReason" TEXT,
+    "Description" TEXT,
+    "Comments" TEXT,
+    "AssignedTo" INT REFERENCES "Users"("UserId"),
+    "AssignedFrom" INT REFERENCES "Users"("UserId"),
+    "CreatedBy" INT REFERENCES "Users"("UserId"),
+    "CreatedAt" TIMESTAMP DEFAULT NOW(),
+    "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+    "IsActive" BOOLEAN DEFAULT TRUE,
+    "IsDeleted" BOOLEAN DEFAULT FALSE,
+    "Flag" BOOLEAN DEFAULT FALSE
+);
+    `
+    await appPool.query(query);
+    await appPool.query('ALTER TABLE "Leads" ADD COLUMN IF NOT EXISTS "ProgressPercentage" NUMERIC(5,2) DEFAULT 0;');
+    await appPool.query('ALTER TABLE "Leads" ADD COLUMN IF NOT EXISTS "FollowUpDate" DATE;');
+    await appPool.query('ALTER TABLE "Leads" ADD COLUMN IF NOT EXISTS "ExpectedValue" NUMERIC(15,2);');
+    await appPool.query('ALTER TABLE "Leads" ADD COLUMN IF NOT EXISTS "ConvertedAt" TIMESTAMP;');
+    await appPool.query('ALTER TABLE "Leads" ADD COLUMN IF NOT EXISTS "LostReason" TEXT;');
+    await appPool.query('ALTER TABLE "Leads" ADD COLUMN IF NOT EXISTS "ProspectAccountName" VARCHAR(255);');
+    await appPool.query('ALTER TABLE "Leads" ADD COLUMN IF NOT EXISTS "ProspectAccountWebsite" VARCHAR(255);');
+    await appPool.query('ALTER TABLE "Leads" ADD COLUMN IF NOT EXISTS "ProspectContactFirstName" VARCHAR(100);');
+    await appPool.query('ALTER TABLE "Leads" ADD COLUMN IF NOT EXISTS "ProspectContactLastName" VARCHAR(100);');
+    await appPool.query('ALTER TABLE "Leads" ADD COLUMN IF NOT EXISTS "ProspectContactEmail" VARCHAR(255);');
+    await appPool.query('ALTER TABLE "Leads" ADD COLUMN IF NOT EXISTS "ProspectContactPhone" VARCHAR(50);');
+    await appPool.query('ALTER TABLE "Leads" ADD COLUMN IF NOT EXISTS "ProspectContactTitle" VARCHAR(255);');
+    await appPool.query('ALTER TABLE "Leads" ADD COLUMN IF NOT EXISTS "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "Leads" ALTER COLUMN "Flag" SET DEFAULT FALSE;');
+    console.log("✅ Leads table ready")
+}
+
+module.exports = { Leads };
+const { appPool } = require("../../config/db")
+
+const  LeadSources= async () => {
+    const query = 
+    `CREATE TABLE IF NOT EXISTS "LeadSources" (
+    "Id" SERIAL PRIMARY KEY,
+    "Name" VARCHAR(255) UNIQUE NOT NULL
+);
+`
+  await appPool.query(query);
+  await appPool.query('ALTER TABLE "LeadSources" ADD COLUMN IF NOT EXISTS "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+  await appPool.query('ALTER TABLE "LeadSources" ADD COLUMN IF NOT EXISTS "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+  await appPool.query('ALTER TABLE "LeadSources" ADD COLUMN IF NOT EXISTS "CreatedAt" TIMESTAMP DEFAULT NOW();');
+  await appPool.query('ALTER TABLE "LeadSources" ADD COLUMN IF NOT EXISTS "UpdatedAt" TIMESTAMP DEFAULT NOW();');
+  await appPool.query('ALTER TABLE "LeadSources" ADD COLUMN IF NOT EXISTS "IsActive" BOOLEAN DEFAULT TRUE;');
+  await appPool.query('ALTER TABLE "LeadSources" ADD COLUMN IF NOT EXISTS "IsDeleted" BOOLEAN DEFAULT FALSE;');
+    console.log("✅ LeadSources table ready")
+}
+
+module.exports = { LeadSources };
+const { appPool } = require("../../config/db")
+
+const  Opportunities= async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "Opportunities" (
+    "Id" SERIAL PRIMARY KEY,
+    "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+    "LeadId" INT REFERENCES "Leads"("Id") ON DELETE SET NULL,
+    "AccountId" INT REFERENCES "Accounts"("Id") ON DELETE SET NULL,
+    "ContactId" INT REFERENCES "Contacts"("Id") ON DELETE SET NULL,
+    "OpportunityName" VARCHAR(255) NOT NULL,
+    "SalesStageId" INT REFERENCES "SalesStages"("Id"),
+    "LeadSourceId" INT REFERENCES "LeadSources"("Id"),
+    "ProductCategoryId" INT REFERENCES "ProductCategories"("Id"),
+    "IndustryId" INT REFERENCES "Industries"("Id"),
+    "BudgetAmount" NUMERIC(15,2),
+    "EstCloseDate" DATE,
+    "Probability" NUMERIC(5,2),
+    "ProgressPercentage" NUMERIC(5,2) DEFAULT 0,
+    "Description" TEXT,
+    "QualificationComments" TEXT,
+    "DetailedSummary" TEXT,
+    "WonAt" TIMESTAMP,
+    "LostAt" TIMESTAMP,
+    "Status" VARCHAR(50) DEFAULT 'Open',
+    "CloseReason" VARCHAR(255),
+    "AssignedTo" INT REFERENCES "Users"("UserId"),
+    "AssignedFrom" INT REFERENCES "Users"("UserId"),
+    "CreatedBy" INT REFERENCES "Users"("UserId"),
+    "CreatedAt" TIMESTAMP DEFAULT NOW(),
+    "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+    "IsActive" BOOLEAN DEFAULT TRUE,
+    "IsDeleted" BOOLEAN DEFAULT FALSE,
+    "Flag" BOOLEAN DEFAULT FALSE
+);
+
+    `
+    await appPool.query(query);
+    await appPool.query('ALTER TABLE "Opportunities" ADD COLUMN IF NOT EXISTS "Probability" NUMERIC(5,2);');
+    await appPool.query('ALTER TABLE "Opportunities" ADD COLUMN IF NOT EXISTS "ProgressPercentage" NUMERIC(5,2) DEFAULT 0;');
+    await appPool.query('ALTER TABLE "Opportunities" ADD COLUMN IF NOT EXISTS "LeadId" INT REFERENCES "Leads"("Id") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "Opportunities" ADD COLUMN IF NOT EXISTS "WonAt" TIMESTAMP;');
+    await appPool.query('ALTER TABLE "Opportunities" ADD COLUMN IF NOT EXISTS "LostAt" TIMESTAMP;');
+    await appPool.query('ALTER TABLE "Opportunities" ADD COLUMN IF NOT EXISTS "Status" VARCHAR(50) DEFAULT \'Open\';');
+    await appPool.query('ALTER TABLE "Opportunities" ADD COLUMN IF NOT EXISTS "CloseReason" VARCHAR(255);');
+    await appPool.query('ALTER TABLE "Opportunities" ADD COLUMN IF NOT EXISTS "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "Opportunities" ALTER COLUMN "Flag" SET DEFAULT FALSE;');
+    console.log("✅ Opportunities table ready")
+}
+
+module.exports = { Opportunities };
+const { appPool } = require("../../config/db");
+
+const OpportunityProducts = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "OpportunityProducts" (
+      "Id" SERIAL PRIMARY KEY,
+      "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "OpportunityId" INT NOT NULL REFERENCES "Opportunities"("Id") ON DELETE CASCADE,
+      "ProductId" INT NOT NULL REFERENCES "Products"("Id") ON DELETE RESTRICT,
+      "Quantity" NUMERIC(12,2) NOT NULL DEFAULT 1 CHECK ("Quantity" > 0),
+      "UnitPrice" NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK ("UnitPrice" >= 0),
+      "DiscountPct" NUMERIC(5,2) NOT NULL DEFAULT 0 CHECK ("DiscountPct" >= 0),
+      "TaxPct" NUMERIC(5,2) NOT NULL DEFAULT 0 CHECK ("TaxPct" >= 0),
+      "LineTotal" NUMERIC(14,2) GENERATED ALWAYS AS (
+        (
+          ("Quantity" * "UnitPrice")
+          - (("Quantity" * "UnitPrice") * ("DiscountPct" / 100.0))
+        )
+        * (1 + ("TaxPct" / 100.0))
+      ) STORED,
+      "Notes" TEXT,
+      "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+      "IsActive" BOOLEAN DEFAULT TRUE,
+      "IsDeleted" BOOLEAN DEFAULT FALSE,
+      "Flag" BOOLEAN DEFAULT FALSE,
+      UNIQUE ("OpportunityId", "ProductId")
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_opp_products_company ON "OpportunityProducts"("CompanyId")
+      WHERE "IsDeleted" = FALSE;
+    CREATE INDEX IF NOT EXISTS idx_opp_products_opp ON "OpportunityProducts"("OpportunityId")
+      WHERE "IsDeleted" = FALSE;
+    CREATE INDEX IF NOT EXISTS idx_opp_products_product ON "OpportunityProducts"("ProductId")
+      WHERE "IsDeleted" = FALSE;
+    CREATE INDEX IF NOT EXISTS idx_opp_products_createdby ON "OpportunityProducts"("CreatedBy")
+      WHERE "IsDeleted" = FALSE;
+  `;
+
+  await appPool.query(query);
+  console.log("OpportunityProducts table ready");
+};
+
+module.exports = { OpportunityProducts };
+const { appPool } = require("../../config/db");
+
+const Payments = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "Payments" (
+      "Id" SERIAL PRIMARY KEY,
+      "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "InvoiceId" INT REFERENCES "Invoices"("Id") ON DELETE SET NULL,
+      "Amount" NUMERIC(15,2) NOT NULL,
+      "PaymentDate" DATE,
+      "PaymentMethod" VARCHAR(100),
+      "ReferenceNumber" VARCHAR(150),
+      "Status" VARCHAR(50) DEFAULT 'Pending',
+      "Notes" TEXT,
+      "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+      "IsActive" BOOLEAN DEFAULT TRUE,
+      "IsDeleted" BOOLEAN DEFAULT FALSE,
+      "Flag" BOOLEAN DEFAULT FALSE
+    );
+  `;
+
+  await appPool.query(query);
+  await appPool.query('ALTER TABLE "Payments" ALTER COLUMN "Flag" SET DEFAULT FALSE;');
+  console.log("Payments table ready");
+};
+
+module.exports = { Payments };
+const { appPool } = require("../../config/db")
+
+const  Presales= async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "Presales" (
+    "Id" SERIAL PRIMARY KEY,
+    "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+    "LeadId" INT REFERENCES "Leads"("Id") ON DELETE SET NULL,
+    "OpportunityId" INT REFERENCES "Opportunities"("Id") ON DELETE SET NULL,
+    "ClientName" VARCHAR(255),
+    "RelatedTo" VARCHAR(255),
+    "StartDate" TIMESTAMP,
+    "EndDate" TIMESTAMP,
+    "ETA" TIMESTAMP,
+    "DurationMinutes" INT,
+    "Status" VARCHAR(50) DEFAULT 'Pending',
+    "Hyperscaler" VARCHAR(100),
+    "FollowUpTriggerStatus" VARCHAR(50),
+    "TaskTypeId" INT REFERENCES "TaskTypes"("Id"),
+    "Documents" TEXT[],
+    "DetailedSummary" TEXT,
+    "Description" TEXT,
+    "Comments" TEXT,
+    "AssignedTo" INT REFERENCES "Users"("UserId"),
+    "AssignedFrom" INT REFERENCES "Users"("UserId"),
+    "CreatedBy" INT REFERENCES "Users"("UserId"),
+    "CreatedAt" TIMESTAMP DEFAULT NOW(),
+    "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+    "IsActive" BOOLEAN DEFAULT TRUE,
+    "IsDeleted" BOOLEAN DEFAULT FALSE,
+    "Flag" BOOLEAN DEFAULT FALSE
+);
+    `
+    await appPool.query(query);
+    await appPool.query('ALTER TABLE "Presales" ADD COLUMN IF NOT EXISTS "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "Presales" ALTER COLUMN "Flag" SET DEFAULT FALSE;');
+    console.log("✅ Presales table ready")
+}
+
+module.exports = { Presales };
+const { appPool } = require("../../config/db");
+
+const PresalesAssignments = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "PresalesAssignments" (
+      "id" SERIAL PRIMARY KEY,
+      "presales_id" INT REFERENCES "Presales"("Id") ON DELETE CASCADE,
+      "assignedTo" INT REFERENCES "Users"("UserId"),
+      "assignedFrom" INT REFERENCES "Users"("UserId"),
+      "changedBy" INT REFERENCES "Users"("UserId"),
+      "changedAt" TIMESTAMP DEFAULT NOW()
+    );
+  `;
+
+  try {
+    await appPool.query(query);
+    console.log("✅ PresalesAssignments table ready");
+  } catch (error) {
+    console.error("❌ Error creating PresalesAssignments table:", error.message);
+  }
+};
+
+module.exports = { PresalesAssignments };
+const { appPool } = require("../../config/db");
+
+const ProductCategories = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "ProductCategories" (
+      "Id" SERIAL PRIMARY KEY,
+      "CategoryName" VARCHAR(100) NOT NULL,
+      "Description" TEXT,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+
+  await appPool.query(query);
+  await appPool.query(
+    'ALTER TABLE "ProductCategories" ADD COLUMN IF NOT EXISTS "CategoryName" VARCHAR(100);'
+  );
+  await appPool.query(
+    'ALTER TABLE "ProductCategories" ADD COLUMN IF NOT EXISTS "Description" TEXT;'
+  );
+  await appPool.query(
+    'ALTER TABLE "ProductCategories" ADD COLUMN IF NOT EXISTS "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP;'
+  );
+
+  // Older CRM-only setups created a "Name" column on this shared table.
+  // Preserve those records by copying into the schema-backed CategoryName field.
+  await appPool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'ProductCategories'
+          AND column_name = 'Name'
+      ) THEN
+        UPDATE "ProductCategories"
+        SET "CategoryName" = COALESCE("CategoryName", "Name")
+        WHERE "CategoryName" IS NULL;
+      END IF;
+    END $$;
+  `);
+
+  console.log("ProductCategories table ready");
+};
+
+module.exports = { ProductCategories };
+const { appPool } = require("../../config/db");
+
+const Quotes = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "Quotes" (
+      "Id" SERIAL PRIMARY KEY,
+      "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "QuoteNumber" VARCHAR(100) NOT NULL,
+      "AccountId" INT REFERENCES "Accounts"("Id") ON DELETE SET NULL,
+      "ContactId" INT REFERENCES "Contacts"("Id") ON DELETE SET NULL,
+      "OpportunityId" INT REFERENCES "Opportunities"("Id") ON DELETE SET NULL,
+      "ValidTillDate" DATE,
+      "Status" VARCHAR(50) DEFAULT 'Draft',
+      "Subtotal" NUMERIC(15,2) DEFAULT 0,
+      "DiscountAmount" NUMERIC(15,2) DEFAULT 0,
+      "TaxAmount" NUMERIC(15,2) DEFAULT 0,
+      "TotalAmount" NUMERIC(15,2) DEFAULT 0,
+      "TermsAndConditions" TEXT,
+      "Notes" TEXT,
+      "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+      "IsActive" BOOLEAN DEFAULT TRUE,
+      "IsDeleted" BOOLEAN DEFAULT FALSE,
+      "Flag" BOOLEAN DEFAULT FALSE
+    );
+  `;
+
+  await appPool.query(query);
+  await appPool.query('CREATE UNIQUE INDEX IF NOT EXISTS "idx_quotes_company_quote_number" ON "Quotes" ("CompanyId", "QuoteNumber");');
+  await appPool.query('ALTER TABLE "Quotes" ALTER COLUMN "Flag" SET DEFAULT FALSE;');
+  console.log("Quotes table ready");
+};
+
+module.exports = { Quotes };
+const { appPool } = require("../../config/db");
+
+const Retentions = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "Retentions" (
+      "Id" SERIAL PRIMARY KEY,
+      "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "AccountId" INT REFERENCES "Accounts"("Id") ON DELETE SET NULL,
+      "ContactId" INT REFERENCES "Contacts"("Id") ON DELETE SET NULL,
+      "OpportunityId" INT REFERENCES "Opportunities"("Id") ON DELETE SET NULL,
+      "Type" VARCHAR(100) NOT NULL,
+      "Status" VARCHAR(50) DEFAULT 'Planned',
+      "NextActionDate" DATE,
+      "ReminderDate" DATE,
+      "Notes" TEXT,
+      "AssignedTo" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+      "IsActive" BOOLEAN DEFAULT TRUE,
+      "IsDeleted" BOOLEAN DEFAULT FALSE,
+      "Flag" BOOLEAN DEFAULT FALSE
+    );
+  `;
+
+  await appPool.query(query);
+  await appPool.query('ALTER TABLE "Retentions" ALTER COLUMN "Flag" SET DEFAULT FALSE;');
+  console.log("Retentions table ready");
+};
+
+module.exports = { Retentions };
+const { appPool } = require("../../config/db")
+
+const  SalesStages= async () => {
+    const query = `CREATE TABLE IF NOT EXISTS "SalesStages" (
+    "Id" SERIAL PRIMARY KEY,
+    "Name" VARCHAR(255) UNIQUE NOT NULL,
+    "SortOrder" INT DEFAULT 0,
+    "IsWon" BOOLEAN DEFAULT FALSE,
+    "IsLost" BOOLEAN DEFAULT FALSE
+);`
+    await appPool.query(query);
+    await appPool.query('ALTER TABLE "SalesStages" ADD COLUMN IF NOT EXISTS "SortOrder" INT DEFAULT 0;');
+    await appPool.query('ALTER TABLE "SalesStages" ADD COLUMN IF NOT EXISTS "IsWon" BOOLEAN DEFAULT FALSE;');
+    await appPool.query('ALTER TABLE "SalesStages" ADD COLUMN IF NOT EXISTS "IsLost" BOOLEAN DEFAULT FALSE;');
+    await appPool.query('ALTER TABLE "SalesStages" ADD COLUMN IF NOT EXISTS "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "SalesStages" ADD COLUMN IF NOT EXISTS "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "SalesStages" ADD COLUMN IF NOT EXISTS "CreatedAt" TIMESTAMP DEFAULT NOW();');
+    await appPool.query('ALTER TABLE "SalesStages" ADD COLUMN IF NOT EXISTS "UpdatedAt" TIMESTAMP DEFAULT NOW();');
+    await appPool.query('ALTER TABLE "SalesStages" ADD COLUMN IF NOT EXISTS "IsActive" BOOLEAN DEFAULT TRUE;');
+    await appPool.query('ALTER TABLE "SalesStages" ADD COLUMN IF NOT EXISTS "IsDeleted" BOOLEAN DEFAULT FALSE;');
+    console.log("✅ SalesStages table ready")
+}
+
+module.exports = { SalesStages };
+const { appPool } = require("../../config/db")
+
+const  TaskTypes= async () => {
+    const query = `CREATE TABLE IF NOT EXISTS "TaskTypes" (
+    "Id" SERIAL PRIMARY KEY,
+    "Name" VARCHAR(100) UNIQUE NOT NULL,
+    "DefaultDurationMinutes" INT,
+    "CreatedAt" TIMESTAMP DEFAULT NOW()
+);`
+    await appPool.query(query);
+    await appPool.query('ALTER TABLE "TaskTypes" ADD COLUMN IF NOT EXISTS "CreatedAt" TIMESTAMP DEFAULT NOW();');
+    await appPool.query('ALTER TABLE "TaskTypes" ADD COLUMN IF NOT EXISTS "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "TaskTypes" ADD COLUMN IF NOT EXISTS "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL;');
+    await appPool.query('ALTER TABLE "TaskTypes" ADD COLUMN IF NOT EXISTS "UpdatedAt" TIMESTAMP DEFAULT NOW();');
+    await appPool.query('ALTER TABLE "TaskTypes" ADD COLUMN IF NOT EXISTS "IsActive" BOOLEAN DEFAULT TRUE;');
+    await appPool.query('ALTER TABLE "TaskTypes" ADD COLUMN IF NOT EXISTS "IsDeleted" BOOLEAN DEFAULT FALSE;');
+    console.log("✅ TaskTypes table ready")
+}
+
+module.exports = { TaskTypes };
+const { appPool } = require("../../config/db")
+
+const  AuditLogs= async () => {
+    const query = `CREATE TABLE IF NOT EXISTS "AuditLogs" (
+  "Id" SERIAL PRIMARY KEY,
+  "TableName" VARCHAR(100),
+  "RecordId" INT,
+  "Action" VARCHAR(20),
+  "ChangedBy" INT REFERENCES "Users"("UserId"),
+  "ChangeTime" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "Changes" JSONB
+);`
+    await appPool.query(query);
+    console.log("✅ AuditLogs table ready")
+}
+
+module.exports = { AuditLogs };
+const { appPool } = require("../../config/db");
+
+const BatchSerialTable = async () => {
+    const query = `
+    -- Batch Tracking
+    CREATE TABLE IF NOT EXISTS "Batches" (
+        "Id" SERIAL PRIMARY KEY,
+        "BatchNo" VARCHAR(100) NOT NULL,
+        "ProductId" INT REFERENCES "Products"("Id") ON DELETE CASCADE,
+        "Quantity" INT DEFAULT 0,
+        "ManufacturingDate" DATE,
+        "ExpiryDate" DATE,
+        "SupplierId" INT REFERENCES "Suppliers"("Id") ON DELETE SET NULL,
+        "PurchaseOrderId" INT REFERENCES "PurchaseOrders"("Id") ON DELETE SET NULL,
+        "WarehouseId" INT REFERENCES "Warehouses"("Id") ON DELETE SET NULL,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "IsActive" BOOLEAN DEFAULT TRUE,
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE("BatchNo", "ProductId", "WarehouseId")
+    );
+
+    -- Serial Number Tracking
+    CREATE TABLE IF NOT EXISTS "SerialNumbers" (
+        "Id" SERIAL PRIMARY KEY,
+        "SerialNo" VARCHAR(200) UNIQUE NOT NULL,
+        "ProductId" INT REFERENCES "Products"("Id") ON DELETE CASCADE,
+        "BatchId" INT REFERENCES "Batches"("Id") ON DELETE SET NULL,
+        "WarehouseId" INT REFERENCES "Warehouses"("Id") ON DELETE SET NULL,
+        "Status" VARCHAR(50) DEFAULT 'Available' CHECK ("Status" IN ('Available','Sold','Returned','Damaged','Transferred')),
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_batches_product ON "Batches"("ProductId");
+    CREATE INDEX IF NOT EXISTS idx_batches_expiry ON "Batches"("ExpiryDate");
+    CREATE INDEX IF NOT EXISTS idx_serial_product ON "SerialNumbers"("ProductId");
+    CREATE INDEX IF NOT EXISTS idx_serial_status ON "SerialNumbers"("Status");
+    `;
+    await appPool.query(query);
+    console.log("✅ Batch & Serial Number tables ready");
+};
+
+module.exports = { BatchSerialTable };
+const { appPool } = require("../../config/db");
+
+const BrandsTable = async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "Brands" (
+        "Id" SERIAL PRIMARY KEY,
+        "BrandName" VARCHAR(255) NOT NULL,
+        "Description" TEXT,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "IsActive" BOOLEAN DEFAULT TRUE,
+        "IsDeleted" BOOLEAN DEFAULT FALSE,
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_brands_company ON "Brands"("CompanyId") WHERE "IsDeleted" = FALSE;
+    `;
+    await appPool.query(query);
+    console.log("✅ Brands table ready");
+};
+
+module.exports = { BrandsTable };
+// db/migrations/customers.js
+
+const { appPool } = require("../../config/db");
+
+const Customers = async () => {
+    const query = `
+        -- Create Customers Table
+        CREATE TABLE IF NOT EXISTS "Customers" (
+            "Id" SERIAL PRIMARY KEY,
+            "CustomerCode" VARCHAR(50) UNIQUE,
+            "Name" VARCHAR(255) NOT NULL,
+            "Email" VARCHAR(255) UNIQUE,
+            "Phone" VARCHAR(20),
+            "AlternatePhone" VARCHAR(20),
+            "Address" TEXT,
+            "City" VARCHAR(100),
+            "State" VARCHAR(100),
+            "Country" VARCHAR(100) DEFAULT 'India',
+            "PostalCode" VARCHAR(20),
+            "GSTNumber" VARCHAR(20),
+            "PANNumber" VARCHAR(20),
+            "CustomerType" VARCHAR(50) DEFAULT 'Retail' CHECK ("CustomerType" IN ('Retail', 'Wholesale', 'Corporate', 'Distributor')),
+            "CreditLimit" DECIMAL(12, 2) DEFAULT 0,
+            "OutstandingBalance" DECIMAL(12, 2) DEFAULT 0,
+            "IsActive" BOOLEAN DEFAULT true,
+            "Notes" TEXT,
+            "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "DeletedAt" TIMESTAMP,
+            "IsDeleted" BOOLEAN DEFAULT false
+        );
+
+        -- Create Indexes
+        CREATE INDEX IF NOT EXISTS idx_customers_email ON "Customers"("Email");
+        CREATE INDEX IF NOT EXISTS idx_customers_phone ON "Customers"("Phone");
+        CREATE INDEX IF NOT EXISTS idx_customers_code ON "Customers"("CustomerCode");
+        CREATE INDEX IF NOT EXISTS idx_customers_active ON "Customers"("IsActive");
+        CREATE INDEX IF NOT EXISTS idx_customers_deleted ON "Customers"("IsDeleted");
+
+        -- Create Auto-Update Trigger for UpdatedAt
+        CREATE OR REPLACE FUNCTION update_customers_updated_at()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            NEW."UpdatedAt" = CURRENT_TIMESTAMP;
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        DROP TRIGGER IF EXISTS trigger_update_customers_updated_at ON "Customers";
+        CREATE TRIGGER trigger_update_customers_updated_at
+            BEFORE UPDATE ON "Customers"
+            FOR EACH ROW
+            EXECUTE FUNCTION update_customers_updated_at();
+
+        -- Function to generate CustomerCode
+        CREATE OR REPLACE FUNCTION generate_customer_code()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            IF NEW."CustomerCode" IS NULL THEN
+                NEW."CustomerCode" := 'CUST-' || LPAD(NEW."Id"::TEXT, 6, '0');
+            END IF;
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        DROP TRIGGER IF EXISTS trigger_generate_customer_code ON "Customers";
+        CREATE TRIGGER trigger_generate_customer_code
+            BEFORE INSERT ON "Customers"
+            FOR EACH ROW
+            EXECUTE FUNCTION generate_customer_code();
+    `;
+
+    await appPool.query(query);
+    console.log("✅ Customers table ready with indexes and triggers");
+};
+
+module.exports = { Customers };
+const { appPool } = require('../../config/db');
+
+const DeliveryChallans = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "DeliveryChallans" (
+      "Id" SERIAL PRIMARY KEY,
+      "ChallanNumber" VARCHAR(50) NOT NULL,
+      "SalesOrderId" INT,
+      "CustomerId" INT,
+      "CompanyId" INT,
+      "BranchId" INT,
+      "WarehouseId" INT,
+      "DeliveryDate" DATE DEFAULT CURRENT_DATE,
+      "ExpectedDeliveryDate" DATE,
+      "Status" VARCHAR(30) DEFAULT 'Pending',
+      "VehicleNumber" VARCHAR(50),
+      "DriverName" VARCHAR(100),
+      "DriverPhone" VARCHAR(20),
+      "ShippingAddress" VARCHAR(500),
+      "TotalItems" INT DEFAULT 0,
+      "TotalQuantity" DECIMAL(18,2) DEFAULT 0,
+      "ReceivedById" INT,
+      "ReceivedAt" TIMESTAMP,
+      "Notes" VARCHAR(500),
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ DeliveryChallans table initialized');
+  } catch (error) {
+    console.error('❌ Error creating DeliveryChallans table:', error.message);
+  }
+};
+
+const DeliveryChallanItems = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "DeliveryChallanItems" (
+      "Id" SERIAL PRIMARY KEY,
+      "ChallanId" INT NOT NULL,
+      "ProductId" INT,
+      "BatchId" INT,
+      "Quantity" DECIMAL(18,2) NOT NULL,
+      "DispatchedQuantity" DECIMAL(18,2) DEFAULT 0,
+      "ReceivedQuantity" DECIMAL(18,2) DEFAULT 0,
+      "UnitPrice" DECIMAL(18,2),
+      "Description" VARCHAR(500),
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ DeliveryChallanItems table initialized');
+  } catch (error) {
+    console.error('❌ Error creating DeliveryChallanItems table:', error.message);
+  }
+};
+
+module.exports = { DeliveryChallans, DeliveryChallanItems };
+const { appPool } = require('../../config/db');
+
+const Employees = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "Employees" (
+      "Id" SERIAL PRIMARY KEY,
+      "EmployeeCode" VARCHAR(50) NOT NULL,
+      "FirstName" VARCHAR(100) NOT NULL,
+      "LastName" VARCHAR(100) NOT NULL,
+      "Email" VARCHAR(200),
+      "Phone" VARCHAR(20),
+      "DepartmentId" INT,
+      "DesignationId" INT,
+      "CompanyId" INT,
+      "BranchId" INT,
+      "ReportingTo" INT,
+      "DateOfJoining" DATE,
+      "DateOfBirth" DATE,
+      "Gender" VARCHAR(20),
+      "Address" VARCHAR(500),
+      "City" VARCHAR(100),
+      "State" VARCHAR(100),
+      "PinCode" VARCHAR(10),
+      "BloodGroup" VARCHAR(10),
+      "EmergencyContact" VARCHAR(20),
+      "EmergencyContactName" VARCHAR(100),
+      "PAN" VARCHAR(20),
+      "Aadhar" VARCHAR(20),
+      "BankName" VARCHAR(100),
+      "BankAccount" VARCHAR(50),
+      "IFSCCode" VARCHAR(20),
+      "BasicSalary" DECIMAL(18,2),
+      "UserId" INT,
+      "ProfileImage" VARCHAR(500),
+      "IsActive" BOOLEAN DEFAULT true,
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ Employees table initialized');
+  } catch (error) {
+    console.error('❌ Error creating Employees table:', error.message);
+  }
+};
+
+const Departments = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "Departments" (
+      "Id" SERIAL PRIMARY KEY,
+      "Name" VARCHAR(100) NOT NULL,
+      "Code" VARCHAR(50),
+      "Description" VARCHAR(500),
+      "CompanyId" INT,
+      "HeadEmployeeId" INT,
+      "ParentDepartmentId" INT,
+      "IsActive" BOOLEAN DEFAULT true,
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ Departments table initialized');
+  } catch (error) {
+    console.error('❌ Error creating Departments table:', error.message);
+  }
+};
+
+const Designations = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "Designations" (
+      "Id" SERIAL PRIMARY KEY,
+      "Name" VARCHAR(100) NOT NULL,
+      "Code" VARCHAR(50),
+      "Description" VARCHAR(500),
+      "DepartmentId" INT,
+      "MinSalary" DECIMAL(18,2),
+      "MaxSalary" DECIMAL(18,2),
+      "IsActive" BOOLEAN DEFAULT true,
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ Designations table initialized');
+  } catch (error) {
+    console.error('❌ Error creating Designations table:', error.message);
+  }
+};
+
+module.exports = { Employees, Departments, Designations };
+const { appPool } = require("../../config/db");
+
+const GRNTable = async () => {
+    const query = `
+    -- Goods Receipt Note (GRN)
+    CREATE TABLE IF NOT EXISTS "GRN" (
+        "Id" SERIAL PRIMARY KEY,
+        "GRNNumber" VARCHAR(50) UNIQUE NOT NULL,
+        "PONumber" VARCHAR(50),
+        "PurchaseOrderId" INT REFERENCES "PurchaseOrders"("Id") ON DELETE SET NULL,
+        "SupplierId" INT REFERENCES "Suppliers"("Id") ON DELETE SET NULL,
+        "WarehouseId" INT REFERENCES "Warehouses"("Id") ON DELETE SET NULL,
+        "ReceivedDate" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "TotalQuantity" INT DEFAULT 0,
+        "TotalAmount" DECIMAL(15,2) DEFAULT 0,
+        "Status" VARCHAR(50) DEFAULT 'Received' CHECK ("Status" IN ('Received','Partially Received','Cancelled')),
+        "Notes" TEXT,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "IsDeleted" BOOLEAN DEFAULT FALSE,
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- GRN Items
+    CREATE TABLE IF NOT EXISTS "GRNItems" (
+        "Id" SERIAL PRIMARY KEY,
+        "GRNId" INT REFERENCES "GRN"("Id") ON DELETE CASCADE,
+        "ProductId" INT REFERENCES "Products"("Id") ON DELETE RESTRICT,
+        "QuantityReceived" INT NOT NULL CHECK ("QuantityReceived" > 0),
+        "QuantityAccepted" INT DEFAULT 0,
+        "QuantityRejected" INT DEFAULT 0,
+        "UnitCost" NUMERIC(10,2) NOT NULL CHECK ("UnitCost" >= 0),
+        "TotalCost" NUMERIC(12,2) GENERATED ALWAYS AS ("QuantityAccepted" * "UnitCost") STORED,
+        "BatchNo" VARCHAR(100),
+        "ManufacturingDate" DATE,
+        "ExpiryDate" DATE,
+        "Notes" TEXT,
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_grn_po ON "GRN"("PurchaseOrderId");
+    CREATE INDEX IF NOT EXISTS idx_grn_company ON "GRN"("CompanyId");
+    CREATE INDEX IF NOT EXISTS idx_grn_items_grn ON "GRNItems"("GRNId");
+    `;
+    await appPool.query(query);
+    console.log("✅ GRN tables ready");
+};
+
+module.exports = { GRNTable };
+const { appPool } = require('../../config/db');
+
+const Notifications = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "Notifications" (
+      "Id" SERIAL PRIMARY KEY,
+      "UserId" INT NOT NULL,
+      "Title" VARCHAR(200) NOT NULL,
+      "Message" VARCHAR(1000),
+      "Type" VARCHAR(50),
+      "ReferenceId" INT,
+      "ReferenceType" VARCHAR(50),
+      "IsRead" BOOLEAN DEFAULT false,
+      "ReadAt" TIMESTAMP,
+      "CompanyId" INT,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ Notifications table initialized');
+  } catch (error) {
+    console.error('❌ Error creating Notifications table:', error.message);
+  }
+};
+
+const ApprovalWorkflows = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "ApprovalWorkflows" (
+      "Id" SERIAL PRIMARY KEY,
+      "WorkflowName" VARCHAR(100) NOT NULL,
+      "ModuleType" VARCHAR(50) NOT NULL,
+      "RecordId" INT NOT NULL,
+      "RequestedById" INT,
+      "CompanyId" INT,
+      "Status" VARCHAR(30) DEFAULT 'Pending',
+      "Priority" VARCHAR(20) DEFAULT 'Medium',
+      "RequestRemarks" VARCHAR(500),
+      "ApprovedById" INT,
+      "ApprovedAt" TIMESTAMP,
+      "ApprovalRemarks" VARCHAR(500),
+      "RejectedById" INT,
+      "RejectedAt" TIMESTAMP,
+      "RejectionRemarks" VARCHAR(500),
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ ApprovalWorkflows table initialized');
+  } catch (error) {
+    console.error('❌ Error creating ApprovalWorkflows table:', error.message);
+  }
+};
+
+const Expenses = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "Expenses" (
+      "Id" SERIAL PRIMARY KEY,
+      "ExpenseNumber" VARCHAR(50) NOT NULL,
+      "Category" VARCHAR(100),
+      "SubCategory" VARCHAR(100),
+      "Description" VARCHAR(500),
+      "Amount" DECIMAL(18,2) NOT NULL,
+      "TaxAmount" DECIMAL(18,2) DEFAULT 0,
+      "TotalAmount" DECIMAL(18,2) DEFAULT 0,
+      "ExpenseDate" DATE DEFAULT CURRENT_DATE,
+      "PaymentMode" VARCHAR(50),
+      "ReferenceNumber" VARCHAR(100),
+      "VendorId" INT,
+      "SupplierId" INT,
+      "CompanyId" INT,
+      "BranchId" INT,
+      "DepartmentId" INT,
+      "EmployeeId" INT,
+      "Status" VARCHAR(30) DEFAULT 'Draft',
+      "ApprovedById" INT,
+      "ApprovedAt" TIMESTAMP,
+      "IsReimbursable" BOOLEAN DEFAULT false,
+      "IsReimbursed" BOOLEAN DEFAULT false,
+      "ReceiptPath" VARCHAR(500),
+      "Notes" VARCHAR(500),
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ Expenses table initialized');
+  } catch (error) {
+    console.error('❌ Error creating Expenses table:', error.message);
+  }
+};
+
+const WarehouseRacks = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "WarehouseRacks" (
+      "Id" SERIAL PRIMARY KEY,
+      "WarehouseId" INT NOT NULL,
+      "RackNumber" VARCHAR(50) NOT NULL,
+      "Name" VARCHAR(100),
+      "Description" VARCHAR(200),
+      "Capacity" INT DEFAULT 0,
+      "IsActive" BOOLEAN DEFAULT true,
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ WarehouseRacks table initialized');
+  } catch (error) {
+    console.error('❌ Error creating WarehouseRacks table:', error.message);
+  }
+};
+
+const WarehouseBins = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "WarehouseBins" (
+      "Id" SERIAL PRIMARY KEY,
+      "WarehouseId" INT NOT NULL,
+      "RackId" INT,
+      "BinNumber" VARCHAR(50) NOT NULL,
+      "ShelfNumber" VARCHAR(50),
+      "Name" VARCHAR(100),
+      "Description" VARCHAR(200),
+      "MaxCapacity" DECIMAL(18,2) DEFAULT 0,
+      "CurrentOccupancy" DECIMAL(18,2) DEFAULT 0,
+      "ProductId" INT,
+      "IsActive" BOOLEAN DEFAULT true,
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ WarehouseBins table initialized');
+  } catch (error) {
+    console.error('❌ Error creating WarehouseBins table:', error.message);
+  }
+};
+
+module.exports = { Notifications, ApprovalWorkflows, Expenses, WarehouseRacks, WarehouseBins };
+
+const { appPool } = require("../../config/db")
+
+const ProductCategoriesTable = async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "ProductCategories" (
+  "Id" SERIAL PRIMARY KEY,
+  "CategoryName" VARCHAR(100) NOT NULL,
+  "Description" TEXT,
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);`
+    await appPool.query(query);
+    console.log("✅ ProductCategories table ready")
+}
+
+module.exports = { ProductCategoriesTable };
+
+const { appPool } = require('../../config/db');
+
+const BOM = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "BOM" (
+      "Id" SERIAL PRIMARY KEY,
+      "BOMCode" VARCHAR(50) NOT NULL,
+      "ProductId" INT NOT NULL,
+      "ProductName" VARCHAR(200),
+      "Version" VARCHAR(20) DEFAULT '1.0',
+      "Description" VARCHAR(500),
+      "Quantity" DECIMAL(18,2) DEFAULT 1,
+      "UnitId" INT,
+      "CompanyId" INT,
+      "IsActive" BOOLEAN DEFAULT true,
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ BOM table initialized');
+  } catch (error) {
+    console.error('❌ Error creating BOM table:', error.message);
+  }
+};
+
+const BOMItems = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "BOMItems" (
+      "Id" SERIAL PRIMARY KEY,
+      "BOMId" INT NOT NULL,
+      "ProductId" INT NOT NULL,
+      "Quantity" DECIMAL(18,2) NOT NULL,
+      "UnitId" INT,
+      "UnitCost" DECIMAL(18,2) DEFAULT 0,
+      "WastagePercent" DECIMAL(5,2) DEFAULT 0,
+      "Remarks" VARCHAR(200),
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ BOMItems table initialized');
+  } catch (error) {
+    console.error('❌ Error creating BOMItems table:', error.message);
+  }
+};
+
+const ProductionOrders = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "ProductionOrders" (
+      "Id" SERIAL PRIMARY KEY,
+      "OrderNumber" VARCHAR(50) NOT NULL,
+      "BOMId" INT,
+      "ProductId" INT NOT NULL,
+      "PlannedQuantity" DECIMAL(18,2) NOT NULL,
+      "ProducedQuantity" DECIMAL(18,2) DEFAULT 0,
+      "RejectedQuantity" DECIMAL(18,2) DEFAULT 0,
+      "UnitId" INT,
+      "CompanyId" INT,
+      "WarehouseId" INT,
+      "Status" VARCHAR(30) DEFAULT 'Planned',
+      "Priority" VARCHAR(20) DEFAULT 'Medium',
+      "PlannedStartDate" DATE,
+      "PlannedEndDate" DATE,
+      "ActualStartDate" DATE,
+      "ActualEndDate" DATE,
+      "AssignedTo" INT,
+      "Remarks" VARCHAR(500),
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ ProductionOrders table initialized');
+  } catch (error) {
+    console.error('❌ Error creating ProductionOrders table:', error.message);
+  }
+};
+
+const ProductionTracking = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "ProductionTracking" (
+      "Id" SERIAL PRIMARY KEY,
+      "ProductionOrderId" INT NOT NULL,
+      "Stage" VARCHAR(100),
+      "Status" VARCHAR(30) DEFAULT 'In Progress',
+      "QuantityProcessed" DECIMAL(18,2) DEFAULT 0,
+      "QuantityRejected" DECIMAL(18,2) DEFAULT 0,
+      "StartedAt" TIMESTAMP,
+      "CompletedAt" TIMESTAMP,
+      "OperatorId" INT,
+      "Remarks" VARCHAR(500),
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ ProductionTracking table initialized');
+  } catch (error) {
+    console.error('❌ Error creating ProductionTracking table:', error.message);
+  }
+};
+
+module.exports = { BOM, BOMItems, ProductionOrders, ProductionTracking };
+
+// models/tables/ProductTable.js
+
+const { appPool } = require("../../config/db");
+
+const ProductTable = async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "Products" (
+        "Id" SERIAL PRIMARY KEY,
+        "ProductName" VARCHAR(255) NOT NULL,
+        "ProductCode" VARCHAR(100) UNIQUE NOT NULL,
+        "Description" TEXT,
+        "CategoryId" INT REFERENCES "ProductCategories"("Id") ON DELETE SET NULL,
+        "UnitId" INT REFERENCES "Units"("Id") ON DELETE SET NULL,
+        "Price" NUMERIC(10,2) DEFAULT 0,
+        "Cost" NUMERIC(10,2) DEFAULT 0,
+        "StockQuantity" INT DEFAULT 0,
+        "MinimumStock" INT DEFAULT 0,
+        "MaximumStock" INT DEFAULT 0,
+        "ReorderLevel" INT DEFAULT 0,
+        "NotifyStockOut" BOOLEAN DEFAULT TRUE,
+        "NotifyStockReload" BOOLEAN DEFAULT TRUE,
+        "Barcode" VARCHAR(100),
+        "SKU" VARCHAR(100),
+        "HSNCode" VARCHAR(50),
+        "TaxRate" NUMERIC(5,2) DEFAULT 0,
+        "Discount" NUMERIC(5,2) DEFAULT 0,
+        "ProductImage" VARCHAR(500),
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "IsActive" BOOLEAN DEFAULT TRUE,
+        "Flag" BOOLEAN DEFAULT FALSE,
+        "IsDelete" BOOLEAN DEFAULT FALSE,
+        "DeletedAt" TIMESTAMP,
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Create indexes for better performance
+    CREATE INDEX IF NOT EXISTS idx_products_company ON "Products"("CompanyId") WHERE "IsDelete" = FALSE;
+    CREATE INDEX IF NOT EXISTS idx_products_category ON "Products"("CategoryId") WHERE "IsDelete" = FALSE;
+    CREATE INDEX IF NOT EXISTS idx_products_active ON "Products"("IsActive") WHERE "IsDelete" = FALSE;
+    CREATE INDEX IF NOT EXISTS idx_products_code ON "Products"("ProductCode") WHERE "IsDelete" = FALSE;
+    CREATE INDEX IF NOT EXISTS idx_products_search ON "Products" USING gin(to_tsvector('english', "ProductName"));
+    `;
+
+    await appPool.query(query);
+    console.log("✅ Products table ready with indexes");
+};
+
+module.exports = { ProductTable };
+// models/tables/ProductStockPerWarehouse.js
+const { appPool } = require("../../config/db");
+
+const ProductStockPerWarehouse = async () => {
+    const query = `
+        CREATE TABLE IF NOT EXISTS "ProductStockPerWarehouse" (
+            "Id" SERIAL PRIMARY KEY,
+            "ProductId" INT NOT NULL REFERENCES "Products"("Id") ON DELETE CASCADE,
+            "WarehouseId" INT NOT NULL REFERENCES "Warehouses"("Id") ON DELETE CASCADE,
+            "Quantity" INT DEFAULT 0 CHECK ("Quantity" >= 0),
+            "ReservedQuantity" INT DEFAULT 0 CHECK ("ReservedQuantity" >= 0),
+            "AvailableQuantity" INT GENERATED ALWAYS AS ("Quantity" - "ReservedQuantity") STORED,
+            "MinimumStock" INT DEFAULT 0,
+            "MaximumStock" INT,
+            "ReorderLevel" INT DEFAULT 0,
+            "LastRestocked" TIMESTAMP,
+            "IsActive" BOOLEAN DEFAULT TRUE,
+            "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+            "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+            UNIQUE ("ProductId", "WarehouseId")
+        );
+
+        -- Create indexes
+        CREATE INDEX IF NOT EXISTS idx_product_stock_product ON "ProductStockPerWarehouse"("ProductId");
+        CREATE INDEX IF NOT EXISTS idx_product_stock_warehouse ON "ProductStockPerWarehouse"("WarehouseId");
+        CREATE INDEX IF NOT EXISTS idx_product_stock_active ON "ProductStockPerWarehouse"("IsActive");
+        CREATE INDEX IF NOT EXISTS idx_product_stock_quantity ON "ProductStockPerWarehouse"("Quantity");
+
+        -- Create trigger for UpdatedAt
+        CREATE OR REPLACE FUNCTION update_product_stock_timestamp()
+        RETURNS TRIGGER AS $$
+        BEGIN
+            NEW."UpdatedAt" = CURRENT_TIMESTAMP;
+            RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        DROP TRIGGER IF EXISTS trigger_update_product_stock_timestamp ON "ProductStockPerWarehouse";
+        CREATE TRIGGER trigger_update_product_stock_timestamp
+        BEFORE UPDATE ON "ProductStockPerWarehouse"
+        FOR EACH ROW
+        EXECUTE FUNCTION update_product_stock_timestamp();
+    `;
+    
+    await appPool.query(query);
+    console.log("✅ ProductStockPerWarehouse table ready with indexes and triggers");
+};
+
+module.exports = { ProductStockPerWarehouse };
+const { appPool } = require("../../config/db")
+
+const ProductTaxMap = async () => {
+    const query = `CREATE TABLE IF NOT EXISTS "ProductTaxMap" (
+  "Id" SERIAL PRIMARY KEY,
+  "ProductId" INT REFERENCES "Products"("Id"),
+  "TaxId" INT REFERENCES "Taxes"("Id")
+);`
+    await appPool.query(query);
+    console.log("✅ ProductTaxMap table ready")
+}
+
+module.exports = { ProductTaxMap };
+const { appPool } = require("../../config/db")
+
+const ProductTaxMap = async () => {
+    const query = `CREATE TABLE IF NOT EXISTS "ProductTaxMap" (
+  "Id" SERIAL PRIMARY KEY,
+  "ProductId" INT REFERENCES "Products"("Id"),
+  "TaxId" INT REFERENCES "Taxes"("Id")
+);`
+    await appPool.query(query);
+    console.log("✅ ProductTaxMap table ready")
+}
+
+module.exports = { ProductTaxMap };
+const { appPool } = require("../../config/db")
+
+const ProfitLossReports = async () => {
+    const query = `CREATE TABLE IF NOT EXISTS "ProfitLossReports" (
+  "Id" SERIAL PRIMARY KEY,
+  "CompanyId" INT REFERENCES "Companies"("Id"),
+  "ReportDate" DATE NOT NULL,       
+  "TotalSales" NUMERIC(15, 2) NOT NULL DEFAULT 0,
+  "TotalCost" NUMERIC(15, 2) NOT NULL DEFAULT 0,
+  "GrossProfit" NUMERIC(15, 2) NOT NULL DEFAULT 0,
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+`
+    await appPool.query(query);
+    console.log("✅ ProfitLossReports table ready")
+}
+
+module.exports = { ProfitLossReports };
+
+const { appPool } = require("../../config/db");
+
+const PurchaseOrderItems = async () => {
+    const query = `
+CREATE TABLE IF NOT EXISTS "PurchaseOrderItems" (
+  "Id" SERIAL PRIMARY KEY,
+  "PurchaseOrderId" INT NOT NULL REFERENCES "PurchaseOrders"("Id") ON DELETE CASCADE,
+  "ProductId" INT NOT NULL REFERENCES "Products"("Id") ON DELETE RESTRICT,
+  "Quantity" INT NOT NULL CHECK ("Quantity" > 0),
+  "UnitCost" NUMERIC(10, 2) NOT NULL CHECK ("UnitCost" >= 0),
+  "TotalCost" NUMERIC(12, 2) GENERATED ALWAYS AS ("Quantity" * "UnitCost") STORED,
+  "ReceivedQuantity" INT DEFAULT 0 CHECK ("ReceivedQuantity" >= 0),
+  "Notes" TEXT,
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_po_items_po_id ON "PurchaseOrderItems"("PurchaseOrderId");
+CREATE INDEX IF NOT EXISTS idx_po_items_product_id ON "PurchaseOrderItems"("ProductId");
+
+CREATE OR REPLACE FUNCTION update_po_items_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW."UpdatedAt" = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_update_po_items_updated_at ON "PurchaseOrderItems";
+CREATE TRIGGER trigger_update_po_items_updated_at
+    BEFORE UPDATE ON "PurchaseOrderItems"
+    FOR EACH ROW
+    EXECUTE FUNCTION update_po_items_updated_at();
+`;
+    await appPool.query(query);
+    console.log("✅ PurchaseOrderItems table ready with indexes and triggers");
+};
+
+module.exports = { PurchaseOrderItems };
+const { appPool } = require("../../config/db");
+
+const PurchaseOrders = async () => {
+    const query = `CREATE TABLE IF NOT EXISTS "PurchaseOrders" (
+        "Id" SERIAL PRIMARY KEY,
+        "PONumber" VARCHAR(50) UNIQUE,
+        "SupplierId" INT REFERENCES "Suppliers"("Id") ON DELETE SET NULL,
+        "OrderDate" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "ExpectedDeliveryDate" TIMESTAMP,
+        "ReceivedDate" TIMESTAMP,
+        "Status" VARCHAR(50) DEFAULT 'Draft',
+        "TotalAmount" DECIMAL(15, 2) DEFAULT 0,
+        "Notes" TEXT,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "CreatedBy" INT REFERENCES "Users"("UserId"),
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );`;
+    
+    await appPool.query(query);
+    console.log("✅ PurchaseOrders table ready");
+};
+
+module.exports = { PurchaseOrders };
+
+const { appPool } = require('../../config/db');
+
+const PurchaseRequisitions = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "PurchaseRequisitions" (
+      "Id" SERIAL PRIMARY KEY,
+      "RequisitionNumber" VARCHAR(50) NOT NULL,
+      "RequestedById" INT,
+      "DepartmentId" INT,
+      "CompanyId" INT,
+      "BranchId" INT,
+      "Priority" VARCHAR(20) DEFAULT 'Medium',
+      "Status" VARCHAR(30) DEFAULT 'Draft',
+      "RequiredByDate" DATE,
+      "Remarks" VARCHAR(500),
+      "ApprovedById" INT,
+      "ApprovedAt" TIMESTAMP,
+      "ApprovalRemarks" VARCHAR(500),
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ PurchaseRequisitions table initialized');
+  } catch (error) {
+    console.error('❌ Error creating PurchaseRequisitions table:', error.message);
+  }
+};
+
+const PurchaseRequisitionItems = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "PurchaseRequisitionItems" (
+      "Id" SERIAL PRIMARY KEY,
+      "RequisitionId" INT NOT NULL,
+      "ProductId" INT,
+      "Quantity" DECIMAL(18,2) NOT NULL,
+      "UnitPrice" DECIMAL(18,2),
+      "Specifications" VARCHAR(500),
+      "Remarks" VARCHAR(200),
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ PurchaseRequisitionItems table initialized');
+  } catch (error) {
+    console.error('❌ Error creating PurchaseRequisitionItems table:', error.message);
+  }
+};
+
+module.exports = { PurchaseRequisitions, PurchaseRequisitionItems };
+
+const { appPool } = require('../../config/db');
+
+const PurchaseReturns = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "PurchaseReturns" (
+      "Id" SERIAL PRIMARY KEY,
+      "ReturnNumber" VARCHAR(50) NOT NULL,
+      "PurchaseOrderId" INT,
+      "SupplierId" INT,
+      "CompanyId" INT,
+      "BranchId" INT,
+      "WarehouseId" INT,
+      "ReturnDate" DATE DEFAULT CURRENT_DATE,
+      "Reason" VARCHAR(500),
+      "Status" VARCHAR(30) DEFAULT 'Draft',
+      "TotalAmount" DECIMAL(18,2) DEFAULT 0,
+      "TaxAmount" DECIMAL(18,2) DEFAULT 0,
+      "GrandTotal" DECIMAL(18,2) DEFAULT 0,
+      "ReceivedById" INT,
+      "Notes" VARCHAR(500),
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ PurchaseReturns table initialized');
+  } catch (error) {
+    console.error('❌ Error creating PurchaseReturns table:', error.message);
+  }
+};
+
+const PurchaseReturnItems = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "PurchaseReturnItems" (
+      "Id" SERIAL PRIMARY KEY,
+      "ReturnId" INT NOT NULL,
+      "ProductId" INT,
+      "BatchId" INT,
+      "Quantity" DECIMAL(18,2) NOT NULL,
+      "UnitPrice" DECIMAL(18,2),
+      "TaxRate" DECIMAL(5,2) DEFAULT 0,
+      "TaxAmount" DECIMAL(18,2) DEFAULT 0,
+      "TotalAmount" DECIMAL(18,2) DEFAULT 0,
+      "Reason" VARCHAR(200),
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ PurchaseReturnItems table initialized');
+  } catch (error) {
+    console.error('❌ Error creating PurchaseReturnItems table:', error.message);
+  }
+};
+
+module.exports = { PurchaseReturns, PurchaseReturnItems };
+
+const { appPool } = require('../../config/db');
+
+const QualityControl = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "QualityControl" (
+      "Id" SERIAL PRIMARY KEY,
+      "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "InspectionNumber" VARCHAR(50) NOT NULL,
+      "EntityType" VARCHAR(50) NOT NULL,
+      "EntityId" INT,
+      "ProductId" INT REFERENCES "Products"("Id"),
+      "WarehouseId" INT,
+      "InspectorId" INT REFERENCES "Users"("UserId"),
+      "InspectionDate" TIMESTAMP DEFAULT NOW(),
+      "Status" VARCHAR(50) DEFAULT 'Pending',
+      "Result" VARCHAR(50),
+      "TotalQuantity" NUMERIC(15,2) DEFAULT 0,
+      "AcceptedQuantity" NUMERIC(15,2) DEFAULT 0,
+      "RejectedQuantity" NUMERIC(15,2) DEFAULT 0,
+      "DefectType" VARCHAR(255),
+      "DefectDescription" TEXT,
+      "CorrectiveAction" TEXT,
+      "Remarks" TEXT,
+      "CreatedBy" INT REFERENCES "Users"("UserId"),
+      "IsActive" BOOLEAN DEFAULT TRUE,
+      "IsDeleted" BOOLEAN DEFAULT FALSE,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW()
+    );
+  `;
+  await appPool.query(query);
+  console.log("✅ QualityControl table ready");
+};
+
+const QualityControlItems = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "QualityControlItems" (
+      "Id" SERIAL PRIMARY KEY,
+      "InspectionId" INT REFERENCES "QualityControl"("Id") ON DELETE CASCADE,
+      "CheckPoint" VARCHAR(255) NOT NULL,
+      "ExpectedValue" VARCHAR(255),
+      "ActualValue" VARCHAR(255),
+      "Status" VARCHAR(50) DEFAULT 'Pass',
+      "Remarks" TEXT,
+      "CreatedAt" TIMESTAMP DEFAULT NOW()
+    );
+  `;
+  await appPool.query(query);
+  console.log("✅ QualityControlItems table ready");
+};
+
+module.exports = { QualityControl, QualityControlItems };
+const { appPool } = require("../../config/db")
+
+const SalesOrderItems = async () => {
+    const query = `
+    CREATE TABLE IF NOT EXISTS "SalesOrderItems" (
+  "Id" SERIAL PRIMARY KEY,
+  "SalesOrderId" INT REFERENCES "SalesOrders"("Id") ON DELETE CASCADE,
+  "ProductId" INT REFERENCES "Products"("Id"),
+  "Quantity" INT NOT NULL,
+  "UnitPrice" NUMERIC(10, 2)
+);`
+    await appPool.query(query);
+    console.log("✅ SalesOrderItems table ready")
+}
+
+module.exports = { SalesOrderItems };
+
+
+// db/migrations/salesOrders.js
+
+const { appPool } = require("../../config/db");
+
+const SalesOrders = async () => {
+    try {
+        const query = `
+            -- Create SalesOrders Table
+            CREATE TABLE IF NOT EXISTS "SalesOrders" (
+                "Id" SERIAL PRIMARY KEY,
+                "SONumber" VARCHAR(50) UNIQUE,
+                "CustomerId" INT NOT NULL REFERENCES "Customers"("Id") ON DELETE RESTRICT,
+                "CustomerName" VARCHAR(255),
+                "OrderDate" DATE NOT NULL DEFAULT CURRENT_DATE,
+                "ExpectedDeliveryDate" DATE,
+                "Status" VARCHAR(50) DEFAULT 'Draft' CHECK ("Status" IN ('Draft', 'Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned')),
+                "Priority" VARCHAR(20) DEFAULT 'Normal' CHECK ("Priority" IN ('Low', 'Normal', 'High', 'Urgent')),
+                "TotalAmount" DECIMAL(12, 2) DEFAULT 0,
+                "TaxAmount" DECIMAL(12, 2) DEFAULT 0,
+                "DiscountAmount" DECIMAL(12, 2) DEFAULT 0,
+                "NetAmount" DECIMAL(12, 2) DEFAULT 0,
+                "PaidAmount" DECIMAL(12, 2) DEFAULT 0,
+                "BalanceAmount" DECIMAL(12, 2) DEFAULT 0,
+                "PaymentStatus" VARCHAR(50) DEFAULT 'Pending' CHECK ("PaymentStatus" IN ('Pending', 'Partial', 'Paid', 'Overdue')),
+                "PaymentMethod" VARCHAR(50),
+                "ShippingAddress" TEXT,
+                "BillingAddress" TEXT,
+                "Notes" TEXT,
+                "InternalNotes" TEXT,
+                "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+                "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+                "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+                "IsDeleted" BOOLEAN DEFAULT false,
+                "DeletedAt" TIMESTAMP,
+                "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `;
+
+        await appPool.query(query);
+        console.log("✅ SalesOrders table created");
+
+        // Create Indexes (separate query to avoid conflicts)
+        const indexQuery = `
+            CREATE INDEX IF NOT EXISTS idx_salesorders_customer ON "SalesOrders"("CustomerId");
+            CREATE INDEX IF NOT EXISTS idx_salesorders_status ON "SalesOrders"("Status");
+            CREATE INDEX IF NOT EXISTS idx_salesorders_orderdate ON "SalesOrders"("OrderDate");
+            CREATE INDEX IF NOT EXISTS idx_salesorders_company ON "SalesOrders"("CompanyId");
+            CREATE INDEX IF NOT EXISTS idx_salesorders_sonumber ON "SalesOrders"("SONumber");
+            CREATE INDEX IF NOT EXISTS idx_salesorders_deleted ON "SalesOrders"("IsDeleted");
+            CREATE INDEX IF NOT EXISTS idx_salesorders_payment_status ON "SalesOrders"("PaymentStatus");
+        `;
+
+        await appPool.query(indexQuery);
+        console.log("✅ Indexes created");
+
+        // Create Functions and Triggers
+        const triggerQuery = `
+            -- Function to calculate NetAmount (BEFORE INSERT/UPDATE)
+            CREATE OR REPLACE FUNCTION calculate_so_net_amount()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                NEW."NetAmount" := (COALESCE(NEW."TotalAmount", 0) + COALESCE(NEW."TaxAmount", 0)) - COALESCE(NEW."DiscountAmount", 0);
+                NEW."BalanceAmount" := NEW."NetAmount" - COALESCE(NEW."PaidAmount", 0);
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+
+            DROP TRIGGER IF EXISTS trigger_calculate_so_net_amount ON "SalesOrders";
+            CREATE TRIGGER trigger_calculate_so_net_amount
+                BEFORE INSERT OR UPDATE ON "SalesOrders"
+                FOR EACH ROW
+                EXECUTE FUNCTION calculate_so_net_amount();
+
+            -- Function to auto-update UpdatedAt (BEFORE UPDATE)
+            CREATE OR REPLACE FUNCTION update_salesorders_updated_at()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                NEW."UpdatedAt" = CURRENT_TIMESTAMP;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+
+            DROP TRIGGER IF EXISTS trigger_update_salesorders_updated_at ON "SalesOrders";
+            CREATE TRIGGER trigger_update_salesorders_updated_at
+                BEFORE UPDATE ON "SalesOrders"
+                FOR EACH ROW
+                EXECUTE FUNCTION update_salesorders_updated_at();
+
+            -- Function to generate SONumber (AFTER INSERT - separate update)
+            CREATE OR REPLACE FUNCTION generate_so_number()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                IF NEW."SONumber" IS NULL THEN
+                    UPDATE "SalesOrders"
+                    SET "SONumber" = 'SO-' || TO_CHAR(CURRENT_DATE, 'YYYYMM') || '-' || LPAD(NEW."Id"::TEXT, 5, '0')
+                    WHERE "Id" = NEW."Id";
+                END IF;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+
+            DROP TRIGGER IF EXISTS trigger_generate_so_number ON "SalesOrders";
+            CREATE TRIGGER trigger_generate_so_number
+                AFTER INSERT ON "SalesOrders"
+                FOR EACH ROW
+                EXECUTE FUNCTION generate_so_number();
+
+            -- Function to auto-populate CustomerName from Customers table
+            CREATE OR REPLACE FUNCTION update_so_customer_name()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                IF NEW."CustomerId" IS NOT NULL THEN
+                    SELECT "Name" INTO NEW."CustomerName" 
+                    FROM "Customers" 
+                    WHERE "Id" = NEW."CustomerId";
+                END IF;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+
+            DROP TRIGGER IF EXISTS trigger_update_so_customer_name ON "SalesOrders";
+            CREATE TRIGGER trigger_update_so_customer_name
+                BEFORE INSERT OR UPDATE OF "CustomerId" ON "SalesOrders"
+                FOR EACH ROW
+                EXECUTE FUNCTION update_so_customer_name();
+        `;
+
+        await appPool.query(triggerQuery);
+        console.log("✅ Triggers and functions created");
+
+        console.log("✅ SalesOrders table ready with all features");
+
+    } catch (error) {
+        console.error("❌ Error creating SalesOrders table:", error);
+        throw error;
+    }
+};
+
+module.exports = { SalesOrders };
+const { appPool } = require('../../config/db');
+
+const SalesQuotations = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "SalesQuotations" (
+      "Id" SERIAL PRIMARY KEY,
+      "QuotationNumber" VARCHAR(50) NOT NULL,
+      "CustomerId" INT,
+      "CompanyId" INT,
+      "BranchId" INT,
+      "QuotationDate" DATE DEFAULT CURRENT_DATE,
+      "ValidUntil" DATE,
+      "Status" VARCHAR(30) DEFAULT 'Draft',
+      "SubTotal" DECIMAL(18,2) DEFAULT 0,
+      "DiscountAmount" DECIMAL(18,2) DEFAULT 0,
+      "TaxAmount" DECIMAL(18,2) DEFAULT 0,
+      "ShippingCharges" DECIMAL(18,2) DEFAULT 0,
+      "GrandTotal" DECIMAL(18,2) DEFAULT 0,
+      "Terms" VARCHAR(500),
+      "Notes" VARCHAR(500),
+      "PreparedById" INT,
+      "ConvertedToOrder" BOOLEAN DEFAULT false,
+      "SalesOrderId" INT,
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ SalesQuotations table initialized');
+  } catch (error) {
+    console.error('❌ Error creating SalesQuotations table:', error.message);
+  }
+};
+
+const SalesQuotationItems = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "SalesQuotationItems" (
+      "Id" SERIAL PRIMARY KEY,
+      "QuotationId" INT NOT NULL,
+      "ProductId" INT,
+      "Quantity" DECIMAL(18,2) NOT NULL,
+      "UnitPrice" DECIMAL(18,2),
+      "DiscountPercent" DECIMAL(5,2) DEFAULT 0,
+      "DiscountAmount" DECIMAL(18,2) DEFAULT 0,
+      "TaxRate" DECIMAL(5,2) DEFAULT 0,
+      "TaxAmount" DECIMAL(18,2) DEFAULT 0,
+      "TotalAmount" DECIMAL(18,2) DEFAULT 0,
+      "Description" VARCHAR(500),
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ SalesQuotationItems table initialized');
+  } catch (error) {
+    console.error('❌ Error creating SalesQuotationItems table:', error.message);
+  }
+};
+
+module.exports = { SalesQuotations, SalesQuotationItems };
+
+const { appPool } = require('../../config/db');
+
+const SalesReturns = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "SalesReturns" (
+      "Id" SERIAL PRIMARY KEY,
+      "ReturnNumber" VARCHAR(50) NOT NULL,
+      "SalesOrderId" INT,
+      "CustomerId" INT,
+      "CompanyId" INT,
+      "BranchId" INT,
+      "WarehouseId" INT,
+      "ReturnDate" DATE DEFAULT CURRENT_DATE,
+      "Reason" VARCHAR(500),
+      "Status" VARCHAR(30) DEFAULT 'Draft',
+      "SubTotal" DECIMAL(18,2) DEFAULT 0,
+      "TaxAmount" DECIMAL(18,2) DEFAULT 0,
+      "GrandTotal" DECIMAL(18,2) DEFAULT 0,
+      "RefundStatus" VARCHAR(30) DEFAULT 'Pending',
+      "RefundAmount" DECIMAL(18,2) DEFAULT 0,
+      "RefundDate" DATE,
+      "ReceivedById" INT,
+      "Notes" VARCHAR(500),
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ SalesReturns table initialized');
+  } catch (error) {
+    console.error('❌ Error creating SalesReturns table:', error.message);
+  }
+};
+
+const SalesReturnItems = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "SalesReturnItems" (
+      "Id" SERIAL PRIMARY KEY,
+      "ReturnId" INT NOT NULL,
+      "ProductId" INT,
+      "BatchId" INT,
+      "Quantity" DECIMAL(18,2) NOT NULL,
+      "UnitPrice" DECIMAL(18,2),
+      "TaxRate" DECIMAL(5,2) DEFAULT 0,
+      "TaxAmount" DECIMAL(18,2) DEFAULT 0,
+      "TotalAmount" DECIMAL(18,2) DEFAULT 0,
+      "Reason" VARCHAR(200),
+      "Condition" VARCHAR(50) DEFAULT 'Good',
+      "IsDeleted" BOOLEAN DEFAULT false,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  try {
+    await appPool.query(query);
+    console.log('✅ SalesReturnItems table initialized');
+  } catch (error) {
+    console.error('❌ Error creating SalesReturnItems table:', error.message);
+  }
+};
+
+module.exports = { SalesReturns, SalesReturnItems };
+// models/Inventory/stockMovements.js
+const { appPool } = require("../../config/db");
+
+const StockMovements = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "StockMovements" (
+      "Id" SERIAL PRIMARY KEY,
+      "ProductId" INT NOT NULL REFERENCES "Products"("Id"),
+      "WarehouseId" INT NOT NULL REFERENCES "Warehouses"("Id"),
+      "ChangeType" VARCHAR(50) NOT NULL, -- IN, OUT, ADJUSTMENT, TRANSFER
+      "Quantity" INT NOT NULL,
+      "Reason" TEXT,
+      "CreatedBy" INT REFERENCES "Users"("UserId"),
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  await appPool.query(query);
+  console.log("✅ StockMovements table ready");
+};
+
+module.exports = { StockMovements };
+const { appPool } = require("../../config/db");
+
+const StockTransfersTable = async () => {
+    const query = `
+    -- Stock Transfer (Warehouse to Warehouse / Branch to Branch)
+    CREATE TABLE IF NOT EXISTS "StockTransfers" (
+        "Id" SERIAL PRIMARY KEY,
+        "TransferNo" VARCHAR(50) UNIQUE NOT NULL,
+        "FromWarehouseId" INT REFERENCES "Warehouses"("Id") ON DELETE SET NULL,
+        "ToWarehouseId" INT REFERENCES "Warehouses"("Id") ON DELETE SET NULL,
+        "TransferDate" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "Status" VARCHAR(50) DEFAULT 'Pending' CHECK ("Status" IN ('Pending','In Transit','Received','Cancelled')),
+        "TotalItems" INT DEFAULT 0,
+        "Notes" TEXT,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "ApprovedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "IsDeleted" BOOLEAN DEFAULT FALSE,
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Stock Transfer Items
+    CREATE TABLE IF NOT EXISTS "StockTransferItems" (
+        "Id" SERIAL PRIMARY KEY,
+        "StockTransferId" INT REFERENCES "StockTransfers"("Id") ON DELETE CASCADE,
+        "ProductId" INT REFERENCES "Products"("Id") ON DELETE RESTRICT,
+        "Quantity" INT NOT NULL CHECK ("Quantity" > 0),
+        "UnitCost" NUMERIC(10,2) DEFAULT 0,
+        "Notes" TEXT,
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Stock Adjustment (Damage, Lost, Manual Correction)
+    CREATE TABLE IF NOT EXISTS "StockAdjustments" (
+        "Id" SERIAL PRIMARY KEY,
+        "AdjustmentNo" VARCHAR(50) UNIQUE NOT NULL,
+        "WarehouseId" INT REFERENCES "Warehouses"("Id") ON DELETE SET NULL,
+        "AdjustmentType" VARCHAR(50) NOT NULL CHECK ("AdjustmentType" IN ('Damage','Lost','Manual Correction','Write Off','Found')),
+        "AdjustmentDate" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "Reason" TEXT,
+        "Status" VARCHAR(50) DEFAULT 'Pending' CHECK ("Status" IN ('Pending','Approved','Rejected')),
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "ApprovedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "IsDeleted" BOOLEAN DEFAULT FALSE,
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Stock Adjustment Items
+    CREATE TABLE IF NOT EXISTS "StockAdjustmentItems" (
+        "Id" SERIAL PRIMARY KEY,
+        "AdjustmentId" INT REFERENCES "StockAdjustments"("Id") ON DELETE CASCADE,
+        "ProductId" INT REFERENCES "Products"("Id") ON DELETE RESTRICT,
+        "Quantity" INT NOT NULL,
+        "CurrentStock" INT DEFAULT 0,
+        "NewStock" INT DEFAULT 0,
+        "UnitCost" NUMERIC(10,2) DEFAULT 0,
+        "Reason" TEXT,
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_stock_transfer_from ON "StockTransfers"("FromWarehouseId");
+    CREATE INDEX IF NOT EXISTS idx_stock_transfer_to ON "StockTransfers"("ToWarehouseId");
+    CREATE INDEX IF NOT EXISTS idx_stock_adjustment_warehouse ON "StockAdjustments"("WarehouseId");
+    CREATE INDEX IF NOT EXISTS idx_stock_adjustment_type ON "StockAdjustments"("AdjustmentType");
+    `;
+    await appPool.query(query);
+    console.log("✅ Stock Transfer & Adjustment tables ready");
+};
+
+module.exports = { StockTransfersTable };
+
+
+// db/migrations/suppliers.js
+const { appPool } = require("../../config/db");
+
+const Suppliers = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "Suppliers" (
+      "Id" SERIAL PRIMARY KEY,
+      "Name" VARCHAR(255) NOT NULL,
+      "ContactPerson" VARCHAR(255),
+      "Email" VARCHAR(255),
+      "Phone" VARCHAR(20),
+      "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "CreatedBy" INT REFERENCES "Users"("UserId"),
+      "Address" TEXT,
+      "City" VARCHAR(100),
+      "State" VARCHAR(100),
+      "Country" VARCHAR(100),
+      "PostalCode" VARCHAR(20),
+      "IsActive" BOOLEAN DEFAULT TRUE,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  await appPool.query(query);
+  console.log("✅ Suppliers table ready");
+};
+
+module.exports = { Suppliers };
+const { appPool } = require("../../config/db")
+
+const Taxes = async () => {
+    const query = `CREATE TABLE IF NOT EXISTS "Taxes" (
+  "Id" SERIAL PRIMARY KEY,
+  "Name" VARCHAR(100),
+  "Rate" NUMERIC(5, 2),
+  "Description" TEXT
+);`
+    await appPool.query(query);
+    console.log("✅ Taxes table ready")
+}
+
+module.exports = { Taxes };
+
+const { appPool } = require('../../config/db');
+
+const Units = async () => {
+    const query = `
+   CREATE TABLE IF NOT EXISTS "Units" (
+            "Id" SERIAL PRIMARY KEY,
+            "Name" VARCHAR(50) NOT NULL,
+            "Symbol" VARCHAR(10),
+            "IsDeleted" BOOLEAN DEFAULT FALSE,
+            "DeletedAt" TIMESTAMP,
+            "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);`
+    await appPool.query(query);
+    console.log("✅ Units table ready");
+}
+
+module.exports={Units}
+
+const { appPool } = require("../../config/db");
+
+const WarehouseLocationsTable = async () => {
+    const query = `
+    -- Rack Management
+    CREATE TABLE IF NOT EXISTS "Racks" (
+        "Id" SERIAL PRIMARY KEY,
+        "RackName" VARCHAR(100) NOT NULL,
+        "RackCode" VARCHAR(50),
+        "WarehouseId" INT REFERENCES "Warehouses"("Id") ON DELETE CASCADE,
+        "Description" TEXT,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "IsActive" BOOLEAN DEFAULT TRUE,
+        "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE("RackCode", "WarehouseId")
+    );
+
+    -- Shelf Management
+    CREATE TABLE IF NOT EXISTS "Shelves" (
+        "Id" SERIAL PRIMARY KEY,
+        "ShelfName" VARCHAR(100) NOT NULL,
+        "ShelfCode" VARCHAR(50),
+        "RackId" INT REFERENCES "Racks"("Id") ON DELETE CASCADE,
+        "WarehouseId" INT REFERENCES "Warehouses"("Id") ON DELETE CASCADE,
+        "Description" TEXT,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "IsActive" BOOLEAN DEFAULT TRUE,
+        "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE("ShelfCode", "RackId")
+    );
+
+    -- Bin Management
+    CREATE TABLE IF NOT EXISTS "Bins" (
+        "Id" SERIAL PRIMARY KEY,
+        "BinName" VARCHAR(100) NOT NULL,
+        "BinCode" VARCHAR(50),
+        "ShelfId" INT REFERENCES "Shelves"("Id") ON DELETE CASCADE,
+        "RackId" INT REFERENCES "Racks"("Id") ON DELETE CASCADE,
+        "WarehouseId" INT REFERENCES "Warehouses"("Id") ON DELETE CASCADE,
+        "ProductId" INT REFERENCES "Products"("Id") ON DELETE SET NULL,
+        "MaxCapacity" INT DEFAULT 0,
+        "CurrentOccupancy" INT DEFAULT 0,
+        "Description" TEXT,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "IsActive" BOOLEAN DEFAULT TRUE,
+        "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE("BinCode", "WarehouseId")
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_racks_warehouse ON "Racks"("WarehouseId");
+    CREATE INDEX IF NOT EXISTS idx_shelves_rack ON "Shelves"("RackId");
+    CREATE INDEX IF NOT EXISTS idx_bins_shelf ON "Bins"("ShelfId");
+    CREATE INDEX IF NOT EXISTS idx_bins_product ON "Bins"("ProductId");
+    `;
+    await appPool.query(query);
+    console.log("✅ Warehouse Location tables (Racks, Shelves, Bins) ready");
+};
+
+module.exports = { WarehouseLocationsTable };
+
+// models/tables/Warehouses.js
+const { appPool } = require("../../config/db");
+
+const Warehouses = async () => {
+    const query = `
+        CREATE TABLE IF NOT EXISTS "Warehouses" (
+            "Id" SERIAL PRIMARY KEY,
+            "WarehouseCode" VARCHAR(50) UNIQUE NOT NULL,
+            "Name" VARCHAR(255) NOT NULL,
+            "Location" TEXT,
+            "Address" TEXT,
+            "City" VARCHAR(100),
+            "State" VARCHAR(100),
+            "Country" VARCHAR(100) DEFAULT 'India',
+            "PinCode" VARCHAR(20),
+            "ContactPerson" VARCHAR(255),
+            "ContactPhone" VARCHAR(20),
+            "ContactEmail" VARCHAR(255),
+            "ManagerId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+            "CompanyId" INT NOT NULL REFERENCES "Companies"("Id") ON DELETE CASCADE,
+            "Capacity" DECIMAL(10, 2),
+            "CapacityUnit" VARCHAR(50) DEFAULT 'sqft',
+            "IsActive" BOOLEAN DEFAULT TRUE,
+            "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+            "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL
+        );
+
+        -- Create indexes for better performance
+        CREATE INDEX IF NOT EXISTS idx_warehouses_company ON "Warehouses"("CompanyId");
+        CREATE INDEX IF NOT EXISTS idx_warehouses_active ON "Warehouses"("IsActive");
+        CREATE INDEX IF NOT EXISTS idx_warehouses_code ON "Warehouses"("WarehouseCode");
+        CREATE INDEX IF NOT EXISTS idx_warehouses_manager ON "Warehouses"("ManagerId");
+    `;
+    
+    await appPool.query(query);
+    console.log("✅ Warehouses table ready with indexes");
+};
+
+module.exports = { Warehouses };
+const { appPool } = require("../../config/db");
+
+const createAuditEventsTable = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "AuditEvents" (
+      "Id" BIGSERIAL PRIMARY KEY,
+      "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "UserId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "EventType" VARCHAR(120) NOT NULL,
+      "Action" VARCHAR(80) NOT NULL,
+      "EntityType" VARCHAR(120),
+      "EntityId" INT,
+      "BeforeData" JSONB,
+      "AfterData" JSONB,
+      "Metadata" JSONB,
+      "IpAddress" VARCHAR(64),
+      "UserAgent" TEXT,
+      "CreatedAt" TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_audit_events_company_created ON "AuditEvents"("CompanyId", "CreatedAt" DESC);
+    CREATE INDEX IF NOT EXISTS idx_audit_events_user_created ON "AuditEvents"("UserId", "CreatedAt" DESC);
+    CREATE INDEX IF NOT EXISTS idx_audit_events_eventtype_created ON "AuditEvents"("EventType", "CreatedAt" DESC);
+    CREATE INDEX IF NOT EXISTS idx_audit_events_entity ON "AuditEvents"("EntityType", "EntityId");
+  `;
+
+  await appPool.query(query);
+  console.log("AuditEvents table ready");
+};
+
+module.exports = { createAuditEventsTable };
+const { appPool } = require("../../config/db");
+
+const createCompanySettingsTable = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "CompanySettings" (
+      "Id" SERIAL PRIMARY KEY,
+      "CompanyId" INT UNIQUE NOT NULL REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "Settings" JSONB NOT NULL DEFAULT '{}'::jsonb,
+      "Version" INT NOT NULL DEFAULT 1,
+      "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_company_settings_company ON "CompanySettings"("CompanyId");
+    CREATE INDEX IF NOT EXISTS idx_company_settings_gin ON "CompanySettings" USING GIN ("Settings");
+  `;
+
+  await appPool.query(query);
+  console.log("CompanySettings table ready");
+};
+
+module.exports = { createCompanySettingsTable };
+const { appPool } = require("../../config/db");
+
+const createInboundEmailRoutingTables = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "InboundEmailRoutes" (
+      "Id" SERIAL PRIMARY KEY,
+      "CompanyId" INT NOT NULL REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "DepartmentId" INT REFERENCES "Departments"("Id") ON DELETE SET NULL,
+      "RouteName" VARCHAR(150) NOT NULL,
+      "InboundEmail" VARCHAR(255) NOT NULL,
+      "AssignToUserId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "AssignToManager" BOOLEAN DEFAULT FALSE,
+      "AutoCreateAccount" BOOLEAN DEFAULT TRUE,
+      "AutoCreateContact" BOOLEAN DEFAULT TRUE,
+      "IsActive" BOOLEAN DEFAULT TRUE,
+      "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "UpdatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_inbound_email_routes_company_email
+      ON "InboundEmailRoutes" ("CompanyId", LOWER("InboundEmail"));
+    CREATE INDEX IF NOT EXISTS idx_inbound_email_routes_company
+      ON "InboundEmailRoutes" ("CompanyId");
+    CREATE INDEX IF NOT EXISTS idx_inbound_email_routes_active
+      ON "InboundEmailRoutes" ("IsActive");
+
+    CREATE TABLE IF NOT EXISTS "InboundEmailEvents" (
+      "Id" SERIAL PRIMARY KEY,
+      "CompanyId" INT NOT NULL REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "RouteId" INT REFERENCES "InboundEmailRoutes"("Id") ON DELETE SET NULL,
+      "CaseId" INT REFERENCES "Cases"("Id") ON DELETE SET NULL,
+      "MessageId" VARCHAR(255),
+      "ThreadId" VARCHAR(255),
+      "FromEmail" VARCHAR(255),
+      "ToEmail" VARCHAR(255),
+      "Subject" VARCHAR(500),
+      "BodyText" TEXT,
+      "Status" VARCHAR(40) DEFAULT 'Processed',
+      "ErrorMessage" TEXT,
+      "RawPayload" JSONB DEFAULT '{}'::jsonb,
+      "ReceivedAt" TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_inbound_email_events_company_message
+      ON "InboundEmailEvents" ("CompanyId", "MessageId")
+      WHERE "MessageId" IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_inbound_email_events_company_thread
+      ON "InboundEmailEvents" ("CompanyId", "ThreadId");
+    CREATE INDEX IF NOT EXISTS idx_inbound_email_events_case
+      ON "InboundEmailEvents" ("CaseId");
+  `;
+
+  await appPool.query(query);
+  console.log("Inbound email routing tables ready");
+};
+
+module.exports = { createInboundEmailRoutingTables };
+const { appPool } = require("../../config/db");
+
+const createNotificationPreferencesTable = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "NotificationPreferences" (
+      "Id" SERIAL PRIMARY KEY,
+      "UserId" INT NOT NULL REFERENCES "Users"("UserId") ON DELETE CASCADE,
+      "NotificationType" VARCHAR(80) NOT NULL,
+      "Channel" VARCHAR(30) NOT NULL CHECK ("Channel" IN ('InApp', 'Email', 'SMS', 'Push', 'Webhook', 'Digest')),
+      "IsEnabled" BOOLEAN NOT NULL DEFAULT TRUE,
+      "QuietHoursStart" TIME,
+      "QuietHoursEnd" TIME,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+      UNIQUE ("UserId", "NotificationType", "Channel")
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_notification_prefs_user ON "NotificationPreferences"("UserId");
+    CREATE INDEX IF NOT EXISTS idx_notification_prefs_type ON "NotificationPreferences"("NotificationType");
+  `;
+
+  await appPool.query(query);
+  console.log("NotificationPreferences table ready");
+};
+
+module.exports = { createNotificationPreferencesTable };
+const { appPool } = require("../../config/db");
+
+const createPlatformCoreTables = async () => {
+  const queries = [
+    `
+      CREATE TABLE IF NOT EXISTS "Modules" (
+        "Id" SERIAL PRIMARY KEY,
+        "ModuleName" VARCHAR(120) NOT NULL,
+        "Code" VARCHAR(80) UNIQUE NOT NULL,
+        "IsActive" BOOLEAN DEFAULT TRUE,
+        "CreatedAt" TIMESTAMP DEFAULT NOW()
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "Permissions" (
+        "Id" SERIAL PRIMARY KEY,
+        "PermissionName" VARCHAR(150) NOT NULL,
+        "Code" VARCHAR(120) UNIQUE NOT NULL,
+        "CreatedAt" TIMESTAMP DEFAULT NOW()
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "RolePermissions" (
+        "Id" SERIAL PRIMARY KEY,
+        "RoleId" INT REFERENCES "Roles"("Id") ON DELETE CASCADE,
+        "ModuleId" INT REFERENCES "Modules"("Id") ON DELETE CASCADE,
+        "PermissionId" INT REFERENCES "Permissions"("Id") ON DELETE CASCADE,
+        "Allowed" BOOLEAN DEFAULT TRUE,
+        "CreatedAt" TIMESTAMP DEFAULT NOW(),
+        UNIQUE ("RoleId", "ModuleId", "PermissionId")
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "UserPermissions" (
+        "Id" SERIAL PRIMARY KEY,
+        "UserId" INT REFERENCES "Users"("UserId") ON DELETE CASCADE,
+        "PermissionId" INT REFERENCES "Permissions"("Id") ON DELETE CASCADE,
+        "Allowed" BOOLEAN DEFAULT TRUE,
+        "CreatedAt" TIMESTAMP DEFAULT NOW(),
+        UNIQUE ("UserId", "PermissionId")
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "Departments" (
+        "Id" SERIAL PRIMARY KEY,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "DepartmentName" VARCHAR(150) NOT NULL,
+        "IsActive" BOOLEAN DEFAULT TRUE,
+        "CreatedAt" TIMESTAMP DEFAULT NOW(),
+        UNIQUE ("CompanyId", "DepartmentName")
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "Designations" (
+        "Id" SERIAL PRIMARY KEY,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "DesignationName" VARCHAR(150) NOT NULL,
+        "IsActive" BOOLEAN DEFAULT TRUE,
+        "CreatedAt" TIMESTAMP DEFAULT NOW(),
+        UNIQUE ("CompanyId", "DesignationName")
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "Notifications" (
+        "Id" SERIAL PRIMARY KEY,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "UserId" INT REFERENCES "Users"("UserId") ON DELETE CASCADE,
+        "Title" VARCHAR(200) NOT NULL,
+        "Message" TEXT NOT NULL,
+        "Type" VARCHAR(80) NOT NULL,
+        "Severity" VARCHAR(30) DEFAULT 'info',
+        "EntityType" VARCHAR(80),
+        "EntityId" INT,
+        "IsRead" BOOLEAN DEFAULT FALSE,
+        "ReadAt" TIMESTAMP,
+        "ExpiresAt" TIMESTAMP,
+        "CreatedAt" TIMESTAMP DEFAULT NOW()
+      );
+    `,
+    `
+      ALTER TABLE "Notifications"
+      ADD COLUMN IF NOT EXISTS "ReadAt" TIMESTAMP;
+    `,
+    `
+      ALTER TABLE "Notifications"
+      ADD COLUMN IF NOT EXISTS "ExpiresAt" TIMESTAMP;
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "NotificationTemplates" (
+        "Id" SERIAL PRIMARY KEY,
+        "Code" VARCHAR(100) UNIQUE NOT NULL,
+        "TitleTemplate" VARCHAR(255) NOT NULL,
+        "MessageTemplate" TEXT NOT NULL,
+        "Channel" VARCHAR(30) DEFAULT 'InApp',
+        "CreatedAt" TIMESTAMP DEFAULT NOW()
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "NotificationSettings" (
+        "Id" SERIAL PRIMARY KEY,
+        "UserId" INT UNIQUE REFERENCES "Users"("UserId") ON DELETE CASCADE,
+        "EmailEnabled" BOOLEAN DEFAULT TRUE,
+        "InAppEnabled" BOOLEAN DEFAULT TRUE,
+        "SmsEnabled" BOOLEAN DEFAULT FALSE,
+        "ApiFailureEnabled" BOOLEAN DEFAULT TRUE,
+        "ApprovalEnabled" BOOLEAN DEFAULT TRUE,
+        "StockAlertEnabled" BOOLEAN DEFAULT TRUE,
+        "UpdatedAt" TIMESTAMP DEFAULT NOW()
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "ApiIntegrations" (
+        "Id" SERIAL PRIMARY KEY,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "IntegrationName" VARCHAR(150) NOT NULL,
+        "BaseUrl" VARCHAR(500) NOT NULL,
+        "AuthType" VARCHAR(50) DEFAULT 'none',
+        "IsActive" BOOLEAN DEFAULT TRUE,
+        "CreatedAt" TIMESTAMP DEFAULT NOW()
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "ApiEndpoints" (
+        "Id" SERIAL PRIMARY KEY,
+        "IntegrationId" INT REFERENCES "ApiIntegrations"("Id") ON DELETE CASCADE,
+        "EndpointName" VARCHAR(150) NOT NULL,
+        "Method" VARCHAR(10) NOT NULL,
+        "EndpointUrl" VARCHAR(500) NOT NULL,
+        "TimeoutSeconds" INT DEFAULT 30,
+        "ExpectedStatusCode" INT DEFAULT 200,
+        "IsCritical" BOOLEAN DEFAULT FALSE,
+        "IsActive" BOOLEAN DEFAULT TRUE
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "ApiExecutionLogs" (
+        "Id" SERIAL PRIMARY KEY,
+        "IntegrationId" INT REFERENCES "ApiIntegrations"("Id") ON DELETE SET NULL,
+        "EndpointId" INT REFERENCES "ApiEndpoints"("Id") ON DELETE SET NULL,
+        "RequestId" VARCHAR(100),
+        "RequestPayload" JSONB,
+        "ResponsePayload" JSONB,
+        "ResponseStatusCode" INT,
+        "IsSuccess" BOOLEAN DEFAULT FALSE,
+        "ErrorMessage" TEXT,
+        "DurationMs" INT,
+        "TriggeredByUserId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "TriggerType" VARCHAR(30) DEFAULT 'Manual',
+        "CreatedAt" TIMESTAMP DEFAULT NOW()
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "ApiFailureAlerts" (
+        "Id" SERIAL PRIMARY KEY,
+        "ApiExecutionLogId" INT REFERENCES "ApiExecutionLogs"("Id") ON DELETE CASCADE,
+        "AlertType" VARCHAR(80) NOT NULL,
+        "AlertSentToUserId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "AlertChannel" VARCHAR(30) DEFAULT 'InApp',
+        "AlertStatus" VARCHAR(30) DEFAULT 'Pending',
+        "CreatedAt" TIMESTAMP DEFAULT NOW()
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "Documents" (
+        "Id" SERIAL PRIMARY KEY,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "EntityType" VARCHAR(80) NOT NULL,
+        "EntityId" INT NOT NULL,
+        "FileName" VARCHAR(255) NOT NULL,
+        "OriginalFileName" VARCHAR(255),
+        "FileExtension" VARCHAR(20),
+        "MimeType" VARCHAR(120),
+        "FileSizeKb" INT,
+        "FileUrl" TEXT NOT NULL,
+        "ThumbnailUrl" TEXT,
+        "Category" VARCHAR(80),
+        "IsImage" BOOLEAN DEFAULT FALSE,
+        "VersionNo" INT DEFAULT 1,
+        "UploadedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "UploadedAt" TIMESTAMP DEFAULT NOW(),
+        "IsDeleted" BOOLEAN DEFAULT FALSE
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "DocumentAccessLogs" (
+        "Id" SERIAL PRIMARY KEY,
+        "DocumentId" INT REFERENCES "Documents"("Id") ON DELETE CASCADE,
+        "AccessedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "AccessType" VARCHAR(30) NOT NULL,
+        "AccessedAt" TIMESTAMP DEFAULT NOW()
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "DocumentVersions" (
+        "Id" SERIAL PRIMARY KEY,
+        "DocumentId" INT REFERENCES "Documents"("Id") ON DELETE CASCADE,
+        "VersionNo" INT NOT NULL,
+        "FileUrl" TEXT NOT NULL,
+        "UploadedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "UploadedAt" TIMESTAMP DEFAULT NOW(),
+        UNIQUE ("DocumentId", "VersionNo")
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "ApprovalWorkflows" (
+        "Id" SERIAL PRIMARY KEY,
+        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+        "EntityType" VARCHAR(80) NOT NULL,
+        "WorkflowName" VARCHAR(200) NOT NULL,
+        "IsActive" BOOLEAN DEFAULT TRUE,
+        "CreatedAt" TIMESTAMP DEFAULT NOW()
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "ApprovalSteps" (
+        "Id" SERIAL PRIMARY KEY,
+        "WorkflowId" INT REFERENCES "ApprovalWorkflows"("Id") ON DELETE CASCADE,
+        "StepNo" INT NOT NULL,
+        "RoleId" INT REFERENCES "Roles"("Id") ON DELETE SET NULL,
+        "MinAmount" NUMERIC(15,2),
+        "MaxAmount" NUMERIC(15,2),
+        "IsMandatory" BOOLEAN DEFAULT TRUE,
+        UNIQUE ("WorkflowId", "StepNo")
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "ApprovalTransactions" (
+        "Id" SERIAL PRIMARY KEY,
+        "EntityType" VARCHAR(80) NOT NULL,
+        "EntityId" INT NOT NULL,
+        "WorkflowId" INT REFERENCES "ApprovalWorkflows"("Id") ON DELETE SET NULL,
+        "CurrentStepNo" INT DEFAULT 1,
+        "Status" VARCHAR(40) DEFAULT 'Pending',
+        "RequestedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "RequestedAt" TIMESTAMP DEFAULT NOW()
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "ApprovalActions" (
+        "Id" SERIAL PRIMARY KEY,
+        "ApprovalTransactionId" INT REFERENCES "ApprovalTransactions"("Id") ON DELETE CASCADE,
+        "StepNo" INT NOT NULL,
+        "ActionBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "ActionType" VARCHAR(40) NOT NULL,
+        "Comments" TEXT,
+        "ActionAt" TIMESTAMP DEFAULT NOW()
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "SecurityLogs" (
+        "Id" SERIAL PRIMARY KEY,
+        "UserId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+        "EventType" VARCHAR(100) NOT NULL,
+        "IpAddress" VARCHAR(64),
+        "UserAgent" TEXT,
+        "DeviceInfo" TEXT,
+        "Status" VARCHAR(30) DEFAULT 'Success',
+        "CreatedAt" TIMESTAMP DEFAULT NOW()
+      );
+    `,
+    `
+      CREATE TABLE IF NOT EXISTS "UserSessions" (
+        "Id" SERIAL PRIMARY KEY,
+        "UserId" INT REFERENCES "Users"("UserId") ON DELETE CASCADE,
+        "Device" VARCHAR(120),
+        "Browser" VARCHAR(120),
+        "IpAddress" VARCHAR(64),
+        "StartedAt" TIMESTAMP DEFAULT NOW(),
+        "EndedAt" TIMESTAMP,
+        "IsActive" BOOLEAN DEFAULT TRUE
+      );
+    `,
+  ];
+
+  for (const query of queries) {
+    await appPool.query(query);
+  }
+
+  console.log("Platform core tables ready");
+};
+
+module.exports = { createPlatformCoreTables };
+const { appPool } = require("../../config/db");
+
+const createTeamsChatTables = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "ChatTeams" (
+      "Id" SERIAL PRIMARY KEY,
+      "CompanyId" INT NOT NULL REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "Name" VARCHAR(150) NOT NULL,
+      "Description" TEXT,
+      "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "IsArchived" BOOLEAN NOT NULL DEFAULT FALSE,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+      UNIQUE ("CompanyId", "Name")
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_chat_teams_company ON "ChatTeams"("CompanyId", "IsArchived");
+    CREATE INDEX IF NOT EXISTS idx_chat_teams_updated ON "ChatTeams"("UpdatedAt" DESC);
+
+    CREATE TABLE IF NOT EXISTS "ChatTeamMembers" (
+      "Id" SERIAL PRIMARY KEY,
+      "TeamId" INT NOT NULL REFERENCES "ChatTeams"("Id") ON DELETE CASCADE,
+      "UserId" INT NOT NULL REFERENCES "Users"("UserId") ON DELETE CASCADE,
+      "MemberRole" VARCHAR(20) NOT NULL DEFAULT 'member',
+      "IsMuted" BOOLEAN NOT NULL DEFAULT FALSE,
+      "LastReadAt" TIMESTAMP,
+      "JoinedAt" TIMESTAMP DEFAULT NOW(),
+      UNIQUE ("TeamId", "UserId"),
+      CHECK ("MemberRole" IN ('owner', 'member'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_chat_team_members_team ON "ChatTeamMembers"("TeamId");
+    CREATE INDEX IF NOT EXISTS idx_chat_team_members_user ON "ChatTeamMembers"("UserId");
+
+    CREATE TABLE IF NOT EXISTS "ChatChannels" (
+      "Id" SERIAL PRIMARY KEY,
+      "TeamId" INT NOT NULL REFERENCES "ChatTeams"("Id") ON DELETE CASCADE,
+      "Name" VARCHAR(150) NOT NULL,
+      "Description" TEXT,
+      "ChannelType" VARCHAR(20) NOT NULL DEFAULT 'standard',
+      "IsDefault" BOOLEAN NOT NULL DEFAULT FALSE,
+      "IsArchived" BOOLEAN NOT NULL DEFAULT FALSE,
+      "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+      UNIQUE ("TeamId", "Name")
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_chat_channels_team ON "ChatChannels"("TeamId", "IsArchived");
+    CREATE INDEX IF NOT EXISTS idx_chat_channels_updated ON "ChatChannels"("UpdatedAt" DESC);
+
+    CREATE TABLE IF NOT EXISTS "ChatMessages" (
+      "Id" SERIAL PRIMARY KEY,
+      "TeamId" INT NOT NULL REFERENCES "ChatTeams"("Id") ON DELETE CASCADE,
+      "ChannelId" INT NOT NULL REFERENCES "ChatChannels"("Id") ON DELETE CASCADE,
+      "SenderUserId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "ParentMessageId" INT REFERENCES "ChatMessages"("Id") ON DELETE SET NULL,
+      "MessageType" VARCHAR(20) NOT NULL DEFAULT 'text',
+      "MessageText" TEXT NOT NULL,
+      "Metadata" JSONB NOT NULL DEFAULT '{}'::jsonb,
+      "IsDeleted" BOOLEAN NOT NULL DEFAULT FALSE,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_chat_messages_channel ON "ChatMessages"("ChannelId", "Id" DESC);
+    CREATE INDEX IF NOT EXISTS idx_chat_messages_team ON "ChatMessages"("TeamId", "Id" DESC);
+    CREATE INDEX IF NOT EXISTS idx_chat_messages_sender ON "ChatMessages"("SenderUserId");
+
+    CREATE TABLE IF NOT EXISTS "ChatMessageReads" (
+      "Id" SERIAL PRIMARY KEY,
+      "MessageId" INT NOT NULL REFERENCES "ChatMessages"("Id") ON DELETE CASCADE,
+      "UserId" INT NOT NULL REFERENCES "Users"("UserId") ON DELETE CASCADE,
+      "ReadAt" TIMESTAMP DEFAULT NOW(),
+      UNIQUE ("MessageId", "UserId")
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_chat_message_reads_user ON "ChatMessageReads"("UserId");
+
+    CREATE TABLE IF NOT EXISTS "ChatAppChannels" (
+      "Id" SERIAL PRIMARY KEY,
+      "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "Name" VARCHAR(150) NOT NULL,
+      "Description" TEXT,
+      "Type" VARCHAR(20) NOT NULL DEFAULT 'group',
+      "IsPrivate" BOOLEAN NOT NULL DEFAULT FALSE,
+      "CreatedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "LastMessageId" INT,
+      "LastActivity" TIMESTAMP DEFAULT NOW(),
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_chat_app_channels_company ON "ChatAppChannels"("CompanyId");
+    CREATE INDEX IF NOT EXISTS idx_chat_app_channels_last_activity ON "ChatAppChannels"("LastActivity" DESC);
+
+    CREATE TABLE IF NOT EXISTS "ChatAppChannelMembers" (
+      "Id" SERIAL PRIMARY KEY,
+      "ChannelId" INT NOT NULL REFERENCES "ChatAppChannels"("Id") ON DELETE CASCADE,
+      "UserId" INT NOT NULL REFERENCES "Users"("UserId") ON DELETE CASCADE,
+      "JoinedAt" TIMESTAMP DEFAULT NOW(),
+      "LastReadMessageId" INT,
+      "LastReadAt" TIMESTAMP,
+      UNIQUE ("ChannelId", "UserId")
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_chat_app_channel_members_channel ON "ChatAppChannelMembers"("ChannelId");
+    CREATE INDEX IF NOT EXISTS idx_chat_app_channel_members_user ON "ChatAppChannelMembers"("UserId");
+
+    CREATE TABLE IF NOT EXISTS "ChatAppMessages" (
+      "Id" SERIAL PRIMARY KEY,
+      "ChannelId" INT NOT NULL REFERENCES "ChatAppChannels"("Id") ON DELETE CASCADE,
+      "SenderUserId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "Content" TEXT,
+      "Type" VARCHAR(20) NOT NULL DEFAULT 'text',
+      "FileUrl" TEXT,
+      "FileName" VARCHAR(255),
+      "FileSize" BIGINT,
+      "FileType" VARCHAR(120),
+      "IsEdited" BOOLEAN NOT NULL DEFAULT FALSE,
+      "EditedAt" TIMESTAMP,
+      "IsDeleted" BOOLEAN NOT NULL DEFAULT FALSE,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      "UpdatedAt" TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_chat_app_messages_channel_id ON "ChatAppMessages"("ChannelId", "Id" DESC);
+
+    CREATE TABLE IF NOT EXISTS "ChatAppMessageReads" (
+      "Id" SERIAL PRIMARY KEY,
+      "MessageId" INT NOT NULL REFERENCES "ChatAppMessages"("Id") ON DELETE CASCADE,
+      "UserId" INT NOT NULL REFERENCES "Users"("UserId") ON DELETE CASCADE,
+      "ReadAt" TIMESTAMP DEFAULT NOW(),
+      UNIQUE ("MessageId", "UserId")
+    );
+
+    CREATE TABLE IF NOT EXISTS "ChatAppReactions" (
+      "Id" SERIAL PRIMARY KEY,
+      "MessageId" INT NOT NULL REFERENCES "ChatAppMessages"("Id") ON DELETE CASCADE,
+      "UserId" INT NOT NULL REFERENCES "Users"("UserId") ON DELETE CASCADE,
+      "Emoji" VARCHAR(32) NOT NULL,
+      "CreatedAt" TIMESTAMP DEFAULT NOW(),
+      UNIQUE ("MessageId", "UserId", "Emoji")
+    );
+
+    CREATE TABLE IF NOT EXISTS "ChatAppPresence" (
+      "UserId" INT PRIMARY KEY REFERENCES "Users"("UserId") ON DELETE CASCADE,
+      "IsOnline" BOOLEAN NOT NULL DEFAULT FALSE,
+      "LastSeen" TIMESTAMP,
+      "SocketCount" INT NOT NULL DEFAULT 0,
+      "UpdatedAt" TIMESTAMP DEFAULT NOW()
+    );
+  `;
+
+  await appPool.query(query);
+  await appPool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.table_constraints
+        WHERE constraint_name = 'chat_app_channels_last_message_fk'
+      ) THEN
+        ALTER TABLE "ChatAppChannels"
+        ADD CONSTRAINT chat_app_channels_last_message_fk
+        FOREIGN KEY ("LastMessageId") REFERENCES "ChatAppMessages"("Id") ON DELETE SET NULL;
+      END IF;
+    END $$;
+  `);
+  console.log("Teams chat tables ready");
+};
+
+module.exports = { createTeamsChatTables };
+const { appPool } = require('../../config/db');
+
+const createTokenTable = async () => {
+  // Create refresh_tokens table with support for JTI (token rotation) and hashed token storage
+  const refreshTokensQuery = `
+    CREATE TABLE IF NOT EXISTS "refresh_tokens" (
+      "Id" SERIAL PRIMARY KEY,
+      "UserId" INT REFERENCES "Users"("UserId"),
+      "Token" TEXT,
+      "TokenHash" TEXT,
+      "Jti" VARCHAR(255),
+      "ExpiresAt" TIMESTAMP NOT NULL,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "Revoked" BOOLEAN DEFAULT FALSE
+    );
+  `;
+  await appPool.query(refreshTokensQuery);
+  
+  // Ensure columns exist for backward compatibility with existing tables
+  const alterQueries = [
+    `ALTER TABLE "refresh_tokens" ADD COLUMN IF NOT EXISTS "TokenHash" TEXT`,
+    `ALTER TABLE "refresh_tokens" ADD COLUMN IF NOT EXISTS "Jti" VARCHAR(255)`,
+    `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_jti ON "refresh_tokens"("Jti")`,
+    `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON "refresh_tokens"("UserId")`,
+  ];
+  for (const query of alterQueries) {
+    try { await appPool.query(query); } catch (_) { /* column may already exist */ }
+  }
+  
+  console.log("✅ refresh_tokens table ready");
+
+  // Ensure token_revocation_list table exists (used for immediate access token invalidation)
+  const revocationListQuery = `
+    CREATE TABLE IF NOT EXISTS token_revocation_list (
+      "Id" SERIAL PRIMARY KEY,
+      "Jti" VARCHAR(255) UNIQUE NOT NULL,
+      "ExpiresAt" TIMESTAMP NOT NULL,
+      "CreatedAt" TIMESTAMP DEFAULT NOW()
+    );
+  `;
+  await appPool.query(revocationListQuery);
+
+  // Create indexes for performance
+  await appPool.query(
+    'CREATE INDEX IF NOT EXISTS idx_token_revocation_jti ON token_revocation_list("Jti")'
+  );
+  await appPool.query(
+    'CREATE INDEX IF NOT EXISTS idx_token_revocation_expires ON token_revocation_list("ExpiresAt")'
+  );
+  console.log("✅ token_revocation_list table ready");
+};
+
+module.exports = { createTokenTable };
+const { appPool } = require('../../config/db');
+
+const createCompaniesTable = async () => {
+    const query = `
+        CREATE TABLE IF NOT EXISTS "Companies" (
+            "Id" SERIAL PRIMARY KEY,
+            "CompanyName" VARCHAR(255) NOT NULL,
+            "BusinessType" VARCHAR(100),
+            "GstNumber" VARCHAR(15),
+            "Address" TEXT,
+            "City" VARCHAR(100),
+            "State" VARCHAR(100),
+            "Country" VARCHAR(100) DEFAULT 'India',
+            "PostalCode" VARCHAR(6),
+            "Website" VARCHAR(255),
+            "OwnerName" VARCHAR(255),
+            "Email" VARCHAR(255) UNIQUE NOT NULL,
+            "Phone" VARCHAR(10),
+            "LogoUrl" VARCHAR(255),
+            "IsActive" BOOLEAN DEFAULT TRUE,
+            "Flag" BOOLEAN DEFAULT TRUE,
+            "IsDelete" BOOLEAN DEFAULT FALSE,
+            "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Create indexes
+        CREATE INDEX IF NOT EXISTS idx_companies_email ON "Companies"("Email") WHERE "IsDelete" = FALSE;
+        CREATE INDEX IF NOT EXISTS idx_companies_gst ON "Companies"("GstNumber") WHERE "IsDelete" = FALSE;
+        CREATE INDEX IF NOT EXISTS idx_companies_city ON "Companies"("City") WHERE "IsDelete" = FALSE;
+        CREATE INDEX IF NOT EXISTS idx_companies_state ON "Companies"("State") WHERE "IsDelete" = FALSE;
+        CREATE INDEX IF NOT EXISTS idx_companies_active ON "Companies"("IsActive") WHERE "IsDelete" = FALSE;
+        CREATE INDEX IF NOT EXISTS idx_companies_deleted ON "Companies"("IsDelete");
+    `;
+    
+    await appPool.query(query);
+    console.log("✅ Companies table ready with all features");
+};
+
+module.exports = { createCompaniesTable };
+const { appPool } = require("../../config/db");
+
+const EmailOtpVerifications = async () => {
+  const query = `
+CREATE TABLE IF NOT EXISTS "EmailOtpVerifications" (
+  "Id" SERIAL PRIMARY KEY,
+  "Email" VARCHAR(255) NOT NULL,
+  "Purpose" VARCHAR(64) NOT NULL,
+  "OtpHash" TEXT NOT NULL,
+  "UserId" INT REFERENCES "Users"("UserId") ON DELETE CASCADE,
+  "ExpiresAt" TIMESTAMP NOT NULL,
+  "ConsumedAt" TIMESTAMP NULL,
+  "AttemptCount" INT NOT NULL DEFAULT 0,
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS "idx_email_otp_lookup"
+  ON "EmailOtpVerifications" ("Email", "Purpose", "ConsumedAt", "ExpiresAt");
+`;
+
+  await appPool.query(query);
+  console.log("✅ Email OTP verifications table ready");
+};
+
+module.exports = { EmailOtpVerifications };
+const { appPool } = require('../../config/db');
+
+const PasswordResets = async () => {
+  const query = `
+CREATE TABLE IF NOT EXISTS "PasswordResets" (
+  "Id" SERIAL PRIMARY KEY,
+  "UserId" INT REFERENCES "Users"("UserId") ON DELETE CASCADE,
+  "Token" TEXT NOT NULL,
+  "ExpiresAt" TIMESTAMP NOT NULL,
+  "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);`;
+  await appPool.query(query);
+  console.log("✅ Users table ready");
+};
+
+module.exports = { PasswordResets };
+const { appPool } = require('../../config/db');
+
+const Roles = async () => {
+  const query = `
+CREATE TABLE IF NOT EXISTS "Roles" (
+    "Id" SERIAL PRIMARY KEY,
+    "RoleName" VARCHAR(100) UNIQUE NOT NULL,   -- Owner, Manager, TeamLead, Employee
+    "Permissions" JSONB,
+    "CreatedAt" TIMESTAMP DEFAULT NOW(),
+    "UpdatedAt" TIMESTAMP DEFAULT NOW(),
+    "IsActive" BOOLEAN DEFAULT TRUE,
+    "IsDeleted" BOOLEAN DEFAULT FALSE,
+    "Flag" BOOLEAN DEFAULT TRUE
+);`;
+  await appPool.query(query);
+  console.log("✅ Roles table ready");
+};
+
+module.exports = { Roles };
+const { appPool } = require("../../config/db");
+
+const createUsersTable = async () => {
+  const existingTable = await appPool.query(`SELECT to_regclass('public."Users"') AS name;`);
+
+  if (existingTable.rows[0]?.name) {
+    console.log("Users table ready");
+    return;
+  }
+
+  await appPool.query(`
+    CREATE TABLE "Users" (
+      "UserId" SERIAL PRIMARY KEY,
+      "Name" VARCHAR(255) NOT NULL,
+      "Email" VARCHAR(255) NOT NULL UNIQUE,
+      "Password" VARCHAR(255) NOT NULL,
+      "MobileNumber" VARCHAR(15),
+      "RoleId" INT REFERENCES "Roles"("Id"),
+      "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
+      "UserTypeId" INT REFERENCES "UserTypes"("Id") ON DELETE CASCADE,
+      "ReportingManagerId" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
+      "DepartmentId" INT,
+      "DesignationId" INT,
+      "HierarchyLevel" INT DEFAULT 0,
+      -- HierarchyPath stores the materialized path (e.g. "1/5/12") for org tree traversal.
+      -- Populated by application logic when the user is placed in a reporting hierarchy.
+      "HierarchyPath" TEXT,
+      -- CreatedBy references the Users table (self-referential FK).
+      -- Must be NULLABLE because the very first user (superadmin) has no creator.
+      "CreatedBy" INT REFERENCES "Users"("UserId"),
+      "Address" TEXT,
+      "City" VARCHAR(100),
+      "State" VARCHAR(100),
+      "Country" VARCHAR(100),
+      "PostalCode" VARCHAR(20),
+      "ProfileImage" TEXT,
+      "IsActive" BOOLEAN DEFAULT TRUE,
+      "IsDeleted" BOOLEAN DEFAULT FALSE,
+      "EmailVerified" BOOLEAN DEFAULT FALSE,
+      "LastLoginAt" TIMESTAMP,
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      "UpdatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  console.log("Users table ready");
+};
+
+module.exports = { createUsersTable };
+
+const { appPool } = require('../../config/db');
+
+const createUserTypesTable = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS "UserTypes" (
+      "Id" SERIAL PRIMARY KEY,
+      "UserType" VARCHAR(50) NOT NULL
+    );
+  `;
+  await appPool.query(query);
+  console.log("✅ UserTypes table ready");
+};
+
+module.exports = { createUserTypesTable };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const { Roles } = require('./Users/Roles');
+const { createCompaniesTable } = require('./Users/companyModel');
+const { createUserTypesTable } = require('./Users/userTypeModel');
+const { createUsersTable } = require('./Users/userModel');
+const { createTokenTable } = require('./Token/tokenModel');
+const { PasswordResets } = require('./Users/PasswordResets');
+const { EmailOtpVerifications } = require('./Users/EmailOtpVerifications');
+
+const { Units } = require('./InventoryManagement/Units');
+const { ProductCategoriesTable } = require('./InventoryManagement/ProductCategories');
+const { ProductTable } = require('./InventoryManagement/Products');
+const { Warehouses } = require('./InventoryManagement/Warehouses');
+const { ProductStockPerWarehouse } = require('./InventoryManagement/ProductStockPerWarehouse');
+const { StockMovements } = require('./InventoryManagement/StockMovements');
+const { Suppliers } = require('./InventoryManagement/Suppliers');
+const { PurchaseOrders } = require('./InventoryManagement/PurchaseOrders');
+const { PurchaseOrderItems } = require('./InventoryManagement/PurchaseOrderItems');
+const { Customers } = require('./InventoryManagement/Customers');
+const { SalesOrders } = require('./InventoryManagement/SalesOrders');
+const { SalesOrderItems } = require('./InventoryManagement/SalesOrderItems');
+const { Taxes } = require('./InventoryManagement/Taxes');
+const { ProductTaxMap } = require('./InventoryManagement/ProductTaxMap');
+const { AuditLogs } = require('./InventoryManagement/AuditLogs');
+const { ProfitLossReports } = require('./InventoryManagement/ProfitLossReports');
+const { BrandsTable } = require('./InventoryManagement/Brands');
+const { BatchSerialTable } = require('./InventoryManagement/BatchSerial');
+const { WarehouseLocationsTable } = require('./InventoryManagement/WarehouseLocations');
+const { GRNTable } = require('./InventoryManagement/GRN');
+const { StockTransfersTable } = require('./InventoryManagement/StockTransfers');
+const { Employees, Departments, Designations } = require('./InventoryManagement/Employees');
+const { PurchaseRequisitions, PurchaseRequisitionItems } = require('./InventoryManagement/PurchaseRequisitions');
+const { PurchaseReturns, PurchaseReturnItems } = require('./InventoryManagement/PurchaseReturns');
+const { SalesQuotations, SalesQuotationItems } = require('./InventoryManagement/SalesQuotations');
+const { DeliveryChallans, DeliveryChallanItems } = require('./InventoryManagement/DeliveryChallans');
+const { SalesReturns, SalesReturnItems } = require('./InventoryManagement/SalesReturns');
+const { BOM, BOMItems, ProductionOrders, ProductionTracking } = require('./InventoryManagement/Production');
+const { Notifications, ApprovalWorkflows, Expenses, WarehouseRacks, WarehouseBins } = require('./InventoryManagement/Notifications');
+
+const { LeadSources } = require('./CrmModels/LeadSources');
+const { ProductCategories } = require('./CrmModels/ProductCategories');
+const { FollowupTypes } = require('./CrmModels/FollowupTypes');
+const { Industries } = require('./CrmModels/Industries');
+const { SalesStages } = require('./CrmModels/SalesStages');
+const { TaskTypes } = require('./CrmModels/TaskTypes');
+const { Accounts } = require('./CrmModels/Accounts');
+const { Contacts } = require('./CrmModels/Contacts');
+const { Leads } = require('./CrmModels/Leads');
+const { Opportunities } = require('./CrmModels/Opportunities');
+const { Activities } = require('./CrmModels/Activities');
+const { Quotes } = require('./CrmModels/Quotes');
+const { Invoices } = require('./CrmModels/Invoices');
+const { Payments } = require('./CrmModels/Payments');
+const { Retentions } = require('./CrmModels/Retentions');
+const { Presales } = require('./CrmModels/Presales');
+const { Cases } = require('./CrmModels/Cases');
+const { OpportunityProducts } = require('./CrmModels/OpportunityProducts');
+const { Comments } = require('./CrmModels/Comments');
+const { PresalesAssignments } = require('./CrmModels/PresalesAssignments');
+const { Groups } = require('./CrmModels/Groups');
+const { GroupMembers } = require('./CrmModels/GroupMembers');
+const { Assignments } = require('./CrmModels/Assignments');
+const { EntityVisibility } = require('./CrmModels/EntityVisibility');
+const { createPlatformCoreTables } = require('./System/platformCore');
+const { createCompanySettingsTable } = require('./System/CompanySettings');
+const { createNotificationPreferencesTable } = require('./System/NotificationPreferences');
+const { createAuditEventsTable } = require('./System/AuditEvents');
+const { createTeamsChatTables } = require('./System/TeamsChat');
+const { createInboundEmailRoutingTables } = require('./System/InboundEmailRouting');
+const { QualityControl, QualityControlItems } = require('./InventoryManagement/QualityControl');
+
+const initModels = async () => {
+  await Roles();
+  await createCompaniesTable();
+  await createUserTypesTable();
+  await createUsersTable();
+  await createTokenTable();
+  await PasswordResets();
+  await EmailOtpVerifications();
+  await Units();
+  await ProductCategoriesTable();
+  await ProductTable();
+  await Warehouses();
+  await ProductStockPerWarehouse();
+  await StockMovements();
+  await Suppliers();
+  await PurchaseOrders();
+  await PurchaseOrderItems();
+  await Customers();
+  await SalesOrders();
+  await SalesOrderItems();
+  await Taxes();
+  await ProductTaxMap();
+  await AuditLogs();
+  await ProfitLossReports();
+  await BrandsTable();
+  await BatchSerialTable();
+  await WarehouseLocationsTable();
+  await GRNTable();
+  await StockTransfersTable();
+  await Employees();
+  await Departments();
+  await Designations();
+  await PurchaseRequisitions();
+  await PurchaseRequisitionItems();
+  await PurchaseReturns();
+  await PurchaseReturnItems();
+  await SalesQuotations();
+  await SalesQuotationItems();
+  await DeliveryChallans();
+  await DeliveryChallanItems();
+  await SalesReturns();
+  await SalesReturnItems();
+  await BOM();
+  await BOMItems();
+  await ProductionOrders();
+  await ProductionTracking();
+  await Notifications();
+  await ApprovalWorkflows();
+  await Expenses();
+  await WarehouseRacks();
+  await WarehouseBins();
+  await TaskTypes();
+  await LeadSources();
+  await ProductCategories();
+  await FollowupTypes();
+  await Industries();
+  await SalesStages();
+  await Accounts();
+  await Contacts();
+  await Leads();
+  await Opportunities();
+  await Activities();
+  await Quotes();
+  await Invoices();
+  await Payments();
+  await Retentions();
+  await Presales();
+  await Cases();
+  await OpportunityProducts();
+  await Comments();
+  await PresalesAssignments();
+  await Groups();
+  await GroupMembers();
+  await Assignments();
+  await EntityVisibility();
+  await createPlatformCoreTables();
+  await createCompanySettingsTable();
+  await createNotificationPreferencesTable();
+  await createAuditEventsTable();
+  await createTeamsChatTables();
+  await createInboundEmailRoutingTables();
+  await QualityControl();
+  await QualityControlItems();
+};
+
+module.exports = { initModels };
+
+
+
+
+
+

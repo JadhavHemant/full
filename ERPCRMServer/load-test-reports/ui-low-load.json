@@ -1,0 +1,293 @@
+{
+  "generatedAt": "2026-06-11T04:22:38.908Z",
+  "startedAt": "2026-06-11T04:22:08.907Z",
+  "endedAt": "2026-06-11T04:22:38.908Z",
+  "config": {
+    "baseUrl": "http://localhost:5351",
+    "method": "GET",
+    "durationSeconds": 30,
+    "concurrency": 1,
+    "timeoutMs": 10000,
+    "maxRps": 0,
+    "paths": [
+      "/api/health",
+      "/api/users/profile",
+      "/api/teams-chat/users",
+      "/api/teams-chat/teams",
+      "/api/crm/leads",
+      "/api/crm/accounts",
+      "/api/products/list",
+      "/api/products/active"
+    ],
+    "authenticated": false
+  },
+  "summary": {
+    "requests": 26217,
+    "failed": 23063,
+    "success": 3154,
+    "errorRatePercent": 87.96963802113133,
+    "requestsPerSecond": 873.894648851767,
+    "latencyMs": {
+      "min": 0.42000000000007276,
+      "avg": 1.0822408818705365,
+      "p50": 0.912199999999757,
+      "p90": 1.534799999997631,
+      "p95": 2.050699999999779,
+      "p99": 3.007500000003347,
+      "max": 115.5694
+    },
+    "statuses": {
+      "200": 3154,
+      "401": 12730,
+      "429": 9337
+    },
+    "errorSamples": [
+      "fetch failed",
+      "fetch failed",
+      "fetch failed",
+      "fetch failed",
+      "fetch failed"
+    ]
+  },
+  "endpoints": [
+    {
+      "name": "",
+      "method": "GET",
+      "path": "/api/crm/accounts",
+      "url": "http://localhost:5351/api/crm/accounts",
+      "requests": 3277,
+      "failed": 3277,
+      "success": 0,
+      "errorRatePercent": 100,
+      "requestsPerSecond": 109.23266446531794,
+      "min": 0.4517999999989115,
+      "avg": 1.0288256942325433,
+      "p50": 0.8631000000000313,
+      "p90": 1.4067999999997483,
+      "p95": 1.9497999999994136,
+      "p99": 3.037599999999884,
+      "max": 19.485099999999875,
+      "statuses": {
+        "401": 1818,
+        "429": 1334
+      },
+      "errorSamples": [
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed"
+      ],
+      "failureReason": "fetch failed"
+    },
+    {
+      "name": "",
+      "method": "GET",
+      "path": "/api/crm/leads",
+      "url": "http://localhost:5351/api/crm/leads",
+      "requests": 3277,
+      "failed": 3277,
+      "success": 0,
+      "errorRatePercent": 100,
+      "requestsPerSecond": 109.23266446531794,
+      "min": 0.4385000000002037,
+      "avg": 1.019887397009489,
+      "p50": 0.8609999999998763,
+      "p90": 1.4058999999997468,
+      "p95": 1.9986000000026252,
+      "p99": 2.8760999999999513,
+      "max": 14.254399999999805,
+      "statuses": {
+        "401": 1818,
+        "429": 1335
+      },
+      "errorSamples": [
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed"
+      ],
+      "failureReason": "fetch failed"
+    },
+    {
+      "name": "",
+      "method": "GET",
+      "path": "/api/health",
+      "url": "http://localhost:5351/api/health",
+      "requests": 3278,
+      "failed": 124,
+      "success": 3154,
+      "errorRatePercent": 3.7827943868212324,
+      "requestsPerSecond": 109.2659975945414,
+      "min": 0.7434999999995853,
+      "avg": 1.436843471629069,
+      "p50": 1.2351999999991676,
+      "p90": 1.8933999999999287,
+      "p95": 2.332299999998213,
+      "p99": 3.2093999999997322,
+      "max": 115.5694,
+      "statuses": {
+        "200": 3154
+      },
+      "errorSamples": [
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed"
+      ],
+      "failureReason": "fetch failed"
+    },
+    {
+      "name": "",
+      "method": "GET",
+      "path": "/api/products/active",
+      "url": "http://localhost:5351/api/products/active",
+      "requests": 3277,
+      "failed": 3277,
+      "success": 0,
+      "errorRatePercent": 100,
+      "requestsPerSecond": 109.23266446531794,
+      "min": 0.4388999999991938,
+      "avg": 1.011635855965783,
+      "p50": 0.8526999999999134,
+      "p90": 1.4171000000005733,
+      "p95": 1.97199999999998,
+      "p99": 2.879099999999994,
+      "max": 10.618099999999686,
+      "statuses": {
+        "401": 1818,
+        "429": 1333
+      },
+      "errorSamples": [
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed"
+      ],
+      "failureReason": "fetch failed"
+    },
+    {
+      "name": "",
+      "method": "GET",
+      "path": "/api/products/list",
+      "url": "http://localhost:5351/api/products/list",
+      "requests": 3277,
+      "failed": 3277,
+      "success": 0,
+      "errorRatePercent": 100,
+      "requestsPerSecond": 109.23266446531794,
+      "min": 0.42770000000018626,
+      "avg": 1.029588190418093,
+      "p50": 0.8514999999997599,
+      "p90": 1.4513000000006286,
+      "p95": 2.011199999999917,
+      "p99": 2.8418000000001484,
+      "max": 16.39730000000054,
+      "statuses": {
+        "401": 1818,
+        "429": 1334
+      },
+      "errorSamples": [
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed"
+      ],
+      "failureReason": "fetch failed"
+    },
+    {
+      "name": "",
+      "method": "GET",
+      "path": "/api/teams-chat/teams",
+      "url": "http://localhost:5351/api/teams-chat/teams",
+      "requests": 3277,
+      "failed": 3277,
+      "success": 0,
+      "errorRatePercent": 100,
+      "requestsPerSecond": 109.23266446531794,
+      "min": 0.42000000000007276,
+      "avg": 1.0294570643881265,
+      "p50": 0.8766999999998006,
+      "p90": 1.4426999999996042,
+      "p95": 1.9039000000011583,
+      "p99": 2.9756999999999607,
+      "max": 13.448500000002241,
+      "statuses": {
+        "401": 1818,
+        "429": 1335
+      },
+      "errorSamples": [
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed"
+      ],
+      "failureReason": "fetch failed"
+    },
+    {
+      "name": "",
+      "method": "GET",
+      "path": "/api/teams-chat/users",
+      "url": "http://localhost:5351/api/teams-chat/users",
+      "requests": 3277,
+      "failed": 3277,
+      "success": 0,
+      "errorRatePercent": 100,
+      "requestsPerSecond": 109.23266446531794,
+      "min": 0.4227000000009866,
+      "avg": 1.046553585596561,
+      "p50": 0.8722999999999956,
+      "p90": 1.433099999998376,
+      "p95": 2.026799999999639,
+      "p99": 2.89220000000023,
+      "max": 17.93069999999716,
+      "statuses": {
+        "401": 1820,
+        "429": 1333
+      },
+      "errorSamples": [
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed"
+      ],
+      "failureReason": "fetch failed"
+    },
+    {
+      "name": "",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "url": "http://localhost:5351/api/users/profile",
+      "requests": 3277,
+      "failed": 3277,
+      "success": 0,
+      "errorRatePercent": 100,
+      "requestsPerSecond": 109.23266446531794,
+      "min": 0.48919999999998254,
+      "avg": 1.0550275862068488,
+      "p50": 0.8724000000001979,
+      "p90": 1.4309000000002925,
+      "p95": 1.9984000000004016,
+      "p99": 3.2132999999994354,
+      "max": 17.39010000000053,
+      "statuses": {
+        "401": 1820,
+        "429": 1333
+      },
+      "errorSamples": [
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed",
+        "fetch failed"
+      ],
+      "failureReason": "fetch failed"
+    }
+  ]
+}

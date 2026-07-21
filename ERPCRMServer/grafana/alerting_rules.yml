@@ -1,0 +1,122 @@
+# Prometheus Alerting Rules for ERP API Server
+# Reference these in prometheus.yml under rule_files
+
+groups:
+  - name: erp-api-alerts
+    rules:
+      # ── Error Rate Alerts ──────────────────────────────────────────
+      - alert: HighErrorRate_Warning
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.01
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High 5xx error rate (>1%)"
+          description: "The API error rate has exceeded 1% for more than 2 minutes. Current value: {{ $value | humanizePercentage }}"
+
+      - alert: HighErrorRate_Critical
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical 5xx error rate (>5%)"
+          description: "The API error rate has exceeded 5% for more than 1 minute. Immediate attention required. Current value: {{ $value | humanizePercentage }}"
+
+      # ── Latency Alerts ─────────────────────────────────────────────
+      - alert: HighP99Latency
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.5
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p99 latency exceeds 500ms"
+          description: "The 99th percentile latency has exceeded 500ms for more than 3 minutes. Current value: {{ $value | humanizeDuration }}"
+
+      - alert: CriticalP99Latency
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "p99 latency exceeds 2 seconds"
+          description: "The 99th percentile latency has exceeded 2 seconds. Current value: {{ $value | humanizeDuration }}"
+
+      # ── Traffic Alerts ─────────────────────────────────────────────
+      - alert: TrafficDrop
+        expr: sum(rate(http_requests_total[5m])) < 0.1 and sum(rate(http_requests_total[5m] offset 1d)) > 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Traffic dropped by >90%"
+          description: "API request rate has dropped by more than 90% compared to the same time yesterday. This may indicate a load balancer or DNS failure."
+
+      - alert: TrafficSpike
+        expr: sum(rate(http_requests_total[5m])) > 2 * sum(rate(http_requests_total[5m] offset 1d))
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Traffic spike detected (>2x normal)"
+          description: "API request rate is more than double the same time yesterday. Current value: {{ $value }} req/s"
+
+      # ── Saturation Alerts ──────────────────────────────────────────
+      - alert: HighInFlightRequests
+        expr: http_requests_in_flight > 50
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of in-flight requests"
+          description: "{{ $value }} requests are currently being processed. This may indicate saturation."
+
+      # ── Rate Limit Alerts ──────────────────────────────────────────
+      - alert: HighRateLimitHits
+        expr: sum(rate(http_requests_total{status="429"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate of 429 responses"
+          description: "More than 1 request/second is being rate-limited. Current value: {{ $value }} req/s"
+
+      # ── Upstream Timeout Alerts ────────────────────────────────────
+      - alert: UpstreamTimeouts
+        expr: sum(rate(http_requests_total{status="504"}[5m])) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Upstream timeout rate elevated"
+          description: "504 Gateway Timeout responses are occurring at {{ $value }}/s. A downstream dependency may be struggling."
+
+      # ── Memory Alerts ──────────────────────────────────────────────
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes > 512 * 1024 * 1024
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage (>512MB)"
+          description: "The ERP API server is using {{ $value | humanize1024 }}B of memory."
+
+      # ── Event Loop Lag Alert ───────────────────────────────────────
+      - alert: HighEventLoopLag
+        expr: nodejs_eventloop_lag_seconds > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High event loop lag"
+          description: "Node.js event loop lag is {{ $value | humanizeDuration }}. The server may be blocked."
+
+      # ── Endpoint-Specific Alerts ───────────────────────────────────
+      - alert: SlowEndpoint
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route)) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Endpoint {{ $labels.route }} is very slow"
+          description: "The p99 latency for {{ $labels.route }} exceeds 5 seconds. Current value: {{ $value | humanizeDuration }}"

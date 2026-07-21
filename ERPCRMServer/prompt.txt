@@ -1,0 +1,5898 @@
+Act as a senior PostgreSQL database architect and inventory-system impact analyst.
+
+Use the supplied Node.js/PostgreSQL table definitions as the source of truth. Analyze the following proposed change and explain exactly where the change will be visible, which records may be updated, deleted, created, recalculated or become inconsistent.
+
+CHANGE TO ANALYZE
+
+Table or module:
+[Enter table/module name]
+
+Record:
+[Enter record ID, product ID, warehouse ID, order ID or other identifier]
+
+Action:
+[INSERT / UPDATE / DELETE / SOFT DELETE / STATUS CHANGE]
+
+Column or business event:
+[Example: SalesOrder.Status changes from Confirmed to Shipped]
+
+Old value:
+[Enter old value]
+
+New value:
+[Enter new value]
+
+Business reason:
+[Enter reason]
+
+Perform the analysis using these rules:
+
+1. Build the dependency path
+
+Identify:
+
+* The directly changed table and row.
+* Parent records referenced by the changed row.
+* Child tables referencing the changed row.
+* Indirectly connected tables through other foreign keys.
+* Polymorphic relationships using fields such as `EntityType`, `EntityId`, `ReferenceType`, `ReferenceId`, `ModuleType` or `RecordId`.
+* `ON DELETE CASCADE`, `ON DELETE SET NULL`, `ON DELETE RESTRICT` and foreign keys without an explicit delete rule.
+* Generated columns, unique constraints, check constraints, indexes and database triggers.
+* Soft-delete fields such as `IsDeleted`, `IsDelete`, `DeletedAt`, `IsActive` and `Flag`.
+
+2. Separate real effects from expected effects
+
+For every identified impact, classify it as one of:
+
+* DATABASE-AUTOMATIC: PostgreSQL definitely performs it because of a foreign key, cascade, generated column or trigger.
+* APPLICATION-REQUIRED: It will happen only if controller, service, API, job or transaction code explicitly implements it.
+* REPORTING-ONLY: The underlying record is unchanged, but reports, dashboards or totals may display different values.
+* POSSIBLE-RISK: The schema suggests an expected relationship, but there is no foreign key, trigger or reliable synchronization mechanism.
+* NO-EFFECT: The related table should not change.
+
+Do not assume that changing a status automatically changes stock unless a trigger or application workflow proving that behavior is supplied.
+
+3. Analyze inventory effects
+
+Check whether the change can affect any of these records:
+
+* `Products.StockQuantity`
+* `ProductStockPerWarehouse.Quantity`
+* `ProductStockPerWarehouse.ReservedQuantity`
+* `ProductStockPerWarehouse.AvailableQuantity`
+* `Batches.Quantity`
+* `SerialNumbers.Status` or warehouse
+* `StockMovements`
+* `StockTransfers`
+* `StockTransferItems`
+* `StockAdjustments`
+* `StockAdjustmentItems`
+* `WarehouseRacks`
+* `WarehouseBins`
+* `WarehouseLocations`
+* `GRN`
+* `GRNItems`
+* `PurchaseOrders`
+* `PurchaseOrderItems.ReceivedQuantity`
+* `PurchaseReturns`
+* `PurchaseReturnItems`
+* `SalesOrders`
+* `SalesOrderItems`
+* `DeliveryChallans`
+* `DeliveryChallanItems`
+* `SalesReturns`
+* `SalesReturnItems`
+* `BOM`
+* `BOMItems`
+* `ProductionOrders`
+* `ProductionTracking`
+* `QualityControl`
+* `QualityControlItems`
+
+For stock changes, calculate and clearly show:
+
+* Stock before the operation.
+* Quantity added, removed, reserved or released.
+* Stock after the operation.
+* Source warehouse impact.
+* Destination warehouse impact.
+* Batch impact.
+* Serial-number impact.
+* Reserved-stock impact.
+* Available-stock impact.
+* Global product-stock impact.
+* Whether a `StockMovements` record should be created.
+* Whether the change could cause negative stock, duplicate stock or mismatch between global and warehouse stock.
+
+4. Analyze commercial and CRM effects
+
+Check whether the change affects:
+
+* Customers or suppliers.
+* Accounts, contacts, leads or opportunities.
+* Opportunity products.
+* Quotes or sales quotations.
+* Invoices and payments.
+* Purchase requisitions.
+* Expenses.
+* Profit-and-loss reports.
+* Customer outstanding balance.
+* Supplier-related purchasing history.
+* Notifications.
+* Approval workflows.
+* Audit logs.
+* Activities, comments, assignments or entity visibility.
+
+5. Identify where users will see the change
+
+List the likely affected screens or API responses, such as:
+
+* Product list and product details.
+* Warehouse stock screen.
+* Batch and serial-number screen.
+* Available-inventory screen.
+* Purchase-order details.
+* GRN/receiving screen.
+* Sales-order details.
+* Dispatch or delivery-challan screen.
+* Sales-return or purchase-return screen.
+* Stock-transfer screen.
+* Stock-adjustment screen.
+* Low-stock or reorder alerts.
+* Dashboard totals.
+* Inventory valuation.
+* Profit-and-loss reports.
+* Customer or supplier history.
+* Notification centre.
+* Audit-history screen.
+
+State whether each screen changes immediately, only after application logic runs, or only when a report is regenerated.
+
+6. Check schema and data-integrity risks
+
+Explicitly detect and report:
+
+* Multiple columns representing the same stock quantity.
+* Missing foreign-key constraints.
+* Missing source-document references in `StockMovements`.
+* Tables that store IDs but do not define foreign keys.
+* Duplicate table definitions or duplicate migration functions.
+* Inconsistent names such as `IsDelete` versus `IsDeleted`.
+* Integer quantities mixed with decimal quantities.
+* Status changes that should affect inventory but have no database trigger.
+* Header totals that may not match item totals.
+* Batch quantity that may not match warehouse quantity.
+* Serial-number counts that may not match batch or product quantity.
+* Cross-company or cross-warehouse data leakage.
+* Cascade deletes that could permanently remove transactional history.
+* Soft-deleted records that may still appear in reports.
+* Missing audit records.
+* Race conditions and concurrent stock updates.
+* Operations that should be performed inside a database transaction.
+
+7. Produce the result in this exact structure
+
+A. CHANGE SUMMARY
+
+Explain the requested change in plain language.
+
+B. DIRECTLY AFFECTED RECORD
+
+Show:
+
+* Table
+* Record ID
+* Changed column
+* Old value
+* New value
+* Immediate database result
+
+C. IMPACT MATRIX
+
+Create a table with these columns:
+
+| Level | Affected table | Related records | Relationship | Operation | Classification | Why affected | User-visible location |
+
+Use impact levels:
+
+* Direct
+* First-level child
+* First-level parent
+* Indirect
+* Reporting
+* Potential risk
+
+D. STOCK CALCULATION
+
+Show a before-and-after stock calculation for every affected product and warehouse.
+
+E. STATUS WORKFLOW IMPACT
+
+Explain what should happen when the relevant document moves between statuses such as:
+
+* Draft
+* Pending
+* Approved
+* Confirmed
+* Processing
+* Shipped
+* Delivered
+* Received
+* Partially Received
+* In Transit
+* Cancelled
+* Returned
+* Rejected
+
+Clearly identify the exact status at which stock should be reserved, deducted, added, transferred, released or reversed.
+
+F. AUTOMATIC VERSUS MISSING LOGIC
+
+Provide two separate lists:
+
+1. Effects guaranteed by the current database schema.
+2. Effects that require controller, service, trigger, stored procedure, background job or event-handler code.
+
+G. AUDIT AND NOTIFICATION REQUIREMENTS
+
+Specify:
+
+* Required `AuditLogs` record.
+* Recommended JSON structure for old and new values.
+* Required `StockMovements` records.
+* Users who should receive notifications.
+* Approval workflow impact.
+
+H. RISKS AND INCONSISTENCIES
+
+Rank every risk as Critical, High, Medium or Low.
+
+I. SAFE IMPLEMENTATION ORDER
+
+Provide the correct transaction sequence, for example:
+
+1. Lock the affected stock row.
+2. Validate available quantity.
+3. Update the business document.
+4. Update warehouse stock.
+5. Update batch and serial records.
+6. Insert stock-movement records.
+7. Update global product stock only if it is intentionally maintained.
+8. Insert audit log.
+9. Create notifications.
+10. Commit the transaction.
+11. Roll back everything if any step fails.
+
+J. VALIDATION QUERIES
+
+Provide safe PostgreSQL `SELECT` queries that can be run before and after the change to verify affected records.
+
+Do not provide destructive `UPDATE` or `DELETE` statements unless explicitly requested.
+
+K. TEST CASES
+
+Provide tests for:
+
+* Normal operation.
+* Partial quantity.
+* Duplicate request.
+* Insufficient stock.
+* Concurrent requests.
+* Cancellation.
+* Return or reversal.
+* Soft deletion.
+* Cross-company access.
+* Missing warehouse-stock record.
+* Batch/serial mismatch.
+
+L. FINAL ANSWER
+
+Finish with:
+
+* Total directly affected tables.
+* Total indirectly affected tables.
+* Records definitely changed by PostgreSQL.
+* Records requiring application logic.
+* Reports or screens affected.
+* Highest-risk inconsistency.
+* Recommended action before deploying the change.
+
+Be precise and evidence-based. Do not say that a record is automatically updated unless the supplied schema contains a foreign-key action, generated column or trigger that guarantees it.
+
+
+
+# Complete Database Change Impact and Role-Based Access Analysis Prompt
+
+Act as a senior PostgreSQL database architect, inventory management consultant, backend engineer, security architect, and role-based access control specialist.
+
+Analyze the supplied Node.js and PostgreSQL table definitions as the source of truth.
+
+The purpose of this analysis is to determine what happens when a user creates, edits, deletes, approves, rejects, cancels, transfers, receives, dispatches, returns, reserves, releases, or otherwise changes a record.
+
+The analysis must explain:
+
+* Which database records are directly changed.
+* Which related records are indirectly affected.
+* Which values are automatically changed by PostgreSQL.
+* Which changes require backend application logic.
+* Which reports, dashboards, screens, APIs, notifications, and totals are affected.
+* Which users and roles are allowed to perform the action.
+* Which users can view the affected records.
+* Whether an approval is required.
+* Whether the action creates a security, stock, accounting, or data-integrity risk.
+* Whether an audit-log entry must be created.
+* Whether the operation must run inside a database transaction.
+
+Do not assume any automatic behaviour unless it is explicitly supported by a database constraint, trigger, generated column, foreign-key action, stored procedure, or supplied application code.
+
+---
+
+# 1. Change Information
+
+Analyze the following proposed change.
+
+## Change request
+
+Module:
+
+[Enter module name]
+
+Main table:
+
+[Enter table name]
+
+Record ID:
+
+[Enter record ID]
+
+Company ID:
+
+[Enter company ID]
+
+Branch ID:
+
+[Enter branch ID, if applicable]
+
+Warehouse ID:
+
+[Enter warehouse ID, if applicable]
+
+Product ID:
+
+[Enter product ID, if applicable]
+
+Batch ID:
+
+[Enter batch ID, if applicable]
+
+Serial number:
+
+[Enter serial number, if applicable]
+
+Document number:
+
+[Enter purchase order, GRN, sales order, invoice, challan, transfer, return, adjustment, production order, or other document number]
+
+Action:
+
+[INSERT / UPDATE / DELETE / SOFT DELETE / RESTORE / STATUS CHANGE / APPROVE / REJECT / CANCEL / RECEIVE / DISPATCH / RETURN / TRANSFER / RESERVE / RELEASE]
+
+Changed field:
+
+[Enter column or business field]
+
+Old value:
+
+[Enter old value]
+
+New value:
+
+[Enter new value]
+
+Quantity:
+
+[Enter quantity, if applicable]
+
+Reason for change:
+
+[Enter business reason]
+
+Requested by user ID:
+
+[Enter user ID]
+
+Requested by role:
+
+[Enter role]
+
+Requested date and time:
+
+[Enter timestamp]
+
+---
+
+# 2. User and Role Information
+
+Analyze access according to the following user context.
+
+User ID:
+
+[Enter user ID]
+
+Company ID:
+
+[Enter company ID]
+
+Branch IDs:
+
+[Enter branch IDs available to the user]
+
+Warehouse IDs:
+
+[Enter warehouse IDs available to the user]
+
+Department ID:
+
+[Enter department ID]
+
+Group IDs:
+
+[Enter group IDs]
+
+Primary role:
+
+[Enter role]
+
+Additional roles:
+
+[Enter additional roles]
+
+Permissions:
+
+[Enter permission list, if available]
+
+Record ownership:
+
+[Owner / Creator / Assignee / Group Member / Manager / Approver / No Relationship]
+
+Requested operation:
+
+[View / Create / Edit / Delete / Approve / Reject / Cancel / Export / Transfer / Receive / Dispatch / Adjust / Return]
+
+---
+
+# 3. Suggested Role Model
+
+Use the following role structure unless another role model is supplied.
+
+## 3.1 Super Administrator
+
+Scope:
+
+* Entire application.
+* All companies.
+* All branches.
+* All warehouses.
+* All modules.
+* All users and roles.
+
+Permissions:
+
+* Create companies.
+* Manage company administrators.
+* View all records.
+* Create, edit, delete, restore, approve, reject, cancel, export, and audit records.
+* Configure system settings.
+* Configure roles and permissions.
+* View audit logs.
+* View deleted records.
+* Perform emergency corrections.
+
+Restrictions:
+
+* Critical stock or accounting corrections must still require a reason.
+* Actions must always be audited.
+* Direct database modification should not be allowed through normal application screens.
+
+## 3.2 Company Administrator
+
+Scope:
+
+* One company.
+* All branches and warehouses belonging to that company.
+
+Permissions:
+
+* Manage company users.
+* Assign company-level roles.
+* Configure branches and warehouses.
+* View all company records.
+* Manage products, suppliers, customers, purchases, sales, stock, reports, and approvals.
+* View company audit logs.
+
+Restrictions:
+
+* Cannot access another company.
+* Cannot create or modify global platform settings.
+* Cannot assign a role with permissions higher than their own.
+
+## 3.3 Inventory Manager
+
+Scope:
+
+* Assigned company.
+* Assigned branches and warehouses.
+
+Permissions:
+
+* View products.
+* View warehouse stock.
+* View batches and serial numbers.
+* Create and approve stock transfers.
+* Create and approve stock adjustments according to configured limits.
+* View GRNs, deliveries, returns, stock movements, racks, bins, and locations.
+* View inventory reports.
+* Resolve stock discrepancies.
+
+Restrictions:
+
+* Cannot modify company settings.
+* Cannot modify financial payments unless separately permitted.
+* Cannot approve their own high-value adjustment when segregation of duties applies.
+* Cannot access warehouses outside assigned scope.
+
+## 3.4 Warehouse Manager
+
+Scope:
+
+* Assigned warehouses only.
+
+Permissions:
+
+* View warehouse stock.
+* Receive goods.
+* Create GRNs.
+* Dispatch goods.
+* Process delivery challans.
+* Process stock transfers.
+* Manage racks, bins, locations, batches, and serial numbers.
+* Perform approved stock adjustments.
+* View warehouse reports.
+
+Restrictions:
+
+* Cannot change product price or cost unless separately permitted.
+* Cannot approve their own stock adjustment above the allowed threshold.
+* Cannot access stock from other warehouses except through an approved transfer.
+* Cannot edit finalized documents without a reversal process.
+
+## 3.5 Warehouse Operator
+
+Scope:
+
+* Assigned warehouse.
+
+Permissions:
+
+* Scan barcodes and QR codes.
+* Record receiving.
+* Record picking and packing.
+* Record dispatch.
+* Move stock between approved bins or locations.
+* Update batch and serial information.
+* Enter physical-count quantities.
+
+Restrictions:
+
+* Cannot approve transactions.
+* Cannot cancel completed transactions.
+* Cannot edit product cost.
+* Cannot perform manual stock adjustments without approval.
+* Cannot view sensitive financial values unless explicitly permitted.
+
+## 3.6 Purchase Manager
+
+Scope:
+
+* Assigned company or branch.
+
+Permissions:
+
+* Manage suppliers.
+* Create and approve purchase requisitions.
+* Create purchase orders.
+* View GRNs.
+* Manage purchase returns.
+* Review supplier history.
+* View purchase reports.
+
+Restrictions:
+
+* Cannot receive stock unless warehouse permission is also granted.
+* Cannot create payment records unless finance permission is granted.
+* Cannot approve their own purchase order above the approval threshold.
+
+## 3.7 Purchase Executive
+
+Scope:
+
+* Assigned company, branch, department, or supplier portfolio.
+
+Permissions:
+
+* Create purchase requisitions.
+* Prepare purchase orders.
+* View assigned suppliers.
+* View purchase-order status.
+* Follow up on expected deliveries.
+
+Restrictions:
+
+* Cannot approve purchase orders.
+* Cannot receive goods.
+* Cannot modify stock.
+* Cannot access unrelated suppliers or branches.
+
+## 3.8 Sales Manager
+
+Scope:
+
+* Assigned company, branch, team, accounts, or customers.
+
+Permissions:
+
+* Manage sales orders.
+* Approve discounts within configured limits.
+* View customer balances.
+* Approve sales returns according to limits.
+* View sales reports.
+* Manage assigned sales users.
+
+Restrictions:
+
+* Cannot dispatch stock unless warehouse permission is granted.
+* Cannot record payments unless finance permission is granted.
+* Cannot approve excessive discounts without higher approval.
+
+## 3.9 Sales Executive
+
+Scope:
+
+* Owned, assigned, shared, or team-visible customers and records.
+
+Permissions:
+
+* Create quotations.
+* Create sales orders.
+* View assigned customers.
+* View available stock.
+* View order and delivery status.
+* Create return requests.
+
+Restrictions:
+
+* Cannot manually change stock.
+* Cannot approve discounts above limits.
+* Cannot approve their own sales return.
+* Cannot view customers outside ownership or sharing rules.
+
+## 3.10 Finance Manager
+
+Scope:
+
+* Assigned company and branches.
+
+Permissions:
+
+* View invoices.
+* Record and approve payments.
+* Manage expenses.
+* View tax values.
+* View profit-and-loss reports.
+* View customer outstanding balances.
+* Approve refunds and financial adjustments.
+
+Restrictions:
+
+* Cannot manipulate physical stock unless inventory permission is also granted.
+* Cannot delete posted financial records.
+* Corrections should use reversal or adjustment transactions.
+
+## 3.11 Accountant
+
+Scope:
+
+* Assigned company or branches.
+
+Permissions:
+
+* Create invoices.
+* Record payments.
+* Enter expenses.
+* View financial reports.
+* Reconcile customer and supplier balances.
+
+Restrictions:
+
+* Cannot approve their own high-value payment or expense.
+* Cannot modify completed stock transactions.
+* Cannot access another company.
+
+## 3.12 Production Manager
+
+Scope:
+
+* Assigned company, production facility, and warehouses.
+
+Permissions:
+
+* Manage BOMs.
+* Create production orders.
+* Issue raw materials.
+* Record finished goods.
+* Record wastage and rejected quantities.
+* View production stock requirements.
+
+Restrictions:
+
+* Cannot modify approved BOM versions without versioning.
+* Cannot consume unavailable stock.
+* Cannot close production orders with unresolved quantity differences.
+
+## 3.13 Quality Controller
+
+Scope:
+
+* Assigned warehouses, GRNs, production orders, or quality-control records.
+
+Permissions:
+
+* Inspect received goods.
+* Accept or reject quantities.
+* Record quality-control results.
+* Hold batches.
+* Release accepted batches.
+
+Restrictions:
+
+* Cannot modify purchase-order quantity.
+* Cannot approve supplier payment.
+* Cannot alter stock outside quality-control workflow.
+
+## 3.14 CRM Manager
+
+Scope:
+
+* Assigned company and CRM team.
+
+Permissions:
+
+* View and manage accounts, contacts, leads, opportunities, activities, cases, and retentions.
+* Reassign CRM records.
+* View team performance.
+
+Restrictions:
+
+* Cannot access inventory, purchasing, or finance modules unless separately permitted.
+
+## 3.15 CRM User or Sales Representative
+
+Scope:
+
+* Owned, created, assigned, shared, or group-visible CRM records.
+
+Permissions:
+
+* Manage assigned leads, opportunities, contacts, activities, and cases.
+* Add comments and follow-ups.
+* View records shared through visibility rules.
+
+Restrictions:
+
+* Cannot view private records owned by another user.
+* Cannot reassign records without transfer permission.
+* Cannot permanently delete records.
+
+## 3.16 Auditor
+
+Scope:
+
+* Assigned companies and modules.
+
+Permissions:
+
+* Read-only access.
+* View transactions.
+* View audit logs.
+* View approval history.
+* View deleted and restored records where permitted.
+* Export audit reports.
+
+Restrictions:
+
+* Cannot create, edit, approve, reject, cancel, or delete operational records.
+* Sensitive personal information may be masked.
+
+## 3.17 Read-Only User
+
+Scope:
+
+* Explicitly assigned company, branch, warehouse, module, or records.
+
+Permissions:
+
+* View allowed records.
+
+Restrictions:
+
+* Cannot create, edit, delete, approve, export, or perform transactions unless explicitly granted.
+
+---
+
+# 4. Permission Model
+
+Evaluate access using granular permissions rather than only role names.
+
+Recommended permission format:
+
+`module.resource.action`
+
+Examples:
+
+* `inventory.product.view`
+* `inventory.product.create`
+* `inventory.product.update`
+* `inventory.product.delete`
+* `inventory.product.restore`
+* `inventory.stock.view`
+* `inventory.stock.adjust`
+* `inventory.stock.adjust.approve`
+* `inventory.transfer.create`
+* `inventory.transfer.dispatch`
+* `inventory.transfer.receive`
+* `inventory.transfer.cancel`
+* `inventory.batch.manage`
+* `inventory.serial.manage`
+* `inventory.stockmovement.view`
+* `purchase.requisition.create`
+* `purchase.requisition.approve`
+* `purchase.order.create`
+* `purchase.order.approve`
+* `purchase.order.cancel`
+* `purchase.grn.create`
+* `purchase.grn.approve`
+* `purchase.return.create`
+* `purchase.return.approve`
+* `sales.quote.create`
+* `sales.order.create`
+* `sales.order.approve`
+* `sales.order.dispatch`
+* `sales.order.cancel`
+* `sales.return.create`
+* `sales.return.approve`
+* `finance.invoice.create`
+* `finance.payment.create`
+* `finance.payment.approve`
+* `finance.expense.create`
+* `finance.expense.approve`
+* `crm.lead.view`
+* `crm.lead.create`
+* `crm.lead.update`
+* `crm.lead.assign`
+* `crm.opportunity.view`
+* `crm.opportunity.update`
+* `admin.user.manage`
+* `admin.role.manage`
+* `audit.log.view`
+* `report.inventory.view`
+* `report.financial.view`
+* `report.export`
+
+For the requested change, identify every permission required.
+
+---
+
+# 5. Access-Control Decision Order
+
+Evaluate access in this exact order.
+
+## Step 1: Authentication
+
+Confirm:
+
+* The user exists.
+* The user is active.
+* The user is not deleted.
+* The session or token is valid.
+* The user belongs to an active company.
+* The account has not been locked.
+
+If authentication fails, deny the operation immediately.
+
+## Step 2: Company scope
+
+Check:
+
+* The record’s `CompanyId`.
+* The user’s company memberships.
+* Whether the role permits cross-company access.
+
+Default rule:
+
+A user must not view or modify records belonging to another company.
+
+Super Administrator access must be explicitly identified and audited.
+
+## Step 3: Branch scope
+
+Where `BranchId` exists, verify that the user is assigned to the branch or has company-wide access.
+
+Default rule:
+
+A branch-level user may access only records belonging to assigned branches.
+
+## Step 4: Warehouse scope
+
+Where `WarehouseId`, source warehouse, or destination warehouse exists, verify access to the relevant warehouses.
+
+For stock transfers:
+
+* The creator must have permission to request a transfer.
+* The source warehouse user must have dispatch permission.
+* The destination warehouse user must have receive permission.
+* A user should not receive stock into an unauthorized warehouse.
+* Cross-company warehouse transfers must be rejected.
+
+## Step 5: Module permission
+
+Check whether the user has permission for the module and action.
+
+Example:
+
+Changing a stock-adjustment record requires more than generic update permission. It may require:
+
+* `inventory.stock.adjust`
+* `inventory.stock.adjust.approve`
+* Warehouse access.
+* Quantity-limit approval.
+* Reason entry.
+
+## Step 6: Record-level visibility
+
+Check whether the user can access the individual record through:
+
+* Ownership.
+* `CreatedBy`.
+* `AssignedTo`.
+* `AssignedFrom`.
+* Group membership.
+* `EntityVisibility`.
+* Company-wide role.
+* Department hierarchy.
+* Manager-subordinate relationship.
+* Explicit sharing.
+* Approval assignment.
+
+For CRM records, apply visibility rules such as:
+
+* Private.
+* Owner only.
+* Assigned user.
+* Group visible.
+* Company visible.
+* Public within company.
+
+## Step 7: Field-level permission
+
+Check whether the user may edit the specific field.
+
+Examples of sensitive fields:
+
+* Product cost.
+* Selling price.
+* Discount.
+* Tax rate.
+* Credit limit.
+* Outstanding balance.
+* Payment status.
+* Approval status.
+* Stock quantity.
+* Reserved quantity.
+* Warehouse ID.
+* Company ID.
+* CreatedBy.
+* UpdatedBy.
+* IsDeleted.
+* DeletedAt.
+* User role.
+* Salary.
+* PAN.
+* Aadhaar.
+* Bank details.
+
+A user may have permission to edit a record but not these sensitive fields.
+
+## Step 8: Status-transition permission
+
+Validate that the requested status transition is allowed.
+
+Example:
+
+* Draft to Pending.
+* Pending to Approved.
+* Approved to Processing.
+* Processing to Shipped.
+* Shipped to Delivered.
+* Approved to Cancelled.
+* Received to Cancelled through reversal only.
+
+Reject invalid status jumps.
+
+## Step 9: Approval requirement
+
+Determine whether the action requires approval based on:
+
+* Transaction value.
+* Quantity.
+* Discount percentage.
+* Stock-adjustment reason.
+* Negative stock.
+* Cross-warehouse transfer.
+* Cross-branch transfer.
+* High-value purchase order.
+* High-value sales return.
+* Payment amount.
+* Expense amount.
+* Product cost change.
+* Credit-limit change.
+* Record deletion.
+* Backdated transaction.
+
+## Step 10: Segregation of duties
+
+Check whether the same user is improperly performing conflicting actions.
+
+Examples:
+
+* Requesting and approving the same purchase order.
+* Creating and approving the same stock adjustment.
+* Creating and receiving the same stock transfer.
+* Creating and approving the same expense.
+* Creating and approving the same payment.
+* Creating and approving the same sales return.
+* Editing and auditing the same transaction.
+
+If segregation of duties applies, require a different user for approval.
+
+---
+
+# 6. Core Database Dependency Analysis
+
+Identify the directly changed table and all dependencies.
+
+For every relationship, determine:
+
+* Parent table.
+* Child table.
+* Foreign-key column.
+* Relationship direction.
+* Cardinality.
+* Delete behaviour.
+* Update behaviour.
+* Whether the relationship is database-enforced.
+* Whether the relationship exists only by naming convention.
+* Whether records can become orphaned.
+
+Analyze:
+
+* `ON DELETE CASCADE`
+* `ON DELETE SET NULL`
+* `ON DELETE RESTRICT`
+* Default PostgreSQL delete behaviour
+* Generated columns
+* Check constraints
+* Unique constraints
+* Partial indexes
+* Database triggers
+* Timestamp triggers
+* Soft-delete fields
+* Polymorphic references
+
+Polymorphic references include:
+
+* `EntityType`
+* `EntityId`
+* `ReferenceType`
+* `ReferenceId`
+* `TableName`
+* `RecordId`
+* `ModuleType`
+
+Because PostgreSQL cannot enforce these references through a normal foreign key, mark them as application-managed relationships.
+
+---
+
+# 7. Impact Classification
+
+Classify every identified effect as one of the following.
+
+## DATABASE-AUTOMATIC
+
+PostgreSQL guarantees the effect because of:
+
+* Foreign-key cascade.
+* Foreign-key set-null rule.
+* Generated column.
+* Check constraint.
+* Unique constraint.
+* Trigger.
+* Stored procedure.
+
+## APPLICATION-REQUIRED
+
+The backend must implement the effect through:
+
+* Controller.
+* Service.
+* Repository.
+* API.
+* Event handler.
+* Queue worker.
+* Scheduled job.
+* Transaction function.
+
+## APPROVAL-REQUIRED
+
+The operation must remain pending until an authorized approver approves it.
+
+## PERMISSION-DENIED
+
+The user does not have the required role, permission, scope, ownership, or warehouse access.
+
+## REPORTING-ONLY
+
+The source records do not change, but reports, dashboard totals, search results, or analytics are affected.
+
+## POSSIBLE-RISK
+
+The schema implies that a change should occur, but the required constraint or application logic is missing or unclear.
+
+## NO-EFFECT
+
+The table or record should not be changed by the requested operation.
+
+---
+
+# 8. Inventory Impact Analysis
+
+For inventory-related changes, analyze all relevant records.
+
+## Product-level stock
+
+Check:
+
+* `Products.StockQuantity`
+* `Products.MinimumStock`
+* `Products.MaximumStock`
+* `Products.ReorderLevel`
+* `Products.NotifyStockOut`
+* `Products.NotifyStockReload`
+
+Determine whether `Products.StockQuantity` is:
+
+* The authoritative stock balance.
+* A cached total.
+* A manually maintained value.
+* A duplicate of warehouse stock.
+* At risk of becoming inconsistent.
+
+## Warehouse-level stock
+
+Check:
+
+* `ProductStockPerWarehouse.Quantity`
+* `ProductStockPerWarehouse.ReservedQuantity`
+* `ProductStockPerWarehouse.AvailableQuantity`
+* `ProductStockPerWarehouse.MinimumStock`
+* `ProductStockPerWarehouse.MaximumStock`
+* `ProductStockPerWarehouse.ReorderLevel`
+* `ProductStockPerWarehouse.LastRestocked`
+
+Remember:
+
+`AvailableQuantity = Quantity - ReservedQuantity`
+
+If this is a generated column, PostgreSQL recalculates it automatically when quantity or reserved quantity changes.
+
+## Batch stock
+
+Check:
+
+* `Batches.Quantity`
+* `Batches.ProductId`
+* `Batches.WarehouseId`
+* `Batches.SupplierId`
+* `Batches.PurchaseOrderId`
+* `Batches.ManufacturingDate`
+* `Batches.ExpiryDate`
+
+Determine whether:
+
+* Batch quantity matches warehouse quantity.
+* Expired stock is excluded from available stock.
+* A batch transfer updates its warehouse.
+* A purchase return reduces batch quantity.
+* A sales return restores the correct batch.
+
+## Serial-number stock
+
+Check:
+
+* `SerialNumbers.SerialNo`
+* `SerialNumbers.ProductId`
+* `SerialNumbers.BatchId`
+* `SerialNumbers.WarehouseId`
+* `SerialNumbers.Status`
+
+Validate allowed transitions such as:
+
+* Available to Reserved.
+* Available to Sold.
+* Available to Transferred.
+* Sold to Returned.
+* Returned to Available.
+* Available to Damaged.
+* Transferred to Available at destination.
+
+Reject invalid or duplicate serial-number transitions.
+
+## Stock movements
+
+For every physical stock change, determine whether a stock-movement record must be created.
+
+Recommended stock-movement fields:
+
+* Product ID.
+* Warehouse ID.
+* Source warehouse ID.
+* Destination warehouse ID.
+* Batch ID.
+* Serial number ID.
+* Movement type.
+* Quantity.
+* Quantity before.
+* Quantity after.
+* Reserved before.
+* Reserved after.
+* Reference type.
+* Reference ID.
+* Document number.
+* User ID.
+* Company ID.
+* Timestamp.
+* Reason.
+
+Movement types may include:
+
+* Purchase Receipt.
+* Sales Dispatch.
+* Sales Return.
+* Purchase Return.
+* Stock Transfer Out.
+* Stock Transfer In.
+* Stock Adjustment Increase.
+* Stock Adjustment Decrease.
+* Production Consumption.
+* Production Output.
+* Reservation.
+* Reservation Release.
+* Damage.
+* Expiry.
+* Opening Stock.
+* Reversal.
+
+---
+
+# 9. Inventory Calculation
+
+For each affected product and warehouse, show:
+
+* Product ID.
+* Product code.
+* Warehouse ID.
+* Batch ID.
+* Serial numbers.
+* Quantity before.
+* Reserved quantity before.
+* Available quantity before.
+* Quantity added.
+* Quantity deducted.
+* Quantity reserved.
+* Quantity released.
+* Quantity after.
+* Reserved quantity after.
+* Available quantity after.
+
+Use formulas such as:
+
+`New physical quantity = old physical quantity + incoming quantity - outgoing quantity`
+
+`New reserved quantity = old reserved quantity + newly reserved quantity - released quantity`
+
+`New available quantity = new physical quantity - new reserved quantity`
+
+Validate:
+
+* Physical quantity must not become negative.
+* Reserved quantity must not become negative.
+* Reserved quantity must not exceed physical quantity.
+* Batch quantity must not become negative.
+* Serial-number count must support the transaction quantity.
+* Source and destination transfer quantities must balance.
+* Product-level total must match the sum of warehouse stock when global stock is maintained.
+
+---
+
+# 10. Business Workflow Analysis
+
+## 10.1 Purchase requisition
+
+Possible workflow:
+
+* Draft.
+* Submitted.
+* Pending Approval.
+* Approved.
+* Rejected.
+* Converted to Purchase Order.
+* Cancelled.
+
+Stock effect:
+
+Normally none.
+
+Access rules:
+
+* Requester may create and submit.
+* Department manager may approve.
+* Purchase team may convert an approved requisition.
+* Requester should not approve their own requisition when segregation of duties applies.
+
+## 10.2 Purchase order
+
+Possible workflow:
+
+* Draft.
+* Pending Approval.
+* Approved.
+* Sent to Supplier.
+* Partially Received.
+* Received.
+* Closed.
+* Cancelled.
+
+Stock effect:
+
+Creating or approving a purchase order normally does not increase physical stock.
+
+Receiving through a GRN should increase stock.
+
+Access rules:
+
+* Purchase Executive may create.
+* Purchase Manager may approve.
+* Warehouse user may receive.
+* Finance user may view financial values.
+* Cancellation after receipt requires reversal or return processing.
+
+## 10.3 GRN
+
+Possible workflow:
+
+* Draft.
+* Received.
+* Partially Received.
+* Quality Check.
+* Accepted.
+* Rejected.
+* Cancelled.
+
+Stock effect:
+
+Determine whether stock increases:
+
+* At physical receipt.
+* After quality acceptance.
+* Only after GRN approval.
+
+Recommended rule:
+
+Accepted quantity increases usable stock.
+
+Rejected quantity should not increase usable stock.
+
+Access rules:
+
+* Warehouse Operator may enter receipt.
+* Warehouse Manager may confirm receipt.
+* Quality Controller may accept or reject.
+* Purchase user may view but should not directly modify warehouse stock.
+
+## 10.4 Purchase return
+
+Possible workflow:
+
+* Draft.
+* Pending Approval.
+* Approved.
+* Dispatched.
+* Completed.
+* Cancelled.
+
+Stock effect:
+
+Stock should reduce when goods physically leave the warehouse, not simply when a draft return is created.
+
+Access rules:
+
+* Warehouse or purchase user may create.
+* Authorized manager approves.
+* Warehouse user dispatches.
+* Finance team processes supplier credit separately.
+
+## 10.5 Sales quotation
+
+Possible workflow:
+
+* Draft.
+* Sent.
+* Accepted.
+* Rejected.
+* Expired.
+* Converted.
+
+Stock effect:
+
+Normally no physical stock change.
+
+Optional reservation should occur only if the business explicitly supports quotation-level reservation.
+
+## 10.6 Sales order
+
+Possible workflow:
+
+* Draft.
+* Pending Approval.
+* Confirmed.
+* Processing.
+* Partially Dispatched.
+* Shipped.
+* Delivered.
+* Cancelled.
+
+Possible stock policies:
+
+Policy A:
+
+Reserve stock when the order is confirmed and deduct stock when dispatched.
+
+Policy B:
+
+Deduct stock only when dispatched.
+
+The analysis must identify which policy is implemented.
+
+Access rules:
+
+* Sales user creates.
+* Sales Manager approves discounts.
+* Warehouse user dispatches.
+* Sales user cannot directly reduce warehouse stock.
+* Cancellation must release reservations.
+* Cancellation after dispatch requires a return or reversal.
+
+## 10.7 Delivery challan
+
+Possible workflow:
+
+* Draft.
+* Pending.
+* Dispatched.
+* In Transit.
+* Delivered.
+* Partially Delivered.
+* Cancelled.
+
+Stock effect:
+
+Usually deduct or move stock when dispatch is confirmed.
+
+Do not deduct stock twice if the sales-order workflow already deducted it.
+
+## 10.8 Sales return
+
+Possible workflow:
+
+* Requested.
+* Pending Approval.
+* Approved.
+* Received.
+* Inspected.
+* Restocked.
+* Rejected.
+* Refunded.
+* Closed.
+
+Stock effect:
+
+Returned stock should increase usable stock only after receiving and inspection.
+
+Damaged returned stock should be recorded separately.
+
+## 10.9 Stock transfer
+
+Possible workflow:
+
+* Draft.
+* Requested.
+* Approved.
+* Dispatched.
+* In Transit.
+* Partially Received.
+* Received.
+* Cancelled.
+
+Recommended stock effect:
+
+At dispatch:
+
+* Reduce source available stock.
+* Record transfer-out movement.
+* Mark stock as in transit.
+
+At receipt:
+
+* Increase destination stock.
+* Record transfer-in movement.
+* Update batch and serial warehouse.
+* Close transfer when fully received.
+
+Access rules:
+
+* Creator needs transfer-create permission.
+* Source approver needs approval permission.
+* Source warehouse user needs dispatch permission.
+* Destination warehouse user needs receive permission.
+* The same user should not approve, dispatch, and receive high-value transfers without an exception.
+
+## 10.10 Stock adjustment
+
+Possible workflow:
+
+* Draft.
+* Submitted.
+* Pending Approval.
+* Approved.
+* Applied.
+* Rejected.
+* Cancelled.
+
+Stock effect:
+
+Apply stock only after approval or final posting.
+
+Access rules:
+
+* Operator may enter physical count.
+* Warehouse Manager may review.
+* Inventory Manager may approve.
+* High-value or large-quantity adjustments may require Company Administrator approval.
+* The creator should not approve their own adjustment.
+
+## 10.11 Production
+
+Possible workflow:
+
+* Planned.
+* Approved.
+* Released.
+* In Progress.
+* Partially Completed.
+* Completed.
+* Closed.
+* Cancelled.
+
+Stock effect:
+
+* Raw materials decrease when issued or consumed.
+* Finished goods increase when production output is accepted.
+* Rejected production may move to damaged or scrap stock.
+* Wastage must be recorded.
+
+Access rules:
+
+* Production user manages operations.
+* Inventory user manages material issue.
+* Quality user accepts output.
+* Production Manager closes the order.
+
+---
+
+# 11. CRM Record Visibility
+
+Analyze CRM records using:
+
+* `CreatedBy`
+* `UpdatedBy`
+* `AssignedTo`
+* `AssignedFrom`
+* `AccountOwnerId`
+* `Groups`
+* `GroupMembers`
+* `EntityVisibility`
+* `Assignments`
+
+Recommended visibility types:
+
+## Private
+
+Visible only to:
+
+* Record owner.
+* Assigned user.
+* Company administrator.
+* Authorized manager.
+* Explicitly shared users.
+* Auditor, when permitted.
+
+## Group
+
+Visible to:
+
+* Users belonging to the specified group.
+* Company administrators.
+* Authorized managers.
+
+## Company
+
+Visible to:
+
+* Authorized users in the same company.
+
+## Public
+
+Visible to:
+
+* All authorized application users, only when explicitly permitted.
+
+For every CRM operation, determine whether the user is:
+
+* Owner.
+* Creator.
+* Assignee.
+* Group member.
+* Manager.
+* Explicitly shared user.
+* Company administrator.
+* Unauthorized.
+
+Assignments and sharing changes should create audit history.
+
+---
+
+# 12. Field-Level Security
+
+For the affected table, classify fields into:
+
+## Public operational fields
+
+Examples:
+
+* Name.
+* Description.
+* Status.
+* Notes.
+* Dates.
+* Product code.
+
+## Restricted operational fields
+
+Examples:
+
+* Stock quantity.
+* Warehouse.
+* Batch.
+* Serial number.
+* Assigned user.
+* Approval status.
+
+## Financial fields
+
+Examples:
+
+* Cost.
+* Price.
+* Discount.
+* Tax.
+* Total amount.
+* Payment status.
+* Outstanding balance.
+* Credit limit.
+* Salary.
+
+## Personal and sensitive fields
+
+Examples:
+
+* Email.
+* Phone.
+* Address.
+* PAN.
+* Aadhaar.
+* Bank account.
+* IFSC.
+* Date of birth.
+* Salary.
+
+## System fields
+
+Examples:
+
+* CompanyId.
+* CreatedBy.
+* UpdatedBy.
+* CreatedAt.
+* UpdatedAt.
+* IsDeleted.
+* DeletedAt.
+* Flag.
+
+Determine:
+
+* Who can view each field.
+* Who can edit each field.
+* Whether it should be masked.
+* Whether changes require approval.
+* Whether changes require enhanced audit logging.
+
+---
+
+# 13. Approval Workflow Analysis
+
+For the requested change, determine:
+
+* Whether approval is required.
+* Required approval level.
+* Approver role.
+* Whether multiple approval levels are required.
+* Whether the requester may approve.
+* Whether the approver has company, branch, warehouse, and module access.
+* Whether an `ApprovalWorkflows` record should be created.
+* Whether the original record remains editable while approval is pending.
+* What happens after approval.
+* What happens after rejection.
+* Whether approval can be withdrawn.
+* Whether approved records can be edited.
+* Whether editing an approved record resets approval.
+
+Suggested approval thresholds:
+
+* Purchase order value.
+* Sales discount percentage.
+* Stock-adjustment quantity.
+* Stock-adjustment value.
+* Purchase return value.
+* Sales return value.
+* Expense value.
+* Payment value.
+* Credit-limit increase.
+* Product-cost change.
+* Backdated transaction.
+* Negative-stock override.
+
+---
+
+# 14. Audit Requirements
+
+Every important operation should create an `AuditLogs` record.
+
+Required fields:
+
+* Table name.
+* Record ID.
+* Action.
+* Changed by.
+* Change time.
+* Changes JSON.
+
+Recommended `Changes` JSON structure:
+
+```json
+{
+  "requestId": "unique-request-id",
+  "companyId": 1,
+  "branchId": 2,
+  "warehouseId": 3,
+  "module": "Inventory",
+  "action": "UPDATE",
+  "reason": "Approved stock correction",
+  "oldValues": {
+    "Quantity": 100,
+    "ReservedQuantity": 10
+  },
+  "newValues": {
+    "Quantity": 95,
+    "ReservedQuantity": 10
+  },
+  "stockImpact": {
+    "quantityChange": -5,
+    "availableBefore": 90,
+    "availableAfter": 85
+  },
+  "approval": {
+    "required": true,
+    "approvedBy": 14,
+    "approvedAt": "timestamp"
+  },
+  "securityContext": {
+    "role": "Inventory Manager",
+    "permissions": [
+      "inventory.stock.adjust",
+      "inventory.stock.adjust.approve"
+    ]
+  }
+}
+```
+
+Audit these actions:
+
+* Create.
+* Update.
+* Delete.
+* Soft delete.
+* Restore.
+* Approval.
+* Rejection.
+* Cancellation.
+* Status transition.
+* Assignment.
+* Ownership transfer.
+* Visibility change.
+* Stock change.
+* Price change.
+* Cost change.
+* Discount change.
+* Payment change.
+* Role change.
+* Permission change.
+* Export of sensitive data.
+* Login failures for privileged users.
+
+Do not allow ordinary users to edit or delete audit logs.
+
+---
+
+# 15. Notification Requirements
+
+Determine who must receive notifications.
+
+Potential recipients:
+
+* Record creator.
+* Assigned user.
+* Record owner.
+* Requester.
+* Approver.
+* Warehouse Manager.
+* Inventory Manager.
+* Purchase Manager.
+* Sales Manager.
+* Finance Manager.
+* Company Administrator.
+* Group members.
+* Destination warehouse team.
+
+Potential notification events:
+
+* Approval requested.
+* Approval completed.
+* Request rejected.
+* Low stock.
+* Stock out.
+* Stock replenished.
+* Batch expiring.
+* Goods received.
+* Goods rejected.
+* Transfer dispatched.
+* Transfer received.
+* Delivery delayed.
+* Order cancelled.
+* Return approved.
+* Payment overdue.
+* Unauthorized action attempted.
+
+For each notification, specify:
+
+* User ID.
+* Title.
+* Message.
+* Type.
+* Reference type.
+* Reference ID.
+* Company ID.
+* When it is created.
+* Whether duplicate notifications must be prevented.
+
+---
+
+# 16. Delete and Soft-Delete Analysis
+
+Determine whether the requested deletion is:
+
+* Hard delete.
+* Soft delete.
+* Archive.
+* Deactivation.
+* Reversal.
+
+Analyze:
+
+* Cascading child deletion.
+* Set-null effects.
+* Restricted deletion.
+* Orphan-record risk.
+* Reporting impact.
+* Stock-history impact.
+* Financial-history impact.
+* Audit-history impact.
+
+Recommended rule:
+
+Transactional records should normally not be permanently deleted after posting.
+
+Use:
+
+* Cancellation.
+* Reversal.
+* Return.
+* Adjustment.
+* Soft deletion.
+
+Master records such as products, customers, suppliers, warehouses, and users should normally be deactivated rather than deleted when historical records reference them.
+
+---
+
+# 17. Concurrency and Transaction Safety
+
+Determine whether the operation requires row locking.
+
+For stock operations, recommend:
+
+```sql
+SELECT *
+FROM "ProductStockPerWarehouse"
+WHERE "ProductId" = $1
+  AND "WarehouseId" = $2
+FOR UPDATE;
+```
+
+Validate stock after acquiring the lock.
+
+The operation should be idempotent.
+
+Use a unique request ID or transaction reference to prevent duplicate posting.
+
+The transaction should contain:
+
+1. Authenticate user.
+2. Authorize company, branch, warehouse, module, record, action, and field.
+3. Validate status transition.
+4. Validate approval.
+5. Lock affected stock rows.
+6. Recheck available quantity.
+7. Update source business document.
+8. Update warehouse stock.
+9. Update reservation.
+10. Update batch quantities.
+11. Update serial-number statuses.
+12. Create stock movements.
+13. Update document totals.
+14. Update global product stock when intentionally maintained.
+15. Insert audit logs.
+16. Create notifications.
+17. Commit.
+
+If any step fails, roll back the complete transaction.
+
+---
+
+# 18. Data-Integrity Risks to Detect
+
+Explicitly identify:
+
+* `Products.StockQuantity` not matching warehouse-stock totals.
+* Batch quantity not matching warehouse quantity.
+* Serial-number count not matching stock.
+* Reserved quantity exceeding physical stock.
+* Negative stock.
+* Duplicate receipt.
+* Duplicate dispatch.
+* Duplicate stock movement.
+* Duplicate approval.
+* Missing foreign key.
+* Orphan child record.
+* Cross-company reference.
+* Cross-warehouse unauthorized operation.
+* Integer and decimal quantity mismatch.
+* `IsDelete` versus `IsDeleted` naming inconsistency.
+* Missing company ID.
+* Missing branch ID.
+* Missing warehouse ID.
+* Status changed without stock update.
+* Stock changed without movement history.
+* Stock changed without audit history.
+* Header totals not matching line totals.
+* Payment totals not matching invoice totals.
+* Purchase-order received quantity not matching GRNs.
+* Sales-order dispatched quantity not matching delivery records.
+* Return quantity exceeding original quantity.
+* Transfer received quantity exceeding dispatched quantity.
+* Production output exceeding reasonable input.
+* Soft-deleted records appearing in reports.
+* Duplicate table definitions.
+* Duplicate migration functions.
+* Missing updated-at trigger.
+* Missing updated-by value.
+* User modifying a record outside assigned company.
+* User approving their own request.
+* User changing approval status directly.
+* Unauthorized sensitive-field update.
+* Audit log containing sensitive data without masking.
+
+---
+
+# 19. Required Output Format
+
+Produce the result in the following exact structure.
+
+## A. Change summary
+
+Explain the requested operation in plain language.
+
+Include:
+
+* User.
+* Role.
+* Company.
+* Branch.
+* Warehouse.
+* Record.
+* Action.
+* Old value.
+* New value.
+* Business reason.
+
+## B. Authorization result
+
+Show:
+
+| Security check        | Result                   | Evidence | Required action |
+| --------------------- | ------------------------ | -------- | --------------- |
+| Authentication        | Allowed or denied        | Reason   | Action          |
+| Company scope         | Allowed or denied        | Reason   | Action          |
+| Branch scope          | Allowed or denied        | Reason   | Action          |
+| Warehouse scope       | Allowed or denied        | Reason   | Action          |
+| Module permission     | Allowed or denied        | Reason   | Action          |
+| Record visibility     | Allowed or denied        | Reason   | Action          |
+| Field permission      | Allowed or denied        | Reason   | Action          |
+| Status transition     | Allowed or denied        | Reason   | Action          |
+| Approval requirement  | Required or not required | Reason   | Action          |
+| Segregation of duties | Passed or failed         | Reason   | Action          |
+
+Finish this section with one result:
+
+* ALLOWED.
+* ALLOWED AFTER APPROVAL.
+* ALLOWED WITH RESTRICTIONS.
+* DENIED.
+
+## C. Required permissions
+
+List:
+
+* Role.
+* Required permissions.
+* Missing permissions.
+* Scope requirements.
+* Approval role.
+* Whether a separate approver is required.
+
+## D. Directly affected record
+
+Show:
+
+* Table.
+* Record ID.
+* Changed field.
+* Old value.
+* New value.
+* Immediate database effect.
+* Application-required effect.
+
+## E. Dependency map
+
+Show the relationship chain.
+
+Example:
+
+`SalesOrders → SalesOrderItems → DeliveryChallans → DeliveryChallanItems → ProductStockPerWarehouse → Batches → SerialNumbers → StockMovements → AuditLogs → Notifications`
+
+Mark each relationship as:
+
+* Foreign key.
+* Polymorphic reference.
+* Application-only relationship.
+* Reporting relationship.
+
+## F. Impact matrix
+
+Create this table:
+
+| Level | Table | Record or filter | Relationship | Expected operation | Classification | User-visible effect | Required permission |
+| ----- | ----- | ---------------- | ------------ | ------------------ | -------------- | ------------------- | ------------------- |
+
+Impact levels:
+
+* Direct.
+* Parent.
+* Child.
+* Indirect.
+* Inventory.
+* Financial.
+* CRM.
+* Security.
+* Reporting.
+* Audit.
+* Notification.
+* Potential risk.
+
+## G. Stock calculation
+
+Show:
+
+| Product | Warehouse | Batch | Before quantity | Before reserved | Incoming | Outgoing | Reserved | Released | After quantity | After reserved | After available |
+| ------- | --------- | ----- | --------------: | --------------: | -------: | -------: | -------: | -------: | -------------: | -------------: | --------------: |
+
+## H. Status workflow impact
+
+Show:
+
+* Current status.
+* Requested status.
+* Whether transition is valid.
+* Required permission.
+* Required approval.
+* Stock effect.
+* Financial effect.
+* Notification effect.
+* Reversal requirements.
+
+## I. Automatic database effects
+
+List only effects guaranteed by PostgreSQL.
+
+Include:
+
+* Cascade deletes.
+* Set-null changes.
+* Generated-column recalculations.
+* Check constraints.
+* Unique constraints.
+* Trigger actions.
+
+## J. Application-required effects
+
+List all effects that require backend code.
+
+Include:
+
+* Stock synchronization.
+* Reservation.
+* Release.
+* Batch update.
+* Serial-number update.
+* Movement record.
+* Approval workflow.
+* Notification.
+* Audit log.
+* Report refresh.
+* Dashboard update.
+
+## K. Role-based screen visibility
+
+Create this table:
+
+| Screen or API | Super Admin | Company Admin | Manager | Operator or Executive | Finance | Auditor | Reason |
+| ------------- | ----------- | ------------- | ------- | --------------------- | ------- | ------- | ------ |
+
+Use:
+
+* Full access.
+* Read-only.
+* Own records.
+* Assigned warehouse.
+* Assigned branch.
+* Approval only.
+* Masked values.
+* No access.
+
+## L. Field-level access
+
+Create this table:
+
+| Field | View roles | Edit roles | Approval required | Masking required | Risk |
+| ----- | ---------- | ---------- | ----------------- | ---------------- | ---- |
+
+## M. Approval workflow
+
+Explain:
+
+* Workflow name.
+* Requester.
+* Approver.
+* Approval levels.
+* Threshold.
+* Status while pending.
+* Action after approval.
+* Action after rejection.
+* Self-approval restriction.
+* Audit entries.
+* Notifications.
+
+## N. Audit-log requirement
+
+Provide the recommended audit record and JSON payload.
+
+## O. Notification requirement
+
+Show:
+
+| Recipient role or user | Event | Title | Reference type | Delivery timing |
+| ---------------------- | ----- | ----- | -------------- | --------------- |
+
+## P. Risks
+
+Rank risks as:
+
+* Critical.
+* High.
+* Medium.
+* Low.
+
+For every risk, include:
+
+* Description.
+* Affected records.
+* Business consequence.
+* Security consequence.
+* Recommended fix.
+
+## Q. Safe implementation order
+
+Provide the exact backend transaction sequence.
+
+Include authorization before data modification.
+
+## R. Validation queries
+
+Provide safe PostgreSQL `SELECT` queries for:
+
+* Main record.
+* Parent record.
+* Child records.
+* Warehouse stock.
+* Batch stock.
+* Serial numbers.
+* Stock movements.
+* Audit logs.
+* Approval records.
+* Notifications.
+* Company and warehouse access.
+* User role and permissions.
+
+Do not provide destructive SQL unless explicitly requested.
+
+## S. API authorization example
+
+Provide recommended API middleware flow:
+
+```text
+authenticate
+→ load user roles and permissions
+→ validate company scope
+→ validate branch scope
+→ validate warehouse scope
+→ validate record ownership or visibility
+→ validate action permission
+→ validate field permission
+→ validate status transition
+→ validate approval requirement
+→ execute transaction
+→ audit
+→ notify
+```
+
+## T. Test cases
+
+Provide test cases for:
+
+* Authorized operation.
+* Missing permission.
+* Wrong company.
+* Wrong branch.
+* Wrong warehouse.
+* Private record.
+* Group-visible record.
+* Owner-access record.
+* Manager-access record.
+* Self-approval attempt.
+* Invalid status transition.
+* Insufficient stock.
+* Negative-stock override.
+* Duplicate request.
+* Concurrent request.
+* Partial receipt.
+* Partial dispatch.
+* Cancellation.
+* Return.
+* Reversal.
+* Soft deletion.
+* Restore.
+* Batch mismatch.
+* Serial-number mismatch.
+* Report visibility.
+* Sensitive-field masking.
+
+## U. Final conclusion
+
+Finish with:
+
+* Authorization decision.
+* Required role.
+* Required permissions.
+* Required approver.
+* Directly affected tables.
+* Indirectly affected tables.
+* Database-automatic effects.
+* Application-required effects.
+* User-visible screens affected.
+* Audit records required.
+* Notifications required.
+* Highest inventory risk.
+* Highest security risk.
+* Highest financial risk.
+* Recommended action before deployment.
+
+---
+
+# 20. Mandatory Analysis Rules
+
+Follow these rules strictly:
+
+1. Never assume a role has access based only on the role name.
+2. Verify permissions, company scope, branch scope, warehouse scope, ownership, assignment, and visibility.
+3. Deny access by default.
+4. Do not trust `CompanyId`, `BranchId`, `WarehouseId`, `CreatedBy`, `UpdatedBy`, approval fields, or stock values supplied directly by the frontend.
+5. Obtain security-sensitive values from the authenticated server-side context.
+6. Do not allow users to change their own role or permissions.
+7. Do not allow users to approve their own high-risk transaction.
+8. Do not allow warehouse users to modify another warehouse’s stock.
+9. Do not allow users to update generated columns directly.
+10. Do not allow direct edits to finalized stock transactions.
+11. Use reversal transactions instead of deleting posted records.
+12. Create an audit log for every privileged action.
+13. Use database transactions for all multi-table operations.
+14. Use row locks for stock modifications.
+15. Prevent duplicate posting through idempotency controls.
+16. Mask personal, salary, bank, tax, and financial data for unauthorized roles.
+17. Never report an effect as automatic unless the supplied schema guarantees it.
+18. Mark missing foreign keys and missing synchronization logic as risks.
+19. Clearly distinguish physical stock, reserved stock, available stock, in-transit stock, damaged stock, and rejected stock.
+20. Finish with a clear ALLOWED, APPROVAL REQUIRED, or DENIED decision.
+
+
+# Complete Database Change Impact and Role-Based Access Analysis Prompt
+
+Act as a senior PostgreSQL database architect, inventory management consultant, backend engineer, security architect, and role-based access control specialist.
+
+Analyze the supplied Node.js and PostgreSQL table definitions as the source of truth.
+
+The purpose of this analysis is to determine what happens when a user creates, edits, deletes, approves, rejects, cancels, transfers, receives, dispatches, returns, reserves, releases, or otherwise changes a record.
+
+The analysis must explain:
+
+* Which database records are directly changed.
+* Which related records are indirectly affected.
+* Which values are automatically changed by PostgreSQL.
+* Which changes require backend application logic.
+* Which reports, dashboards, screens, APIs, notifications, and totals are affected.
+* Which users and roles are allowed to perform the action.
+* Which users can view the affected records.
+* Whether an approval is required.
+* Whether the action creates a security, stock, accounting, or data-integrity risk.
+* Whether an audit-log entry must be created.
+* Whether the operation must run inside a database transaction.
+
+Do not assume any automatic behaviour unless it is explicitly supported by a database constraint, trigger, generated column, foreign-key action, stored procedure, or supplied application code.
+
+---
+
+# 1. Change Information
+
+Analyze the following proposed change.
+
+## Change request
+
+Module:
+
+[Enter module name]
+
+Main table:
+
+[Enter table name]
+
+Record ID:
+
+[Enter record ID]
+
+Company ID:
+
+[Enter company ID]
+
+Branch ID:
+
+[Enter branch ID, if applicable]
+
+Warehouse ID:
+
+[Enter warehouse ID, if applicable]
+
+Product ID:
+
+[Enter product ID, if applicable]
+
+Batch ID:
+
+[Enter batch ID, if applicable]
+
+Serial number:
+
+[Enter serial number, if applicable]
+
+Document number:
+
+[Enter purchase order, GRN, sales order, invoice, challan, transfer, return, adjustment, production order, or other document number]
+
+Action:
+
+[INSERT / UPDATE / DELETE / SOFT DELETE / RESTORE / STATUS CHANGE / APPROVE / REJECT / CANCEL / RECEIVE / DISPATCH / RETURN / TRANSFER / RESERVE / RELEASE]
+
+Changed field:
+
+[Enter column or business field]
+
+Old value:
+
+[Enter old value]
+
+New value:
+
+[Enter new value]
+
+Quantity:
+
+[Enter quantity, if applicable]
+
+Reason for change:
+
+[Enter business reason]
+
+Requested by user ID:
+
+[Enter user ID]
+
+Requested by role:
+
+[Enter role]
+
+Requested date and time:
+
+[Enter timestamp]
+
+---
+
+# 2. User and Role Information
+
+Analyze access according to the following user context.
+
+User ID:
+
+[Enter user ID]
+
+Company ID:
+
+[Enter company ID]
+
+Branch IDs:
+
+[Enter branch IDs available to the user]
+
+Warehouse IDs:
+
+[Enter warehouse IDs available to the user]
+
+Department ID:
+
+[Enter department ID]
+
+Group IDs:
+
+[Enter group IDs]
+
+Primary role:
+
+[Enter role]
+
+Additional roles:
+
+[Enter additional roles]
+
+Permissions:
+
+[Enter permission list, if available]
+
+Record ownership:
+
+[Owner / Creator / Assignee / Group Member / Manager / Approver / No Relationship]
+
+Requested operation:
+
+[View / Create / Edit / Delete / Approve / Reject / Cancel / Export / Transfer / Receive / Dispatch / Adjust / Return]
+
+---
+
+# 3. Suggested Role Model
+
+Use the following role structure unless another role model is supplied.
+
+## 3.1 Super Administrator
+
+Scope:
+
+* Entire application.
+* All companies.
+* All branches.
+* All warehouses.
+* All modules.
+* All users and roles.
+
+Permissions:
+
+* Create companies.
+* Manage company administrators.
+* View all records.
+* Create, edit, delete, restore, approve, reject, cancel, export, and audit records.
+* Configure system settings.
+* Configure roles and permissions.
+* View audit logs.
+* View deleted records.
+* Perform emergency corrections.
+
+Restrictions:
+
+* Critical stock or accounting corrections must still require a reason.
+* Actions must always be audited.
+* Direct database modification should not be allowed through normal application screens.
+
+## 3.2 Company Administrator
+
+Scope:
+
+* One company.
+* All branches and warehouses belonging to that company.
+
+Permissions:
+
+* Manage company users.
+* Assign company-level roles.
+* Configure branches and warehouses.
+* View all company records.
+* Manage products, suppliers, customers, purchases, sales, stock, reports, and approvals.
+* View company audit logs.
+
+Restrictions:
+
+* Cannot access another company.
+* Cannot create or modify global platform settings.
+* Cannot assign a role with permissions higher than their own.
+
+## 3.3 Inventory Manager
+
+Scope:
+
+* Assigned company.
+* Assigned branches and warehouses.
+
+Permissions:
+
+* View products.
+* View warehouse stock.
+* View batches and serial numbers.
+* Create and approve stock transfers.
+* Create and approve stock adjustments according to configured limits.
+* View GRNs, deliveries, returns, stock movements, racks, bins, and locations.
+* View inventory reports.
+* Resolve stock discrepancies.
+
+Restrictions:
+
+* Cannot modify company settings.
+* Cannot modify financial payments unless separately permitted.
+* Cannot approve their own high-value adjustment when segregation of duties applies.
+* Cannot access warehouses outside assigned scope.
+
+## 3.4 Warehouse Manager
+
+Scope:
+
+* Assigned warehouses only.
+
+Permissions:
+
+* View warehouse stock.
+* Receive goods.
+* Create GRNs.
+* Dispatch goods.
+* Process delivery challans.
+* Process stock transfers.
+* Manage racks, bins, locations, batches, and serial numbers.
+* Perform approved stock adjustments.
+* View warehouse reports.
+
+Restrictions:
+
+* Cannot change product price or cost unless separately permitted.
+* Cannot approve their own stock adjustment above the allowed threshold.
+* Cannot access stock from other warehouses except through an approved transfer.
+* Cannot edit finalized documents without a reversal process.
+
+## 3.5 Warehouse Operator
+
+Scope:
+
+* Assigned warehouse.
+
+Permissions:
+
+* Scan barcodes and QR codes.
+* Record receiving.
+* Record picking and packing.
+* Record dispatch.
+* Move stock between approved bins or locations.
+* Update batch and serial information.
+* Enter physical-count quantities.
+
+Restrictions:
+
+* Cannot approve transactions.
+* Cannot cancel completed transactions.
+* Cannot edit product cost.
+* Cannot perform manual stock adjustments without approval.
+* Cannot view sensitive financial values unless explicitly permitted.
+
+## 3.6 Purchase Manager
+
+Scope:
+
+* Assigned company or branch.
+
+Permissions:
+
+* Manage suppliers.
+* Create and approve purchase requisitions.
+* Create purchase orders.
+* View GRNs.
+* Manage purchase returns.
+* Review supplier history.
+* View purchase reports.
+
+Restrictions:
+
+* Cannot receive stock unless warehouse permission is also granted.
+* Cannot create payment records unless finance permission is granted.
+* Cannot approve their own purchase order above the approval threshold.
+
+## 3.7 Purchase Executive
+
+Scope:
+
+* Assigned company, branch, department, or supplier portfolio.
+
+Permissions:
+
+* Create purchase requisitions.
+* Prepare purchase orders.
+* View assigned suppliers.
+* View purchase-order status.
+* Follow up on expected deliveries.
+
+Restrictions:
+
+* Cannot approve purchase orders.
+* Cannot receive goods.
+* Cannot modify stock.
+* Cannot access unrelated suppliers or branches.
+
+## 3.8 Sales Manager
+
+Scope:
+
+* Assigned company, branch, team, accounts, or customers.
+
+Permissions:
+
+* Manage sales orders.
+* Approve discounts within configured limits.
+* View customer balances.
+* Approve sales returns according to limits.
+* View sales reports.
+* Manage assigned sales users.
+
+Restrictions:
+
+* Cannot dispatch stock unless warehouse permission is granted.
+* Cannot record payments unless finance permission is granted.
+* Cannot approve excessive discounts without higher approval.
+
+## 3.9 Sales Executive
+
+Scope:
+
+* Owned, assigned, shared, or team-visible customers and records.
+
+Permissions:
+
+* Create quotations.
+* Create sales orders.
+* View assigned customers.
+* View available stock.
+* View order and delivery status.
+* Create return requests.
+
+Restrictions:
+
+* Cannot manually change stock.
+* Cannot approve discounts above limits.
+* Cannot approve their own sales return.
+* Cannot view customers outside ownership or sharing rules.
+
+## 3.10 Finance Manager
+
+Scope:
+
+* Assigned company and branches.
+
+Permissions:
+
+* View invoices.
+* Record and approve payments.
+* Manage expenses.
+* View tax values.
+* View profit-and-loss reports.
+* View customer outstanding balances.
+* Approve refunds and financial adjustments.
+
+Restrictions:
+
+* Cannot manipulate physical stock unless inventory permission is also granted.
+* Cannot delete posted financial records.
+* Corrections should use reversal or adjustment transactions.
+
+## 3.11 Accountant
+
+Scope:
+
+* Assigned company or branches.
+
+Permissions:
+
+* Create invoices.
+* Record payments.
+* Enter expenses.
+* View financial reports.
+* Reconcile customer and supplier balances.
+
+Restrictions:
+
+* Cannot approve their own high-value payment or expense.
+* Cannot modify completed stock transactions.
+* Cannot access another company.
+
+## 3.12 Production Manager
+
+Scope:
+
+* Assigned company, production facility, and warehouses.
+
+Permissions:
+
+* Manage BOMs.
+* Create production orders.
+* Issue raw materials.
+* Record finished goods.
+* Record wastage and rejected quantities.
+* View production stock requirements.
+
+Restrictions:
+
+* Cannot modify approved BOM versions without versioning.
+* Cannot consume unavailable stock.
+* Cannot close production orders with unresolved quantity differences.
+
+## 3.13 Quality Controller
+
+Scope:
+
+* Assigned warehouses, GRNs, production orders, or quality-control records.
+
+Permissions:
+
+* Inspect received goods.
+* Accept or reject quantities.
+* Record quality-control results.
+* Hold batches.
+* Release accepted batches.
+
+Restrictions:
+
+* Cannot modify purchase-order quantity.
+* Cannot approve supplier payment.
+* Cannot alter stock outside quality-control workflow.
+
+## 3.14 CRM Manager
+
+Scope:
+
+* Assigned company and CRM team.
+
+Permissions:
+
+* View and manage accounts, contacts, leads, opportunities, activities, cases, and retentions.
+* Reassign CRM records.
+* View team performance.
+
+Restrictions:
+
+* Cannot access inventory, purchasing, or finance modules unless separately permitted.
+
+## 3.15 CRM User or Sales Representative
+
+Scope:
+
+* Owned, created, assigned, shared, or group-visible CRM records.
+
+Permissions:
+
+* Manage assigned leads, opportunities, contacts, activities, and cases.
+* Add comments and follow-ups.
+* View records shared through visibility rules.
+
+Restrictions:
+
+* Cannot view private records owned by another user.
+* Cannot reassign records without transfer permission.
+* Cannot permanently delete records.
+
+## 3.16 Auditor
+
+Scope:
+
+* Assigned companies and modules.
+
+Permissions:
+
+* Read-only access.
+* View transactions.
+* View audit logs.
+* View approval history.
+* View deleted and restored records where permitted.
+* Export audit reports.
+
+Restrictions:
+
+* Cannot create, edit, approve, reject, cancel, or delete operational records.
+* Sensitive personal information may be masked.
+
+## 3.17 Read-Only User
+
+Scope:
+
+* Explicitly assigned company, branch, warehouse, module, or records.
+
+Permissions:
+
+* View allowed records.
+
+Restrictions:
+
+* Cannot create, edit, delete, approve, export, or perform transactions unless explicitly granted.
+
+---
+
+# 4. Permission Model
+
+Evaluate access using granular permissions rather than only role names.
+
+Recommended permission format:
+
+`module.resource.action`
+
+Examples:
+
+* `inventory.product.view`
+* `inventory.product.create`
+* `inventory.product.update`
+* `inventory.product.delete`
+* `inventory.product.restore`
+* `inventory.stock.view`
+* `inventory.stock.adjust`
+* `inventory.stock.adjust.approve`
+* `inventory.transfer.create`
+* `inventory.transfer.dispatch`
+* `inventory.transfer.receive`
+* `inventory.transfer.cancel`
+* `inventory.batch.manage`
+* `inventory.serial.manage`
+* `inventory.stockmovement.view`
+* `purchase.requisition.create`
+* `purchase.requisition.approve`
+* `purchase.order.create`
+* `purchase.order.approve`
+* `purchase.order.cancel`
+* `purchase.grn.create`
+* `purchase.grn.approve`
+* `purchase.return.create`
+* `purchase.return.approve`
+* `sales.quote.create`
+* `sales.order.create`
+* `sales.order.approve`
+* `sales.order.dispatch`
+* `sales.order.cancel`
+* `sales.return.create`
+* `sales.return.approve`
+* `finance.invoice.create`
+* `finance.payment.create`
+* `finance.payment.approve`
+* `finance.expense.create`
+* `finance.expense.approve`
+* `crm.lead.view`
+* `crm.lead.create`
+* `crm.lead.update`
+* `crm.lead.assign`
+* `crm.opportunity.view`
+* `crm.opportunity.update`
+* `admin.user.manage`
+* `admin.role.manage`
+* `audit.log.view`
+* `report.inventory.view`
+* `report.financial.view`
+* `report.export`
+
+For the requested change, identify every permission required.
+
+---
+
+# 5. Access-Control Decision Order
+
+Evaluate access in this exact order.
+
+## Step 1: Authentication
+
+Confirm:
+
+* The user exists.
+* The user is active.
+* The user is not deleted.
+* The session or token is valid.
+* The user belongs to an active company.
+* The account has not been locked.
+
+If authentication fails, deny the operation immediately.
+
+## Step 2: Company scope
+
+Check:
+
+* The record’s `CompanyId`.
+* The user’s company memberships.
+* Whether the role permits cross-company access.
+
+Default rule:
+
+A user must not view or modify records belonging to another company.
+
+Super Administrator access must be explicitly identified and audited.
+
+## Step 3: Branch scope
+
+Where `BranchId` exists, verify that the user is assigned to the branch or has company-wide access.
+
+Default rule:
+
+A branch-level user may access only records belonging to assigned branches.
+
+## Step 4: Warehouse scope
+
+Where `WarehouseId`, source warehouse, or destination warehouse exists, verify access to the relevant warehouses.
+
+For stock transfers:
+
+* The creator must have permission to request a transfer.
+* The source warehouse user must have dispatch permission.
+* The destination warehouse user must have receive permission.
+* A user should not receive stock into an unauthorized warehouse.
+* Cross-company warehouse transfers must be rejected.
+
+## Step 5: Module permission
+
+Check whether the user has permission for the module and action.
+
+Example:
+
+Changing a stock-adjustment record requires more than generic update permission. It may require:
+
+* `inventory.stock.adjust`
+* `inventory.stock.adjust.approve`
+* Warehouse access.
+* Quantity-limit approval.
+* Reason entry.
+
+## Step 6: Record-level visibility
+
+Check whether the user can access the individual record through:
+
+* Ownership.
+* `CreatedBy`.
+* `AssignedTo`.
+* `AssignedFrom`.
+* Group membership.
+* `EntityVisibility`.
+* Company-wide role.
+* Department hierarchy.
+* Manager-subordinate relationship.
+* Explicit sharing.
+* Approval assignment.
+
+For CRM records, apply visibility rules such as:
+
+* Private.
+* Owner only.
+* Assigned user.
+* Group visible.
+* Company visible.
+* Public within company.
+
+## Step 7: Field-level permission
+
+Check whether the user may edit the specific field.
+
+Examples of sensitive fields:
+
+* Product cost.
+* Selling price.
+* Discount.
+* Tax rate.
+* Credit limit.
+* Outstanding balance.
+* Payment status.
+* Approval status.
+* Stock quantity.
+* Reserved quantity.
+* Warehouse ID.
+* Company ID.
+* CreatedBy.
+* UpdatedBy.
+* IsDeleted.
+* DeletedAt.
+* User role.
+* Salary.
+* PAN.
+* Aadhaar.
+* Bank details.
+
+A user may have permission to edit a record but not these sensitive fields.
+
+## Step 8: Status-transition permission
+
+Validate that the requested status transition is allowed.
+
+Example:
+
+* Draft to Pending.
+* Pending to Approved.
+* Approved to Processing.
+* Processing to Shipped.
+* Shipped to Delivered.
+* Approved to Cancelled.
+* Received to Cancelled through reversal only.
+
+Reject invalid status jumps.
+
+## Step 9: Approval requirement
+
+Determine whether the action requires approval based on:
+
+* Transaction value.
+* Quantity.
+* Discount percentage.
+* Stock-adjustment reason.
+* Negative stock.
+* Cross-warehouse transfer.
+* Cross-branch transfer.
+* High-value purchase order.
+* High-value sales return.
+* Payment amount.
+* Expense amount.
+* Product cost change.
+* Credit-limit change.
+* Record deletion.
+* Backdated transaction.
+
+## Step 10: Segregation of duties
+
+Check whether the same user is improperly performing conflicting actions.
+
+Examples:
+
+* Requesting and approving the same purchase order.
+* Creating and approving the same stock adjustment.
+* Creating and receiving the same stock transfer.
+* Creating and approving the same expense.
+* Creating and approving the same payment.
+* Creating and approving the same sales return.
+* Editing and auditing the same transaction.
+
+If segregation of duties applies, require a different user for approval.
+
+---
+
+# 6. Core Database Dependency Analysis
+
+Identify the directly changed table and all dependencies.
+
+For every relationship, determine:
+
+* Parent table.
+* Child table.
+* Foreign-key column.
+* Relationship direction.
+* Cardinality.
+* Delete behaviour.
+* Update behaviour.
+* Whether the relationship is database-enforced.
+* Whether the relationship exists only by naming convention.
+* Whether records can become orphaned.
+
+Analyze:
+
+* `ON DELETE CASCADE`
+* `ON DELETE SET NULL`
+* `ON DELETE RESTRICT`
+* Default PostgreSQL delete behaviour
+* Generated columns
+* Check constraints
+* Unique constraints
+* Partial indexes
+* Database triggers
+* Timestamp triggers
+* Soft-delete fields
+* Polymorphic references
+
+Polymorphic references include:
+
+* `EntityType`
+* `EntityId`
+* `ReferenceType`
+* `ReferenceId`
+* `TableName`
+* `RecordId`
+* `ModuleType`
+
+Because PostgreSQL cannot enforce these references through a normal foreign key, mark them as application-managed relationships.
+
+---
+
+# 7. Impact Classification
+
+Classify every identified effect as one of the following.
+
+## DATABASE-AUTOMATIC
+
+PostgreSQL guarantees the effect because of:
+
+* Foreign-key cascade.
+* Foreign-key set-null rule.
+* Generated column.
+* Check constraint.
+* Unique constraint.
+* Trigger.
+* Stored procedure.
+
+## APPLICATION-REQUIRED
+
+The backend must implement the effect through:
+
+* Controller.
+* Service.
+* Repository.
+* API.
+* Event handler.
+* Queue worker.
+* Scheduled job.
+* Transaction function.
+
+## APPROVAL-REQUIRED
+
+The operation must remain pending until an authorized approver approves it.
+
+## PERMISSION-DENIED
+
+The user does not have the required role, permission, scope, ownership, or warehouse access.
+
+## REPORTING-ONLY
+
+The source records do not change, but reports, dashboard totals, search results, or analytics are affected.
+
+## POSSIBLE-RISK
+
+The schema implies that a change should occur, but the required constraint or application logic is missing or unclear.
+
+## NO-EFFECT
+
+The table or record should not be changed by the requested operation.
+
+---
+
+# 8. Inventory Impact Analysis
+
+For inventory-related changes, analyze all relevant records.
+
+## Product-level stock
+
+Check:
+
+* `Products.StockQuantity`
+* `Products.MinimumStock`
+* `Products.MaximumStock`
+* `Products.ReorderLevel`
+* `Products.NotifyStockOut`
+* `Products.NotifyStockReload`
+
+Determine whether `Products.StockQuantity` is:
+
+* The authoritative stock balance.
+* A cached total.
+* A manually maintained value.
+* A duplicate of warehouse stock.
+* At risk of becoming inconsistent.
+
+## Warehouse-level stock
+
+Check:
+
+* `ProductStockPerWarehouse.Quantity`
+* `ProductStockPerWarehouse.ReservedQuantity`
+* `ProductStockPerWarehouse.AvailableQuantity`
+* `ProductStockPerWarehouse.MinimumStock`
+* `ProductStockPerWarehouse.MaximumStock`
+* `ProductStockPerWarehouse.ReorderLevel`
+* `ProductStockPerWarehouse.LastRestocked`
+
+Remember:
+
+`AvailableQuantity = Quantity - ReservedQuantity`
+
+If this is a generated column, PostgreSQL recalculates it automatically when quantity or reserved quantity changes.
+
+## Batch stock
+
+Check:
+
+* `Batches.Quantity`
+* `Batches.ProductId`
+* `Batches.WarehouseId`
+* `Batches.SupplierId`
+* `Batches.PurchaseOrderId`
+* `Batches.ManufacturingDate`
+* `Batches.ExpiryDate`
+
+Determine whether:
+
+* Batch quantity matches warehouse quantity.
+* Expired stock is excluded from available stock.
+* A batch transfer updates its warehouse.
+* A purchase return reduces batch quantity.
+* A sales return restores the correct batch.
+
+## Serial-number stock
+
+Check:
+
+* `SerialNumbers.SerialNo`
+* `SerialNumbers.ProductId`
+* `SerialNumbers.BatchId`
+* `SerialNumbers.WarehouseId`
+* `SerialNumbers.Status`
+
+Validate allowed transitions such as:
+
+* Available to Reserved.
+* Available to Sold.
+* Available to Transferred.
+* Sold to Returned.
+* Returned to Available.
+* Available to Damaged.
+* Transferred to Available at destination.
+
+Reject invalid or duplicate serial-number transitions.
+
+## Stock movements
+
+For every physical stock change, determine whether a stock-movement record must be created.
+
+Recommended stock-movement fields:
+
+* Product ID.
+* Warehouse ID.
+* Source warehouse ID.
+* Destination warehouse ID.
+* Batch ID.
+* Serial number ID.
+* Movement type.
+* Quantity.
+* Quantity before.
+* Quantity after.
+* Reserved before.
+* Reserved after.
+* Reference type.
+* Reference ID.
+* Document number.
+* User ID.
+* Company ID.
+* Timestamp.
+* Reason.
+
+Movement types may include:
+
+* Purchase Receipt.
+* Sales Dispatch.
+* Sales Return.
+* Purchase Return.
+* Stock Transfer Out.
+* Stock Transfer In.
+* Stock Adjustment Increase.
+* Stock Adjustment Decrease.
+* Production Consumption.
+* Production Output.
+* Reservation.
+* Reservation Release.
+* Damage.
+* Expiry.
+* Opening Stock.
+* Reversal.
+
+---
+
+# 9. Inventory Calculation
+
+For each affected product and warehouse, show:
+
+* Product ID.
+* Product code.
+* Warehouse ID.
+* Batch ID.
+* Serial numbers.
+* Quantity before.
+* Reserved quantity before.
+* Available quantity before.
+* Quantity added.
+* Quantity deducted.
+* Quantity reserved.
+* Quantity released.
+* Quantity after.
+* Reserved quantity after.
+* Available quantity after.
+
+Use formulas such as:
+
+`New physical quantity = old physical quantity + incoming quantity - outgoing quantity`
+
+`New reserved quantity = old reserved quantity + newly reserved quantity - released quantity`
+
+`New available quantity = new physical quantity - new reserved quantity`
+
+Validate:
+
+* Physical quantity must not become negative.
+* Reserved quantity must not become negative.
+* Reserved quantity must not exceed physical quantity.
+* Batch quantity must not become negative.
+* Serial-number count must support the transaction quantity.
+* Source and destination transfer quantities must balance.
+* Product-level total must match the sum of warehouse stock when global stock is maintained.
+
+---
+
+# 10. Business Workflow Analysis
+
+## 10.1 Purchase requisition
+
+Possible workflow:
+
+* Draft.
+* Submitted.
+* Pending Approval.
+* Approved.
+* Rejected.
+* Converted to Purchase Order.
+* Cancelled.
+
+Stock effect:
+
+Normally none.
+
+Access rules:
+
+* Requester may create and submit.
+* Department manager may approve.
+* Purchase team may convert an approved requisition.
+* Requester should not approve their own requisition when segregation of duties applies.
+
+## 10.2 Purchase order
+
+Possible workflow:
+
+* Draft.
+* Pending Approval.
+* Approved.
+* Sent to Supplier.
+* Partially Received.
+* Received.
+* Closed.
+* Cancelled.
+
+Stock effect:
+
+Creating or approving a purchase order normally does not increase physical stock.
+
+Receiving through a GRN should increase stock.
+
+Access rules:
+
+* Purchase Executive may create.
+* Purchase Manager may approve.
+* Warehouse user may receive.
+* Finance user may view financial values.
+* Cancellation after receipt requires reversal or return processing.
+
+## 10.3 GRN
+
+Possible workflow:
+
+* Draft.
+* Received.
+* Partially Received.
+* Quality Check.
+* Accepted.
+* Rejected.
+* Cancelled.
+
+Stock effect:
+
+Determine whether stock increases:
+
+* At physical receipt.
+* After quality acceptance.
+* Only after GRN approval.
+
+Recommended rule:
+
+Accepted quantity increases usable stock.
+
+Rejected quantity should not increase usable stock.
+
+Access rules:
+
+* Warehouse Operator may enter receipt.
+* Warehouse Manager may confirm receipt.
+* Quality Controller may accept or reject.
+* Purchase user may view but should not directly modify warehouse stock.
+
+## 10.4 Purchase return
+
+Possible workflow:
+
+* Draft.
+* Pending Approval.
+* Approved.
+* Dispatched.
+* Completed.
+* Cancelled.
+
+Stock effect:
+
+Stock should reduce when goods physically leave the warehouse, not simply when a draft return is created.
+
+Access rules:
+
+* Warehouse or purchase user may create.
+* Authorized manager approves.
+* Warehouse user dispatches.
+* Finance team processes supplier credit separately.
+
+## 10.5 Sales quotation
+
+Possible workflow:
+
+* Draft.
+* Sent.
+* Accepted.
+* Rejected.
+* Expired.
+* Converted.
+
+Stock effect:
+
+Normally no physical stock change.
+
+Optional reservation should occur only if the business explicitly supports quotation-level reservation.
+
+## 10.6 Sales order
+
+Possible workflow:
+
+* Draft.
+* Pending Approval.
+* Confirmed.
+* Processing.
+* Partially Dispatched.
+* Shipped.
+* Delivered.
+* Cancelled.
+
+Possible stock policies:
+
+Policy A:
+
+Reserve stock when the order is confirmed and deduct stock when dispatched.
+
+Policy B:
+
+Deduct stock only when dispatched.
+
+The analysis must identify which policy is implemented.
+
+Access rules:
+
+* Sales user creates.
+* Sales Manager approves discounts.
+* Warehouse user dispatches.
+* Sales user cannot directly reduce warehouse stock.
+* Cancellation must release reservations.
+* Cancellation after dispatch requires a return or reversal.
+
+## 10.7 Delivery challan
+
+Possible workflow:
+
+* Draft.
+* Pending.
+* Dispatched.
+* In Transit.
+* Delivered.
+* Partially Delivered.
+* Cancelled.
+
+Stock effect:
+
+Usually deduct or move stock when dispatch is confirmed.
+
+Do not deduct stock twice if the sales-order workflow already deducted it.
+
+## 10.8 Sales return
+
+Possible workflow:
+
+* Requested.
+* Pending Approval.
+* Approved.
+* Received.
+* Inspected.
+* Restocked.
+* Rejected.
+* Refunded.
+* Closed.
+
+Stock effect:
+
+Returned stock should increase usable stock only after receiving and inspection.
+
+Damaged returned stock should be recorded separately.
+
+## 10.9 Stock transfer
+
+Possible workflow:
+
+* Draft.
+* Requested.
+* Approved.
+* Dispatched.
+* In Transit.
+* Partially Received.
+* Received.
+* Cancelled.
+
+Recommended stock effect:
+
+At dispatch:
+
+* Reduce source available stock.
+* Record transfer-out movement.
+* Mark stock as in transit.
+
+At receipt:
+
+* Increase destination stock.
+* Record transfer-in movement.
+* Update batch and serial warehouse.
+* Close transfer when fully received.
+
+Access rules:
+
+* Creator needs transfer-create permission.
+* Source approver needs approval permission.
+* Source warehouse user needs dispatch permission.
+* Destination warehouse user needs receive permission.
+* The same user should not approve, dispatch, and receive high-value transfers without an exception.
+
+## 10.10 Stock adjustment
+
+Possible workflow:
+
+* Draft.
+* Submitted.
+* Pending Approval.
+* Approved.
+* Applied.
+* Rejected.
+* Cancelled.
+
+Stock effect:
+
+Apply stock only after approval or final posting.
+
+Access rules:
+
+* Operator may enter physical count.
+* Warehouse Manager may review.
+* Inventory Manager may approve.
+* High-value or large-quantity adjustments may require Company Administrator approval.
+* The creator should not approve their own adjustment.
+
+## 10.11 Production
+
+Possible workflow:
+
+* Planned.
+* Approved.
+* Released.
+* In Progress.
+* Partially Completed.
+* Completed.
+* Closed.
+* Cancelled.
+
+Stock effect:
+
+* Raw materials decrease when issued or consumed.
+* Finished goods increase when production output is accepted.
+* Rejected production may move to damaged or scrap stock.
+* Wastage must be recorded.
+
+Access rules:
+
+* Production user manages operations.
+* Inventory user manages material issue.
+* Quality user accepts output.
+* Production Manager closes the order.
+
+---
+
+# 11. CRM Record Visibility
+
+Analyze CRM records using:
+
+* `CreatedBy`
+* `UpdatedBy`
+* `AssignedTo`
+* `AssignedFrom`
+* `AccountOwnerId`
+* `Groups`
+* `GroupMembers`
+* `EntityVisibility`
+* `Assignments`
+
+Recommended visibility types:
+
+## Private
+
+Visible only to:
+
+* Record owner.
+* Assigned user.
+* Company administrator.
+* Authorized manager.
+* Explicitly shared users.
+* Auditor, when permitted.
+
+## Group
+
+Visible to:
+
+* Users belonging to the specified group.
+* Company administrators.
+* Authorized managers.
+
+## Company
+
+Visible to:
+
+* Authorized users in the same company.
+
+## Public
+
+Visible to:
+
+* All authorized application users, only when explicitly permitted.
+
+For every CRM operation, determine whether the user is:
+
+* Owner.
+* Creator.
+* Assignee.
+* Group member.
+* Manager.
+* Explicitly shared user.
+* Company administrator.
+* Unauthorized.
+
+Assignments and sharing changes should create audit history.
+
+---
+
+# 12. Field-Level Security
+
+For the affected table, classify fields into:
+
+## Public operational fields
+
+Examples:
+
+* Name.
+* Description.
+* Status.
+* Notes.
+* Dates.
+* Product code.
+
+## Restricted operational fields
+
+Examples:
+
+* Stock quantity.
+* Warehouse.
+* Batch.
+* Serial number.
+* Assigned user.
+* Approval status.
+
+## Financial fields
+
+Examples:
+
+* Cost.
+* Price.
+* Discount.
+* Tax.
+* Total amount.
+* Payment status.
+* Outstanding balance.
+* Credit limit.
+* Salary.
+
+## Personal and sensitive fields
+
+Examples:
+
+* Email.
+* Phone.
+* Address.
+* PAN.
+* Aadhaar.
+* Bank account.
+* IFSC.
+* Date of birth.
+* Salary.
+
+## System fields
+
+Examples:
+
+* CompanyId.
+* CreatedBy.
+* UpdatedBy.
+* CreatedAt.
+* UpdatedAt.
+* IsDeleted.
+* DeletedAt.
+* Flag.
+
+Determine:
+
+* Who can view each field.
+* Who can edit each field.
+* Whether it should be masked.
+* Whether changes require approval.
+* Whether changes require enhanced audit logging.
+
+---
+
+# 13. Approval Workflow Analysis
+
+For the requested change, determine:
+
+* Whether approval is required.
+* Required approval level.
+* Approver role.
+* Whether multiple approval levels are required.
+* Whether the requester may approve.
+* Whether the approver has company, branch, warehouse, and module access.
+* Whether an `ApprovalWorkflows` record should be created.
+* Whether the original record remains editable while approval is pending.
+* What happens after approval.
+* What happens after rejection.
+* Whether approval can be withdrawn.
+* Whether approved records can be edited.
+* Whether editing an approved record resets approval.
+
+Suggested approval thresholds:
+
+* Purchase order value.
+* Sales discount percentage.
+* Stock-adjustment quantity.
+* Stock-adjustment value.
+* Purchase return value.
+* Sales return value.
+* Expense value.
+* Payment value.
+* Credit-limit increase.
+* Product-cost change.
+* Backdated transaction.
+* Negative-stock override.
+
+---
+
+# 14. Audit Requirements
+
+Every important operation should create an `AuditLogs` record.
+
+Required fields:
+
+* Table name.
+* Record ID.
+* Action.
+* Changed by.
+* Change time.
+* Changes JSON.
+
+Recommended `Changes` JSON structure:
+
+```json
+{
+  "requestId": "unique-request-id",
+  "companyId": 1,
+  "branchId": 2,
+  "warehouseId": 3,
+  "module": "Inventory",
+  "action": "UPDATE",
+  "reason": "Approved stock correction",
+  "oldValues": {
+    "Quantity": 100,
+    "ReservedQuantity": 10
+  },
+  "newValues": {
+    "Quantity": 95,
+    "ReservedQuantity": 10
+  },
+  "stockImpact": {
+    "quantityChange": -5,
+    "availableBefore": 90,
+    "availableAfter": 85
+  },
+  "approval": {
+    "required": true,
+    "approvedBy": 14,
+    "approvedAt": "timestamp"
+  },
+  "securityContext": {
+    "role": "Inventory Manager",
+    "permissions": [
+      "inventory.stock.adjust",
+      "inventory.stock.adjust.approve"
+    ]
+  }
+}
+```
+
+Audit these actions:
+
+* Create.
+* Update.
+* Delete.
+* Soft delete.
+* Restore.
+* Approval.
+* Rejection.
+* Cancellation.
+* Status transition.
+* Assignment.
+* Ownership transfer.
+* Visibility change.
+* Stock change.
+* Price change.
+* Cost change.
+* Discount change.
+* Payment change.
+* Role change.
+* Permission change.
+* Export of sensitive data.
+* Login failures for privileged users.
+
+Do not allow ordinary users to edit or delete audit logs.
+
+---
+
+# 15. Notification Requirements
+
+Determine who must receive notifications.
+
+Potential recipients:
+
+* Record creator.
+* Assigned user.
+* Record owner.
+* Requester.
+* Approver.
+* Warehouse Manager.
+* Inventory Manager.
+* Purchase Manager.
+* Sales Manager.
+* Finance Manager.
+* Company Administrator.
+* Group members.
+* Destination warehouse team.
+
+Potential notification events:
+
+* Approval requested.
+* Approval completed.
+* Request rejected.
+* Low stock.
+* Stock out.
+* Stock replenished.
+* Batch expiring.
+* Goods received.
+* Goods rejected.
+* Transfer dispatched.
+* Transfer received.
+* Delivery delayed.
+* Order cancelled.
+* Return approved.
+* Payment overdue.
+* Unauthorized action attempted.
+
+For each notification, specify:
+
+* User ID.
+* Title.
+* Message.
+* Type.
+* Reference type.
+* Reference ID.
+* Company ID.
+* When it is created.
+* Whether duplicate notifications must be prevented.
+
+---
+
+# 16. Delete and Soft-Delete Analysis
+
+Determine whether the requested deletion is:
+
+* Hard delete.
+* Soft delete.
+* Archive.
+* Deactivation.
+* Reversal.
+
+Analyze:
+
+* Cascading child deletion.
+* Set-null effects.
+* Restricted deletion.
+* Orphan-record risk.
+* Reporting impact.
+* Stock-history impact.
+* Financial-history impact.
+* Audit-history impact.
+
+Recommended rule:
+
+Transactional records should normally not be permanently deleted after posting.
+
+Use:
+
+* Cancellation.
+* Reversal.
+* Return.
+* Adjustment.
+* Soft deletion.
+
+Master records such as products, customers, suppliers, warehouses, and users should normally be deactivated rather than deleted when historical records reference them.
+
+---
+
+# 17. Concurrency and Transaction Safety
+
+Determine whether the operation requires row locking.
+
+For stock operations, recommend:
+
+```sql
+SELECT *
+FROM "ProductStockPerWarehouse"
+WHERE "ProductId" = $1
+  AND "WarehouseId" = $2
+FOR UPDATE;
+```
+
+Validate stock after acquiring the lock.
+
+The operation should be idempotent.
+
+Use a unique request ID or transaction reference to prevent duplicate posting.
+
+The transaction should contain:
+
+1. Authenticate user.
+2. Authorize company, branch, warehouse, module, record, action, and field.
+3. Validate status transition.
+4. Validate approval.
+5. Lock affected stock rows.
+6. Recheck available quantity.
+7. Update source business document.
+8. Update warehouse stock.
+9. Update reservation.
+10. Update batch quantities.
+11. Update serial-number statuses.
+12. Create stock movements.
+13. Update document totals.
+14. Update global product stock when intentionally maintained.
+15. Insert audit logs.
+16. Create notifications.
+17. Commit.
+
+If any step fails, roll back the complete transaction.
+
+---
+
+# 18. Data-Integrity Risks to Detect
+
+Explicitly identify:
+
+* `Products.StockQuantity` not matching warehouse-stock totals.
+* Batch quantity not matching warehouse quantity.
+* Serial-number count not matching stock.
+* Reserved quantity exceeding physical stock.
+* Negative stock.
+* Duplicate receipt.
+* Duplicate dispatch.
+* Duplicate stock movement.
+* Duplicate approval.
+* Missing foreign key.
+* Orphan child record.
+* Cross-company reference.
+* Cross-warehouse unauthorized operation.
+* Integer and decimal quantity mismatch.
+* `IsDelete` versus `IsDeleted` naming inconsistency.
+* Missing company ID.
+* Missing branch ID.
+* Missing warehouse ID.
+* Status changed without stock update.
+* Stock changed without movement history.
+* Stock changed without audit history.
+* Header totals not matching line totals.
+* Payment totals not matching invoice totals.
+* Purchase-order received quantity not matching GRNs.
+* Sales-order dispatched quantity not matching delivery records.
+* Return quantity exceeding original quantity.
+* Transfer received quantity exceeding dispatched quantity.
+* Production output exceeding reasonable input.
+* Soft-deleted records appearing in reports.
+* Duplicate table definitions.
+* Duplicate migration functions.
+* Missing updated-at trigger.
+* Missing updated-by value.
+* User modifying a record outside assigned company.
+* User approving their own request.
+* User changing approval status directly.
+* Unauthorized sensitive-field update.
+* Audit log containing sensitive data without masking.
+
+---
+
+# 19. Required Output Format
+
+Produce the result in the following exact structure.
+
+## A. Change summary
+
+Explain the requested operation in plain language.
+
+Include:
+
+* User.
+* Role.
+* Company.
+* Branch.
+* Warehouse.
+* Record.
+* Action.
+* Old value.
+* New value.
+* Business reason.
+
+## B. Authorization result
+
+Show:
+
+| Security check        | Result                   | Evidence | Required action |
+| --------------------- | ------------------------ | -------- | --------------- |
+| Authentication        | Allowed or denied        | Reason   | Action          |
+| Company scope         | Allowed or denied        | Reason   | Action          |
+| Branch scope          | Allowed or denied        | Reason   | Action          |
+| Warehouse scope       | Allowed or denied        | Reason   | Action          |
+| Module permission     | Allowed or denied        | Reason   | Action          |
+| Record visibility     | Allowed or denied        | Reason   | Action          |
+| Field permission      | Allowed or denied        | Reason   | Action          |
+| Status transition     | Allowed or denied        | Reason   | Action          |
+| Approval requirement  | Required or not required | Reason   | Action          |
+| Segregation of duties | Passed or failed         | Reason   | Action          |
+
+Finish this section with one result:
+
+* ALLOWED.
+* ALLOWED AFTER APPROVAL.
+* ALLOWED WITH RESTRICTIONS.
+* DENIED.
+
+## C. Required permissions
+
+List:
+
+* Role.
+* Required permissions.
+* Missing permissions.
+* Scope requirements.
+* Approval role.
+* Whether a separate approver is required.
+
+## D. Directly affected record
+
+Show:
+
+* Table.
+* Record ID.
+* Changed field.
+* Old value.
+* New value.
+* Immediate database effect.
+* Application-required effect.
+
+## E. Dependency map
+
+Show the relationship chain.
+
+Example:
+
+`SalesOrders → SalesOrderItems → DeliveryChallans → DeliveryChallanItems → ProductStockPerWarehouse → Batches → SerialNumbers → StockMovements → AuditLogs → Notifications`
+
+Mark each relationship as:
+
+* Foreign key.
+* Polymorphic reference.
+* Application-only relationship.
+* Reporting relationship.
+
+## F. Impact matrix
+
+Create this table:
+
+| Level | Table | Record or filter | Relationship | Expected operation | Classification | User-visible effect | Required permission |
+| ----- | ----- | ---------------- | ------------ | ------------------ | -------------- | ------------------- | ------------------- |
+
+Impact levels:
+
+* Direct.
+* Parent.
+* Child.
+* Indirect.
+* Inventory.
+* Financial.
+* CRM.
+* Security.
+* Reporting.
+* Audit.
+* Notification.
+* Potential risk.
+
+## G. Stock calculation
+
+Show:
+
+| Product | Warehouse | Batch | Before quantity | Before reserved | Incoming | Outgoing | Reserved | Released | After quantity | After reserved | After available |
+| ------- | --------- | ----- | --------------: | --------------: | -------: | -------: | -------: | -------: | -------------: | -------------: | --------------: |
+
+## H. Status workflow impact
+
+Show:
+
+* Current status.
+* Requested status.
+* Whether transition is valid.
+* Required permission.
+* Required approval.
+* Stock effect.
+* Financial effect.
+* Notification effect.
+* Reversal requirements.
+
+## I. Automatic database effects
+
+List only effects guaranteed by PostgreSQL.
+
+Include:
+
+* Cascade deletes.
+* Set-null changes.
+* Generated-column recalculations.
+* Check constraints.
+* Unique constraints.
+* Trigger actions.
+
+## J. Application-required effects
+
+List all effects that require backend code.
+
+Include:
+
+* Stock synchronization.
+* Reservation.
+* Release.
+* Batch update.
+* Serial-number update.
+* Movement record.
+* Approval workflow.
+* Notification.
+* Audit log.
+* Report refresh.
+* Dashboard update.
+
+## K. Role-based screen visibility
+
+Create this table:
+
+| Screen or API | Super Admin | Company Admin | Manager | Operator or Executive | Finance | Auditor | Reason |
+| ------------- | ----------- | ------------- | ------- | --------------------- | ------- | ------- | ------ |
+
+Use:
+
+* Full access.
+* Read-only.
+* Own records.
+* Assigned warehouse.
+* Assigned branch.
+* Approval only.
+* Masked values.
+* No access.
+
+## L. Field-level access
+
+Create this table:
+
+| Field | View roles | Edit roles | Approval required | Masking required | Risk |
+| ----- | ---------- | ---------- | ----------------- | ---------------- | ---- |
+
+## M. Approval workflow
+
+Explain:
+
+* Workflow name.
+* Requester.
+* Approver.
+* Approval levels.
+* Threshold.
+* Status while pending.
+* Action after approval.
+* Action after rejection.
+* Self-approval restriction.
+* Audit entries.
+* Notifications.
+
+## N. Audit-log requirement
+
+Provide the recommended audit record and JSON payload.
+
+## O. Notification requirement
+
+Show:
+
+| Recipient role or user | Event | Title | Reference type | Delivery timing |
+| ---------------------- | ----- | ----- | -------------- | --------------- |
+
+## P. Risks
+
+Rank risks as:
+
+* Critical.
+* High.
+* Medium.
+* Low.
+
+For every risk, include:
+
+* Description.
+* Affected records.
+* Business consequence.
+* Security consequence.
+* Recommended fix.
+
+## Q. Safe implementation order
+
+Provide the exact backend transaction sequence.
+
+Include authorization before data modification.
+
+## R. Validation queries
+
+Provide safe PostgreSQL `SELECT` queries for:
+
+* Main record.
+* Parent record.
+* Child records.
+* Warehouse stock.
+* Batch stock.
+* Serial numbers.
+* Stock movements.
+* Audit logs.
+* Approval records.
+* Notifications.
+* Company and warehouse access.
+* User role and permissions.
+
+Do not provide destructive SQL unless explicitly requested.
+
+## S. API authorization example
+
+Provide recommended API middleware flow:
+
+```text
+authenticate
+→ load user roles and permissions
+→ validate company scope
+→ validate branch scope
+→ validate warehouse scope
+→ validate record ownership or visibility
+→ validate action permission
+→ validate field permission
+→ validate status transition
+→ validate approval requirement
+→ execute transaction
+→ audit
+→ notify
+```
+
+## T. Test cases
+
+Provide test cases for:
+
+* Authorized operation.
+* Missing permission.
+* Wrong company.
+* Wrong branch.
+* Wrong warehouse.
+* Private record.
+* Group-visible record.
+* Owner-access record.
+* Manager-access record.
+* Self-approval attempt.
+* Invalid status transition.
+* Insufficient stock.
+* Negative-stock override.
+* Duplicate request.
+* Concurrent request.
+* Partial receipt.
+* Partial dispatch.
+* Cancellation.
+* Return.
+* Reversal.
+* Soft deletion.
+* Restore.
+* Batch mismatch.
+* Serial-number mismatch.
+* Report visibility.
+* Sensitive-field masking.
+
+## U. Final conclusion
+
+Finish with:
+
+* Authorization decision.
+* Required role.
+* Required permissions.
+* Required approver.
+* Directly affected tables.
+* Indirectly affected tables.
+* Database-automatic effects.
+* Application-required effects.
+* User-visible screens affected.
+* Audit records required.
+* Notifications required.
+* Highest inventory risk.
+* Highest security risk.
+* Highest financial risk.
+* Recommended action before deployment.
+
+---
+
+# 20. Mandatory Analysis Rules
+
+Follow these rules strictly:
+
+1. Never assume a role has access based only on the role name.
+2. Verify permissions, company scope, branch scope, warehouse scope, ownership, assignment, and visibility.
+3. Deny access by default.
+4. Do not trust `CompanyId`, `BranchId`, `WarehouseId`, `CreatedBy`, `UpdatedBy`, approval fields, or stock values supplied directly by the frontend.
+5. Obtain security-sensitive values from the authenticated server-side context.
+6. Do not allow users to change their own role or permissions.
+7. Do not allow users to approve their own high-risk transaction.
+8. Do not allow warehouse users to modify another warehouse’s stock.
+9. Do not allow users to update generated columns directly.
+10. Do not allow direct edits to finalized stock transactions.
+11. Use reversal transactions instead of deleting posted records.
+12. Create an audit log for every privileged action.
+13. Use database transactions for all multi-table operations.
+14. Use row locks for stock modifications.
+15. Prevent duplicate posting through idempotency controls.
+16. Mask personal, salary, bank, tax, and financial data for unauthorized roles.
+17. Never report an effect as automatic unless the supplied schema guarantees it.
+18. Mark missing foreign keys and missing synchronization logic as risks.
+19. Clearly distinguish physical stock, reserved stock, available stock, in-transit stock, damaged stock, and rejected stock.
+20. Finish with a clear ALLOWED, APPROVAL REQUIRED, or DENIED decision.
+
+
+# Complete ERP/CRM End-to-End Testing and Verification
+
+Please test the entire `ERPCRMServer` project and verify whether all implemented features are working correctly.
+
+Do not only review the code. Run the application, execute available tests, call the APIs, verify database changes, and validate each workflow from beginning to end.
+
+Use `ERPCRMServer/docs/COMPREHENSIVE_ARCHITECTURE_ANALYSIS.md` as the testing reference.
+
+## Testing objectives
+
+Verify:
+
+* The server starts without errors.
+* The PostgreSQL connection works.
+* All migrations and table-creation scripts execute successfully.
+* All API routes are reachable.
+* Authentication works.
+* Role-based permissions work.
+* Company, branch, and warehouse isolation work.
+* Inventory quantities remain consistent.
+* Status changes produce the expected database effects.
+* Transactions roll back correctly after failures.
+* Audit logs and notifications are created.
+* Invalid and unauthorized requests are rejected.
+* Concurrent or duplicate requests do not corrupt stock.
+
+## 1. Environment verification
+
+Check:
+
+* Environment variables.
+* Database connection.
+* JWT configuration.
+* Token expiry and refresh logic.
+* File-upload paths.
+* Required directories.
+* Package installation.
+* Application startup.
+* Migration execution.
+* Missing imports or exports.
+* Route-controller mappings.
+* PostgreSQL syntax errors.
+
+Run the server and record every startup warning or error.
+
+## 2. Database verification
+
+Verify that all required tables, columns, indexes, constraints, foreign keys, triggers, functions, and generated columns exist.
+
+Check for:
+
+* Duplicate tables.
+* Duplicate migration functions.
+* Missing foreign keys.
+* Missing indexes.
+* Invalid PostgreSQL queries.
+* MSSQL syntax still present.
+* Inconsistent names such as `IsDelete` and `IsDeleted`.
+* `Id` and `id` inconsistencies.
+* Integer and decimal quantity mismatches.
+* Invalid cascade-delete behavior.
+
+Do not assume a migration worked. Verify it directly in PostgreSQL.
+
+## 3. Authentication testing
+
+Test:
+
+* Valid login.
+* Invalid password.
+* Unknown user.
+* Inactive user.
+* Deleted user.
+* Expired access token.
+* Invalid access token.
+* Missing token.
+* Refresh token.
+* Expired refresh token.
+* Reused or revoked refresh token.
+* Logout.
+* Password reset, when available.
+* Token rotation, when available.
+
+Verify that protected APIs cannot be accessed without authentication.
+
+## 4. Role-based access testing
+
+Test every important endpoint with these roles where available:
+
+* Super Administrator.
+* Company Administrator.
+* Inventory Manager.
+* Warehouse Manager.
+* Warehouse Operator.
+* Purchase Manager.
+* Purchase Executive.
+* Sales Manager.
+* Sales Executive.
+* Finance Manager.
+* Accountant.
+* Production Manager.
+* Quality Controller.
+* CRM Manager.
+* CRM User.
+* Auditor.
+* Read-only user.
+
+For every route, verify:
+
+* Allowed roles can access it.
+* Unauthorized roles receive `403 Forbidden`.
+* Unauthenticated users receive `401 Unauthorized`.
+* Read-only users cannot create, edit, delete, approve, dispatch, receive, or cancel.
+* Operators cannot approve their own transactions.
+* Auditors cannot modify data.
+* Users cannot assign permissions higher than their own.
+
+## 5. Company isolation testing
+
+Create or use records from at least two companies.
+
+Verify that:
+
+* A user from Company A cannot view Company B records.
+* A user from Company A cannot update Company B records.
+* A user cannot submit Company B’s ID in the request body.
+* Record-by-ID endpoints enforce company scope.
+* List endpoints enforce company scope.
+* Reports enforce company scope.
+* Audit logs enforce company scope.
+* Notifications enforce company scope.
+* Warehouse and stock queries enforce company scope.
+
+Treat any cross-company data access as a critical failure.
+
+## 6. Branch and warehouse isolation testing
+
+Use at least two branches and two warehouses.
+
+Verify that:
+
+* Branch-level users only see assigned branches.
+* Warehouse users only see assigned warehouses.
+* A warehouse operator cannot edit another warehouse’s stock.
+* Source and destination warehouse permissions are checked for transfers.
+* A user cannot change `WarehouseId` to bypass access rules.
+* Stock reports respect warehouse scope.
+* Batch and serial-number records respect warehouse scope.
+
+## 7. Product testing
+
+Test:
+
+* Create product.
+* Update product.
+* View product.
+* Search product.
+* Deactivate product.
+* Restore product.
+* Duplicate product code.
+* Duplicate barcode.
+* Duplicate SKU.
+* Invalid category.
+* Invalid unit.
+* Negative price.
+* Negative cost.
+* Unauthorized cost update.
+* Unauthorized stock update.
+* Deleting a product referenced by transactions.
+
+Verify that direct editing of `Products.StockQuantity` is blocked or handled according to the approved inventory design.
+
+## 8. Inventory source-of-truth testing
+
+Verify consistency between:
+
+* `Products.StockQuantity`
+* `ProductStockPerWarehouse.Quantity`
+* `ProductStockPerWarehouse.ReservedQuantity`
+* `ProductStockPerWarehouse.AvailableQuantity`
+* `Batches.Quantity`
+* `SerialNumbers`
+* `StockMovements`
+* Warehouse bins or locations
+
+Run reconciliation checks after every inventory operation.
+
+Confirm:
+
+```text
+AvailableQuantity = Quantity - ReservedQuantity
+```
+
+Confirm that the global product total matches the sum of warehouse quantities when global stock is intentionally maintained.
+
+Any mismatch must be reported.
+
+## 9. Purchase requisition testing
+
+Test:
+
+* Draft creation.
+* Submission.
+* Approval.
+* Rejection.
+* Cancellation.
+* Conversion to purchase order.
+* Unauthorized approval.
+* Self-approval.
+* Duplicate conversion.
+* Invalid status transition.
+
+Verify that purchase requisitions do not directly change stock.
+
+## 10. Purchase order testing
+
+Test:
+
+* Create purchase order.
+* Add items.
+* Update draft.
+* Submit for approval.
+* Approve.
+* Reject.
+* Send to supplier.
+* Partial receipt.
+* Full receipt.
+* Cancellation before receipt.
+* Cancellation after receipt.
+* Duplicate product item.
+* Invalid supplier.
+* Incorrect totals.
+* Unauthorized approval.
+* Self-approval.
+
+Verify that creating or approving a purchase order does not increase physical stock.
+
+## 11. GRN testing
+
+Test:
+
+* Create GRN.
+* Partial receipt.
+* Full receipt.
+* Accepted quantity.
+* Rejected quantity.
+* Batch creation.
+* Serial-number creation.
+* Duplicate GRN submission.
+* GRN against wrong purchase order.
+* Receipt exceeding ordered quantity.
+* Receipt into unauthorized warehouse.
+* Cancellation.
+* Reversal.
+* Concurrent receipt.
+
+After GRN posting, verify:
+
+* Warehouse stock increased correctly.
+* Purchase-order item received quantity updated.
+* Purchase-order status updated.
+* Batch quantity updated.
+* Serial numbers created or updated.
+* Stock movement created.
+* Audit log created.
+* Notification created.
+* No duplicate stock was added.
+
+## 12. Purchase return testing
+
+Test:
+
+* Create return.
+* Approve return.
+* Dispatch return.
+* Partial return.
+* Return exceeding received quantity.
+* Wrong batch.
+* Wrong serial number.
+* Cancellation before dispatch.
+* Cancellation after dispatch.
+* Duplicate posting.
+* Unauthorized warehouse.
+
+Verify:
+
+* Stock decreases only when goods leave the warehouse.
+* Batch quantity decreases.
+* Serial status changes correctly.
+* Stock movement is created.
+* Audit and notifications are created.
+* Returned quantity cannot exceed received quantity.
+
+## 13. Sales quotation testing
+
+Test:
+
+* Create quotation.
+* Edit draft.
+* Approve.
+* Send.
+* Accept.
+* Reject.
+* Expire.
+* Convert to sales order.
+* Duplicate conversion.
+* Discount limit.
+* Unauthorized discount.
+* Incorrect totals.
+
+Verify that quotation creation does not change physical stock unless quotation-level reservation is explicitly implemented.
+
+## 14. Sales order testing
+
+Test:
+
+* Draft creation.
+* Approval.
+* Confirmation.
+* Reservation.
+* Partial reservation.
+* Insufficient stock.
+* Partial dispatch.
+* Full dispatch.
+* Cancellation before dispatch.
+* Cancellation after partial dispatch.
+* Duplicate submission.
+* Concurrent confirmation.
+* Invalid status transition.
+* Unauthorized discount.
+* Unauthorized warehouse.
+
+Verify the configured stock policy.
+
+When reservation is implemented:
+
+* Confirmation increases reserved quantity.
+* Available quantity decreases.
+* Physical quantity remains unchanged.
+* Cancellation releases the reservation.
+* Dispatch decreases physical and reserved quantities.
+
+Verify that the same quantity is not deducted twice.
+
+## 15. Delivery challan testing
+
+Test:
+
+* Create challan.
+* Add items.
+* Partial dispatch.
+* Full dispatch.
+* Delivery confirmation.
+* Partial delivery.
+* Cancellation.
+* Duplicate dispatch.
+* Quantity exceeding sales order.
+* Wrong warehouse.
+* Wrong batch.
+* Wrong serial number.
+* PostgreSQL query execution.
+
+Verify:
+
+* Dispatch affects stock exactly once.
+* Sales-order dispatched quantities update.
+* Batch and serial records update.
+* Stock movement is created.
+* Audit and notification records are created.
+* MSSQL-style SQL has been removed.
+
+## 16. Sales return testing
+
+Test:
+
+* Return request.
+* Approval.
+* Physical receipt.
+* Inspection.
+* Accepted return.
+* Damaged return.
+* Rejected return.
+* Partial return.
+* Return exceeding sold quantity.
+* Duplicate return.
+* Wrong batch.
+* Wrong serial number.
+* Refund or credit flow.
+* Cancellation.
+
+Verify:
+
+* Stock is restored only after receipt and acceptance.
+* Damaged goods do not enter normal available stock.
+* Batch quantity updates.
+* Serial status updates.
+* Stock movement is created.
+* PostgreSQL queries work.
+* Audit and notifications are created.
+
+## 17. Stock-transfer testing
+
+Test:
+
+* Draft transfer.
+* Request approval.
+* Approval.
+* Rejection.
+* Reservation.
+* Dispatch.
+* In-transit status.
+* Partial receipt.
+* Full receipt.
+* Cancellation before dispatch.
+* Cancellation after dispatch.
+* Source and destination being the same.
+* Insufficient source stock.
+* Receipt exceeding dispatched quantity.
+* Duplicate dispatch.
+* Duplicate receipt.
+* Concurrent transfer.
+* Wrong source warehouse permission.
+* Wrong destination warehouse permission.
+* Cross-company transfer attempt.
+
+Verify:
+
+At dispatch:
+
+* Source stock decreases or moves to in-transit stock.
+* Source reservation is released.
+* Transfer-out movement is created.
+* Batch and serial status updates.
+
+At receipt:
+
+* Destination stock increases.
+* Transfer-in movement is created.
+* Batch warehouse updates.
+* Serial warehouse and status update.
+* Source and destination quantities balance.
+
+## 18. Stock-adjustment testing
+
+Test:
+
+* Increase adjustment.
+* Decrease adjustment.
+* Damage adjustment.
+* Expiry adjustment.
+* Lost-stock adjustment.
+* Opening stock.
+* Physical-count correction.
+* Draft.
+* Submission.
+* Approval.
+* Rejection.
+* Application.
+* Reversal.
+* Duplicate application.
+* Self-approval.
+* Adjustment exceeding approval limit.
+* Negative-stock attempt.
+* Unauthorized warehouse.
+
+Verify:
+
+* Draft adjustments do not change stock.
+* Approved adjustments are applied once.
+* Stock cannot become negative unless an authorized override exists.
+* Reversal creates an opposite transaction.
+* Original movements and audit history remain unchanged.
+
+## 19. Batch and serial-number testing
+
+Test batches for:
+
+* Duplicate batch number.
+* Expired batch.
+* Negative batch quantity.
+* Batch transfer.
+* Purchase return.
+* Sales return.
+* Damage.
+* Expiry.
+* Warehouse mismatch.
+
+Test serial numbers for:
+
+* Duplicate serial number.
+* Available to sold.
+* Sold to returned.
+* Returned to available.
+* Available to damaged.
+* Warehouse transfer.
+* Reusing a sold serial number.
+* Serial belonging to the wrong product.
+* Serial belonging to the wrong batch.
+* Serial belonging to the wrong warehouse.
+
+Verify that serial counts reconcile with serialized product quantities.
+
+## 20. Production testing
+
+Test:
+
+* BOM creation.
+* BOM update.
+* Production-order creation.
+* Approval or release.
+* Raw-material reservation.
+* Raw-material issue.
+* Consumption.
+* Partial production.
+* Finished-goods receipt.
+* Rejected production.
+* Wastage.
+* Cancellation.
+* Reversal.
+* Insufficient raw material.
+* Duplicate completion.
+* Concurrent completion.
+
+Verify:
+
+* Raw materials decrease correctly.
+* Finished goods increase correctly.
+* Wastage is recorded.
+* Rejected output is separated.
+* Stock movements are created.
+* Batch and serial records update where required.
+* Production cannot consume unavailable stock.
+
+## 21. CRM testing
+
+Test:
+
+* Account creation.
+* Contact creation.
+* Lead creation.
+* Lead assignment.
+* Lead conversion.
+* Opportunity creation.
+* Opportunity stage change.
+* Activity creation.
+* Case creation.
+* Comments.
+* Assignment changes.
+* Group visibility.
+* Private visibility.
+* Company visibility.
+* Unauthorized record-by-ID access.
+* Unauthorized update.
+* Unauthorized reassignment.
+* Soft deletion.
+* Restore.
+
+Verify visibility through:
+
+* Owner.
+* Creator.
+* Assigned user.
+* Group member.
+* Manager.
+* Explicit sharing.
+* Company administrator.
+
+List and detail endpoints must apply the same visibility rules.
+
+## 22. Finance testing
+
+Test:
+
+* Invoice creation.
+* Invoice totals.
+* Payment creation.
+* Partial payment.
+* Full payment.
+* Duplicate payment.
+* Payment approval.
+* Expense creation.
+* Expense approval.
+* Self-approval.
+* Unauthorized financial access.
+* Customer outstanding balance.
+* Profit-and-loss reporting.
+* Deleted or cancelled document reporting.
+
+Verify that financial users cannot directly manipulate physical stock unless they also have inventory permission.
+
+## 23. Approval-workflow testing
+
+Test:
+
+* Approval request creation.
+* Correct approver assignment.
+* Approval.
+* Rejection.
+* Resubmission.
+* Multi-level approval.
+* Approval thresholds.
+* Self-approval prevention.
+* Editing after approval.
+* Approval reset after material changes.
+* Wrong-company approval attempt.
+* Wrong-warehouse approval attempt.
+* Duplicate approval.
+
+Verify that changing the main record’s status directly cannot bypass the approval workflow.
+
+## 24. Audit-log testing
+
+Verify audit logs for:
+
+* Create.
+* Update.
+* Delete.
+* Soft delete.
+* Restore.
+* Approval.
+* Rejection.
+* Cancellation.
+* Assignment.
+* Visibility change.
+* Stock change.
+* Price change.
+* Cost change.
+* Payment change.
+* Role change.
+* Permission change.
+
+Check that audit logs contain:
+
+* User.
+* Company.
+* Record.
+* Action.
+* Timestamp.
+* Old values.
+* New values.
+* Reason.
+* Approval context.
+* Stock before and after.
+
+Verify that passwords, tokens, complete bank details, PAN, Aadhaar, and other secrets are not stored in audit JSON.
+
+Verify that ordinary users cannot edit or delete audit records.
+
+## 25. Notification testing
+
+Verify notifications for:
+
+* Approval requested.
+* Approval approved.
+* Approval rejected.
+* Low stock.
+* Stock out.
+* Stock replenished.
+* Batch expiry.
+* Goods received.
+* Goods rejected.
+* Transfer dispatched.
+* Transfer received.
+* Delivery delayed.
+* Return approved.
+* Payment overdue.
+
+Check:
+
+* Correct recipient.
+* Correct company scope.
+* Correct record reference.
+* No duplicate notification.
+* Read and unread behavior.
+* Unauthorized users cannot read another user’s notifications.
+
+## 26. Transaction rollback testing
+
+Force failures after intermediate steps.
+
+Examples:
+
+* Fail after stock update but before stock movement.
+* Fail after batch update but before audit log.
+* Fail after source transfer deduction but before destination receipt.
+* Fail after GRN creation but before warehouse-stock update.
+* Fail after dispatch but before sales-order update.
+
+Verify that all changes roll back together.
+
+There must not be partially posted stock operations.
+
+## 27. Concurrency testing
+
+Send simultaneous requests for:
+
+* Sales-order confirmation.
+* Delivery dispatch.
+* GRN receipt.
+* Stock adjustment.
+* Stock transfer.
+* Purchase return.
+* Sales return.
+* Production consumption.
+
+Verify:
+
+* Stock does not become negative.
+* Reserved quantity does not exceed physical quantity.
+* The same document is not posted twice.
+* Row locking or atomic updates prevent race conditions.
+* One request succeeds and conflicting requests fail safely.
+
+## 28. Idempotency testing
+
+Submit the same posting request multiple times using the same request or idempotency key.
+
+Test:
+
+* GRN posting.
+* Dispatch.
+* Transfer dispatch.
+* Transfer receipt.
+* Return posting.
+* Stock adjustment.
+* Production completion.
+* Payment creation.
+
+Verify that repeated requests return the existing result and do not duplicate stock, payments, movements, audit logs, or notifications.
+
+## 29. Reporting verification
+
+After each workflow, verify:
+
+* Product stock report.
+* Warehouse stock report.
+* Available-stock report.
+* Low-stock report.
+* Batch-expiry report.
+* Purchase report.
+* Sales report.
+* Return report.
+* Transfer report.
+* Production report.
+* Customer history.
+* Supplier history.
+* Inventory valuation.
+* Profit-and-loss report.
+* Dashboard totals.
+
+Reports must exclude or correctly represent:
+
+* Soft-deleted records.
+* Cancelled transactions.
+* Reversed transactions.
+* Rejected quantities.
+* Damaged stock.
+* In-transit stock.
+* Reserved stock.
+
+## 30. Automated test requirements
+
+Inspect the existing test suite.
+
+Create or update tests only where necessary and safe.
+
+Include:
+
+* Unit tests.
+* Controller tests.
+* Service tests.
+* Middleware tests.
+* Integration tests.
+* Database transaction tests.
+* RBAC tests.
+* Company-isolation tests.
+* Branch-isolation tests.
+* Warehouse-isolation tests.
+* Record-visibility tests.
+* Approval tests.
+* Stock-reconciliation tests.
+* Concurrency tests.
+* Idempotency tests.
+* Audit tests.
+* Notification tests.
+
+Use a dedicated test database.
+
+Do not run destructive tests against production data.
+
+## 31. Required final report
+
+Save the test report as:
+
+`ERPCRMServer/docs/COMPREHENSIVE_TEST_REPORT.md`
+
+Use this structure:
+
+### A. Test environment
+
+* Node.js version.
+* PostgreSQL version.
+* Test database.
+* Application configuration.
+* Commands executed.
+
+### B. Test execution summary
+
+| Category | Total | Passed | Failed | Blocked | Not implemented |
+| -------- | ----: | -----: | -----: | ------: | --------------: |
+
+### C. API test results
+
+| Method | Endpoint | Role | Scenario | Expected result | Actual result | Status |
+| ------ | -------- | ---- | -------- | --------------- | ------------- | ------ |
+
+### D. Workflow test results
+
+| Workflow | Scenario | Database effect | Stock effect | Audit effect | Notification effect | Status |
+| -------- | -------- | --------------- | ------------ | ------------ | ------------------- | ------ |
+
+### E. RBAC results
+
+| Role | Module | Action | Expected access | Actual access | Status |
+| ---- | ------ | ------ | --------------- | ------------- | ------ |
+
+### F. Data-isolation results
+
+Include:
+
+* Company isolation.
+* Branch isolation.
+* Warehouse isolation.
+* Record visibility.
+
+### G. Inventory reconciliation
+
+| Product | Warehouse | Product total | Warehouse total | Batch total | Serial count | Difference | Status |
+| ------- | --------- | ------------: | --------------: | ----------: | -----------: | ---------: | ------ |
+
+### H. Concurrency and idempotency results
+
+Document every simultaneous and duplicate request test.
+
+### I. Failed tests
+
+For every failure include:
+
+* Severity.
+* Test name.
+* Endpoint.
+* File.
+* Function.
+* Expected behavior.
+* Actual behavior.
+* Database state.
+* Reproduction steps.
+* Recommended fix.
+
+### J. Blocked tests
+
+Explain what prevented the test from running.
+
+### K. Missing implementations
+
+List all workflows that cannot be tested because their implementation is missing.
+
+### L. Final conclusion
+
+Finish with one of:
+
+* READY FOR PRODUCTION.
+* READY FOR STAGING ONLY.
+* NOT READY FOR PRODUCTION.
+
+Also provide:
+
+* Total tests executed.
+* Passed tests.
+* Failed tests.
+* Blocked tests.
+* Critical failures.
+* High-risk failures.
+* Inventory mismatches.
+* Authorization failures.
+* Data-isolation failures.
+* Transaction failures.
+* Concurrency failures.
+* Recommended next fix.
+
+## Mandatory rules
+
+1. Do not say a feature works only because the code exists.
+2. Verify the actual API response and database result.
+3. Do not mark untested behavior as passed.
+4. Mark unavailable functionality as `NOT IMPLEMENTED`.
+5. Mark tests that cannot run as `BLOCKED`.
+6. Include exact file paths, functions, routes, and database records as evidence.
+7. Use a separate test database.
+8. Do not delete or modify production data.
+9. Do not hide failed tests.
+10. Do not automatically declare the system production-ready.
+11. A critical security, stock, isolation, transaction, or concurrency failure means the system is not production-ready.
+12. Fix only simple test-environment or syntax issues when necessary to continue testing.
+13. Do not make large architectural changes during testing.
+14. Record recommended fixes separately.
+15. Run the complete test suite again after any permitted fix.
+
+Start by reading `ERPCRMServer/docs/COMPREHENSIVE_ARCHITECTURE_ANALYSIS.md`, identifying the available test setup, starting the application with a dedicated test database, and producing a test execution plan before running the complete tests.
+
+
+////================================================================
+
+
+# ERPCRM Complete System Documentation Generator
+
+Act as a Senior ERP Architect, PostgreSQL Database Architect, Security Architect, Inventory Management Consultant, CRM Architect, and Technical Documentation Specialist.
+
+Your task is to analyze the entire ERPCRM codebase and generate complete technical documentation.
+
+Do not stop after reading migrations or model files.
+
+Inspect:
+
+* Models
+* Database schema
+* Migrations
+* Controllers
+* Services
+* Routes
+* Middleware
+* Validators
+* Helpers
+* Utilities
+* Authentication logic
+* RBAC logic
+* Approval workflow logic
+* Audit logging logic
+* Notification logic
+* Inventory logic
+* CRM logic
+* Finance logic
+* Production logic
+* Reports
+* Dashboard logic
+
+Use the actual codebase as the source of truth.
+
+Do not assume behavior.
+
+Only document behavior that exists in code.
+
+Mark missing functionality separately.
+
+---
+
+# PHASE 1 — DATABASE DISCOVERY
+
+Discover every table in the system.
+
+Generate:
+
+## DATABASE_CATALOG.md
+
+For every table:
+
+| # | Table Name | Module | Purpose | Primary Key | Company Scoped | Branch Scoped | Warehouse Scoped | Soft Delete | Audit Fields |
+| - | ---------- | ------ | ------- | ----------- | -------------- | ------------- | ---------------- | ----------- | ------------ |
+
+For each table identify:
+
+* Columns
+* Data types
+* Nullable fields
+* Default values
+* Unique constraints
+* Foreign keys
+* Indexes
+* Check constraints
+
+Generate a total count:
+
+* Total tables
+* Tables by module
+* Tables with CompanyId
+* Tables with BranchId
+* Tables with WarehouseId
+* Tables with CreatedBy
+* Tables with UpdatedBy
+* Tables using soft delete
+
+---
+
+# PHASE 2 — RELATIONSHIP ANALYSIS
+
+Generate:
+
+## DATABASE_RELATIONSHIP_MAP.md
+
+For every table identify:
+
+* Parent tables
+* Child tables
+* One-to-one relationships
+* One-to-many relationships
+* Many-to-many relationships
+* Polymorphic relationships
+
+Create:
+
+| Source Table | Source Column | Target Table | Target Column | Relationship Type | FK Exists | Delete Rule |
+| ------------ | ------------- | ------------ | ------------- | ----------------- | --------- | ----------- |
+
+Also identify:
+
+* Missing foreign keys
+* Orphan risks
+* Dangerous cascade deletes
+* Unenforced relationships
+
+Create a complete dependency tree.
+
+---
+
+# PHASE 3 — MODULE DOCUMENTATION
+
+Group all tables into modules.
+
+Expected modules:
+
+* Security
+* Users
+* RBAC
+* Inventory
+* Purchasing
+* Sales
+* CRM
+* Finance
+* Production
+* Workflow
+* Reporting
+* Notifications
+* Audit
+
+For each module generate:
+
+### Purpose
+
+### Tables
+
+### Main workflows
+
+### APIs
+
+### Permissions
+
+### Approval requirements
+
+### Reports
+
+### Security considerations
+
+---
+
+# PHASE 4 — INVENTORY ARCHITECTURE
+
+Generate:
+
+## INVENTORY_ARCHITECTURE.md
+
+Identify:
+
+* Product master tables
+* Warehouse tables
+* Batch tables
+* Serial number tables
+* Stock movement tables
+* Transfer tables
+* Adjustment tables
+* Production tables
+
+Determine:
+
+* Inventory source of truth
+* Stock calculation method
+* Available quantity calculation
+* Reserved quantity calculation
+* Batch tracking design
+* Serial tracking design
+
+Document:
+
+### Purchase Flow
+
+Purchase Requisition
+→ Purchase Order
+→ GRN
+→ Warehouse Stock
+
+### Sales Flow
+
+Quotation
+→ Sales Order
+→ Delivery
+→ Invoice
+
+### Transfer Flow
+
+Request
+→ Approval
+→ Dispatch
+→ Receipt
+
+### Production Flow
+
+BOM
+→ Production Order
+→ Consumption
+→ Finished Goods
+
+Identify every table affected by:
+
+* Product creation
+* Product update
+* GRN receipt
+* Sales dispatch
+* Purchase return
+* Sales return
+* Stock adjustment
+* Stock transfer
+* Production completion
+
+---
+
+# PHASE 5 — IMPACT ANALYSIS
+
+Generate:
+
+## IMPACT_MATRIX.md
+
+For every major table create:
+
+| Main Table | Action | Direct Impact | Indirect Impact | Related Tables | Approval | Audit | Notification |
+| ---------- | ------ | ------------- | --------------- | -------------- | -------- | ----- | ------------ |
+
+Analyze:
+
+* Products
+* Warehouses
+* Batches
+* SerialNumbers
+* PurchaseOrders
+* GRN
+* PurchaseReturns
+* SalesOrders
+* DeliveryChallans
+* SalesReturns
+* StockTransfers
+* StockAdjustments
+* ProductionOrders
+* BOM
+* Customers
+* Suppliers
+* Accounts
+* Leads
+* Opportunities
+
+Answer:
+
+"If this record changes, what else changes?"
+
+---
+
+# PHASE 6 — API DOCUMENTATION
+
+Generate:
+
+## API_REFERENCE.md
+
+Inspect every route.
+
+Document:
+
+| Method | Endpoint | Controller | Auth Required | Permission Required | Company Scope | Branch Scope | Warehouse Scope |
+| ------ | -------- | ---------- | ------------- | ------------------- | ------------- | ------------ | --------------- |
+
+For every API:
+
+* Request body
+* Validation rules
+* Response format
+* Error codes
+* Permissions
+* Side effects
+
+Identify:
+
+* Missing middleware
+* Missing authorization
+* Public endpoints
+
+---
+
+# PHASE 7 — RBAC DOCUMENTATION
+
+Generate:
+
+## RBAC_MATRIX.md
+
+Discover:
+
+* Roles
+* Permissions
+* User types
+* Scope rules
+
+Create:
+
+| Permission | Super Admin | Company Admin | Inventory Manager | Warehouse Manager | Warehouse Operator | Purchase Manager | Sales Manager | Finance Manager | CRM User |
+| ---------- | ----------- | ------------- | ----------------- | ----------------- | ------------------ | ---------------- | ------------- | --------------- | -------- |
+
+Document:
+
+* Company scope
+* Branch scope
+* Warehouse scope
+* Record ownership
+* Visibility rules
+
+---
+
+# PHASE 8 — APPROVAL WORKFLOWS
+
+Generate:
+
+## APPROVAL_WORKFLOWS.md
+
+Identify approval logic.
+
+For each module:
+
+| Module | Action | Approval Required | Requester | Approver | Multi-Level |
+| ------ | ------ | ----------------- | --------- | -------- | ----------- |
+
+Document:
+
+* Purchase approvals
+* Sales approvals
+* Inventory approvals
+* Expense approvals
+* Payment approvals
+* Production approvals
+
+Identify missing approvals.
+
+---
+
+# PHASE 9 — AUDIT & NOTIFICATION SYSTEM
+
+Generate:
+
+## AUDIT_AND_NOTIFICATION.md
+
+Document:
+
+* Audit tables
+* Audit middleware
+* Audit services
+* Notification tables
+* Notification services
+
+Identify:
+
+* What actions create audit logs
+* What actions create notifications
+* Missing audit coverage
+* Missing notification coverage
+
+---
+
+# PHASE 10 — SECURITY REVIEW
+
+Generate:
+
+## SECURITY_REVIEW.md
+
+Inspect:
+
+* Authentication
+* JWT
+* Refresh tokens
+* RBAC
+* Company isolation
+* Branch isolation
+* Warehouse isolation
+* Input validation
+* SQL injection protection
+* Audit protection
+
+Identify:
+
+* Critical issues
+* High-risk issues
+* Medium issues
+* Low issues
+
+Provide remediation steps.
+
+---
+
+# PHASE 11 — FINAL MASTER DOCUMENT
+
+Generate:
+
+## ERP_ARCHITECTURE_MASTER.md
+
+Include:
+
+### Executive Summary
+
+### System Overview
+
+### Total Table Count
+
+### Module Count
+
+### API Count
+
+### Controller Count
+
+### Service Count
+
+### Route Count
+
+### Complete Table Catalog
+
+### Relationship Diagram
+
+### Inventory Architecture
+
+### Purchasing Architecture
+
+### Sales Architecture
+
+### CRM Architecture
+
+### Finance Architecture
+
+### Production Architecture
+
+### RBAC Architecture
+
+### Approval Architecture
+
+### Audit Architecture
+
+### Notification Architecture
+
+### API Architecture
+
+### Security Architecture
+
+### Impact Analysis
+
+### Risks
+
+### Recommendations
+
+### Missing Features
+
+### Technical Debt
+
+### Implementation Roadmap
+
+---
+
+# IMPORTANT RULES
+
+1. Inspect the entire codebase recursively.
+2. Do not stop after reading model files.
+3. Use actual code as evidence.
+4. Include file paths and function names.
+5. Mark assumptions separately.
+6. Mark missing functionality separately.
+7. Generate documentation in markdown format.
+8. Create diagrams where possible.
+9. Count every table exactly.
+10. Count every API exactly.
+11. Count every controller exactly.
+12. Count every service exactly.
+13. Count every role exactly.
+14. Count every permission exactly.
+15. Produce a complete ERP documentation package suitable for onboarding new developers and system architects.
+
+Start by discovering all tables and generating the database catalog.

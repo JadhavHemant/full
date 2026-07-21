@@ -1,0 +1,77 @@
+…or create a new repository on the command line
+echo "# client" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/JadhavHemant/client.git
+git push -u origin main
+…or push an existing repository from the command line
+git remote add origin https://github.com/JadhavHemant/ERPCRMClient.
+git branch -M main
+git push -u origin main
+
+
+
+…or create a new repository on the command line
+echo "# server" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/JadhavHemant/server.git
+git push -u origin main
+…or push an existing repository from the command line
+git remote add origin https://github.com/JadhavHemant/server.git
+git branch -M main
+git push -u origin main
+
+
+
+
+Create a new branch:
+git checkout -b Sachin
+
+
+Push the branch to remote (so others can access it):
+git push -u origin Sachin
+
+git init
+# Initialize a new local Git repository in the current folder.
+
+git remote add origin https://github.com/JadhavHemant/ProjectERP.git
+# Link (connect) your local repository with the remote GitHub repository.
+
+git branch -M main
+# Rename the default branch from 'master' to 'main' (GitHub default).
+
+git push -u origin main
+# Push the local 'main' branch to the remote repository for the first time,
+# and set it as the upstream branch (so future pushes/pulls are easier).
+
+
+git init
+# Initialize a new local Git repository.
+
+git add README.md
+# Stage the README.md file for commit (preparing it to be tracked).
+
+git commit -m "first commit"
+# Create the first commit with a message "first commit".
+
+git branch -M main
+# Rename the default branch from 'master' to 'main'.
+
+git remote add origin https://github.com/JadhavHemant/ProjectERPui.git
+# Connect the local repository with the remote GitHub repository.
+
+git push -u origin main
+# Push the 'main' branch to GitHub and set tracking for future pushes/pulls.
+
+
+git checkout -b Sachin
+# Create a new branch named 'Sachin' and switch to it immediately.
+
+git push -u origin Sachin
+# Push the 'Sachin' branch to GitHub and set upstream so you can
+# use 'git push' and 'git pull' directly later.

@@ -1,0 +1,62 @@
+{
+  "generatedAt": "2026-06-11T04:25:55.987Z",
+  "startedAt": "2026-06-11T04:25:52.869Z",
+  "endedAt": "2026-06-11T04:25:55.987Z",
+  "config": {
+    "baseUrl": "http://localhost:5351",
+    "method": "GET",
+    "durationSeconds": 3,
+    "concurrency": 2,
+    "timeoutMs": 10000,
+    "maxRps": 10,
+    "paths": [
+      "/api/health"
+    ],
+    "authenticated": false
+  },
+  "summary": {
+    "requests": 32,
+    "failed": 0,
+    "success": 32,
+    "errorRatePercent": 0,
+    "requestsPerSecond": 10.264056320416639,
+    "latencyMs": {
+      "min": 1.7471000000000458,
+      "avg": 6.475821874999982,
+      "p50": 2.585700000000088,
+      "p90": 4.2631000000000085,
+      "p95": 4.671999999999997,
+      "p99": 118.4476,
+      "max": 118.4476
+    },
+    "statuses": {
+      "200": 32
+    },
+    "errorSamples": []
+  },
+  "endpoints": [
+    {
+      "name": "Health Check",
+      "method": "GET",
+      "path": "/api/health",
+      "url": "http://localhost:5351/api/health",
+      "requests": 32,
+      "failed": 0,
+      "success": 32,
+      "errorRatePercent": 0,
+      "requestsPerSecond": 10.264056320416639,
+      "min": 1.7471000000000458,
+      "avg": 6.475821874999982,
+      "p50": 2.585700000000088,
+      "p90": 4.2631000000000085,
+      "p95": 4.671999999999997,
+      "p99": 118.4476,
+      "max": 118.4476,
+      "statuses": {
+        "200": 32
+      },
+      "errorSamples": [],
+      "failureReason": ""
+    }
+  ]
+}

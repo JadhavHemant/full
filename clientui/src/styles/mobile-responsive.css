@@ -1,0 +1,229 @@
+/* Mobile Responsive Styles - Applied globally */
+
+/* Ensure form elements are properly sized on mobile */
+@media (max-width: 640px) {
+  /* Fix table views for mobile */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-responsive table {
+    min-width: 600px;
+  }
+
+  /* Improve form layouts on mobile */
+  input, select, textarea, button {
+    font-size: 16px !important; /* Prevent iOS zoom on focus */
+  }
+
+  /* Card-style layout for mobile tables */
+  .mobile-card-view .table-row {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+    background: white;
+  }
+
+  .mobile-card-view .table-cell {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .mobile-card-view .table-cell:last-child {
+    border-bottom: none;
+  }
+
+  .mobile-card-view .table-cell-label {
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+
+  .mobile-card-view .table-cell-value {
+    text-align: right;
+    font-size: 14px;
+    color: #111827;
+  }
+
+  /* Modal adjustments for mobile */
+  .modal-content {
+    margin: 0 !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Full-width filters */
+  .filter-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Stack form fields */
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Button containers */
+  .button-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .button-group button {
+    width: 100%;
+  }
+
+  /* Navigation adjustments */
+  .sidebar-nav {
+    width: 100% !important;
+  }
+
+  /* Page padding */
+  .page-container {
+    padding: 12px !important;
+  }
+
+  /* Improve spacing */
+  .content-section {
+    padding: 16px !important;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .filter-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Common responsive utilities */
+.responsive-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.responsive-grid-cols-1 { grid-template-columns: 1fr; }
+.responsive-grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.responsive-grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.responsive-grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 640px) {
+  .responsive-grid-cols-2,
+  .responsive-grid-cols-3,
+  .responsive-grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .responsive-grid-cols-3,
+  .responsive-grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .responsive-grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Modal mobile optimization */
+.fixed.z-50 .max-h-90vh {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .fixed.z-50 {
+    padding: 0 !important;
+  }
+  .fixed.z-50 > div {
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    min-height: 100vh;
+  }
+}
+
+/* Form field responsive sizing */
+.field-group {
+  margin-bottom: 12px;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+@media (max-width: 640px) {
+  .field-label {
+    font-size: 14px;
+  }
+}
+
+/* Responsive table wrapper */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.table-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+/* Action buttons responsive */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .action-buttons {
+    flex-direction: column;
+  }
+  .action-buttons button,
+  .action-buttons a {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* Dropdown container responsive */
+.responsive-select {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Search input responsive */
+.responsive-search {
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (min-width: 641px) {
+  .responsive-search {
+    max-width: 400px;
+  }
+}

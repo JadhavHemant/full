@@ -1,0 +1,254 @@
+{
+  "generatedAt": "2026-06-11T04:27:38.748Z",
+  "startedAt": "2026-06-11T04:27:28.728Z",
+  "endedAt": "2026-06-11T04:27:38.748Z",
+  "config": {
+    "baseUrl": "http://localhost:5351",
+    "method": "GET",
+    "durationSeconds": 10,
+    "concurrency": 1,
+    "timeoutMs": 10000,
+    "maxRps": 3,
+    "paths": [
+      "/api/health",
+      "/api/users/profile",
+      "/api/teams-chat/users",
+      "/api/teams-chat/teams",
+      "/api/crm/leads",
+      "/api/crm/accounts",
+      "/api/products/list",
+      "/api/products/active",
+      "/api/products/reports/stats"
+    ],
+    "authenticated": true
+  },
+  "summary": {
+    "requests": 31,
+    "failed": 0,
+    "success": 31,
+    "errorRatePercent": 0,
+    "requestsPerSecond": 3.093921588828939,
+    "latencyMs": {
+      "min": 2.9296999999996842,
+      "avg": 8.519361290322676,
+      "p50": 5.519000000000233,
+      "p90": 11.943700000000035,
+      "p95": 33.58709999999974,
+      "p99": 35.73620000000005,
+      "max": 35.73620000000005
+    },
+    "statuses": {
+      "200": 31
+    },
+    "errorSamples": []
+  },
+  "endpoints": [
+    {
+      "name": "CRM Accounts",
+      "method": "GET",
+      "path": "/api/crm/accounts",
+      "url": "http://localhost:5351/api/crm/accounts",
+      "requests": 3,
+      "failed": 0,
+      "success": 3,
+      "errorRatePercent": 0,
+      "requestsPerSecond": 0.29941176666086505,
+      "min": 5.063600000000406,
+      "avg": 5.286633333333536,
+      "p50": 5.232600000000275,
+      "p90": 5.563699999999926,
+      "p95": 5.563699999999926,
+      "p99": 5.563699999999926,
+      "max": 5.563699999999926,
+      "statuses": {
+        "200": 3
+      },
+      "errorSamples": [],
+      "failureReason": ""
+    },
+    {
+      "name": "CRM Leads",
+      "method": "GET",
+      "path": "/api/crm/leads",
+      "url": "http://localhost:5351/api/crm/leads",
+      "requests": 3,
+      "failed": 0,
+      "success": 3,
+      "errorRatePercent": 0,
+      "requestsPerSecond": 0.29941176666086505,
+      "min": 31.59690000000046,
+      "avg": 33.64006666666675,
+      "p50": 33.58709999999974,
+      "p90": 35.73620000000005,
+      "p95": 35.73620000000005,
+      "p99": 35.73620000000005,
+      "max": 35.73620000000005,
+      "statuses": {
+        "200": 3
+      },
+      "errorSamples": [],
+      "failureReason": ""
+    },
+    {
+      "name": "Health Check",
+      "method": "GET",
+      "path": "/api/health",
+      "url": "http://localhost:5351/api/health",
+      "requests": 4,
+      "failed": 0,
+      "success": 4,
+      "errorRatePercent": 0,
+      "requestsPerSecond": 0.39921568888115344,
+      "min": 2.9296999999996842,
+      "avg": 4.318150000000244,
+      "p50": 2.9407000000010157,
+      "p90": 8.228499999999997,
+      "p95": 8.228499999999997,
+      "p99": 8.228499999999997,
+      "max": 8.228499999999997,
+      "statuses": {
+        "200": 4
+      },
+      "errorSamples": [],
+      "failureReason": ""
+    },
+    {
+      "name": "Active Products",
+      "method": "GET",
+      "path": "/api/products/active",
+      "url": "http://localhost:5351/api/products/active",
+      "requests": 3,
+      "failed": 0,
+      "success": 3,
+      "errorRatePercent": 0,
+      "requestsPerSecond": 0.29941176666086505,
+      "min": 7.818000000000211,
+      "avg": 8.777633333333446,
+      "p50": 8.853900000000067,
+      "p90": 9.661000000000058,
+      "p95": 9.661000000000058,
+      "p99": 9.661000000000058,
+      "max": 9.661000000000058,
+      "statuses": {
+        "200": 3
+      },
+      "errorSamples": [],
+      "failureReason": ""
+    },
+    {
+      "name": "Products List",
+      "method": "GET",
+      "path": "/api/products/list",
+      "url": "http://localhost:5351/api/products/list",
+      "requests": 3,
+      "failed": 0,
+      "success": 3,
+      "errorRatePercent": 0,
+      "requestsPerSecond": 0.29941176666086505,
+      "min": 6.012400000000525,
+      "avg": 8.769399999999981,
+      "p50": 9.783100000000104,
+      "p90": 10.512699999999313,
+      "p95": 10.512699999999313,
+      "p99": 10.512699999999313,
+      "max": 10.512699999999313,
+      "statuses": {
+        "200": 3
+      },
+      "errorSamples": [],
+      "failureReason": ""
+    },
+    {
+      "name": "Product Stats",
+      "method": "GET",
+      "path": "/api/products/reports/stats",
+      "url": "http://localhost:5351/api/products/reports/stats",
+      "requests": 3,
+      "failed": 0,
+      "success": 3,
+      "errorRatePercent": 0,
+      "requestsPerSecond": 0.29941176666086505,
+      "min": 3.159899999999652,
+      "avg": 4.3122,
+      "p50": 4.547800000000279,
+      "p90": 5.228900000000067,
+      "p95": 5.228900000000067,
+      "p99": 5.228900000000067,
+      "max": 5.228900000000067,
+      "statuses": {
+        "200": 3
+      },
+      "errorSamples": [],
+      "failureReason": ""
+    },
+    {
+      "name": "Teams Chat Teams",
+      "method": "GET",
+      "path": "/api/teams-chat/teams",
+      "url": "http://localhost:5351/api/teams-chat/teams",
+      "requests": 4,
+      "failed": 0,
+      "success": 4,
+      "errorRatePercent": 0,
+      "requestsPerSecond": 0.39921568888115344,
+      "min": 5.199800000000323,
+      "avg": 7.408075000000338,
+      "p50": 5.519000000000233,
+      "p90": 11.943700000000035,
+      "p95": 11.943700000000035,
+      "p99": 11.943700000000035,
+      "max": 11.943700000000035,
+      "statuses": {
+        "200": 4
+      },
+      "errorSamples": [],
+      "failureReason": ""
+    },
+    {
+      "name": "Teams Chat Users",
+      "method": "GET",
+      "path": "/api/teams-chat/users",
+      "url": "http://localhost:5351/api/teams-chat/users",
+      "requests": 4,
+      "failed": 0,
+      "success": 4,
+      "errorRatePercent": 0,
+      "requestsPerSecond": 0.39921568888115344,
+      "min": 3.978499999999258,
+      "avg": 4.657074999999992,
+      "p50": 4.121100000000297,
+      "p90": 6.400800000000004,
+      "p95": 6.400800000000004,
+      "p99": 6.400800000000004,
+      "max": 6.400800000000004,
+      "statuses": {
+        "200": 4
+      },
+      "errorSamples": [],
+      "failureReason": ""
+    },
+    {
+      "name": "User Profile",
+      "method": "GET",
+      "path": "/api/users/profile",
+      "url": "http://localhost:5351/api/users/profile",
+      "requests": 4,
+      "failed": 0,
+      "success": 4,
+      "errorRatePercent": 0,
+      "requestsPerSecond": 0.39921568888115344,
+      "min": 3.310899999999947,
+      "avg": 4.052299999999889,
+      "p50": 3.544799999999668,
+      "p90": 5.6978999999998905,
+      "p95": 5.6978999999998905,
+      "p99": 5.6978999999998905,
+      "max": 5.6978999999998905,
+      "statuses": {
+        "200": 4
+      },
+      "errorSamples": [],
+      "failureReason": ""
+    }
+  ]
+}

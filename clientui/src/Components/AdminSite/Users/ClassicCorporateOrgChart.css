@@ -1,0 +1,428 @@
+/* src/Components/AdminSite/Users/ClassicCorporateOrgChart.css */
+/* Styles for the Classic Corporate Organization Chart component */
+
+/* Wrapper with CSS custom properties for theming */
+.ccoc-wrapper {
+  --ccoc-bg: #ece8db;
+  --ccoc-card: #f5efe4;
+  --ccoc-card-soft: #ffffff;
+  --ccoc-line: #9bb8b3;
+  --ccoc-border: #d8cfbf;
+  --ccoc-text: #285f63;
+  --ccoc-muted: #5f7b78;
+  --ccoc-accent: #285f63;
+  --ccoc-accent-strong: #1f5256;
+  --ccoc-accent-soft: #deebe8;
+  --ccoc-secondary-bg: #eef4f3;
+  --ccoc-shadow: 0 10px 30px rgba(40, 95, 99, 0.14);
+  --ccoc-radius: 16px;
+  --ccoc-gap-x: 22px;
+  --ccoc-gap-y: 34px;
+  --ccoc-card-w: 230px;
+
+  color: var(--ccoc-text);
+}
+
+/* Toolbar with title and actions */
+.ccoc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  background: var(--ccoc-card-soft);
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--ccoc-border);
+  box-shadow: var(--ccoc-shadow);
+}
+
+/* Title styling */
+.ccoc-title-wrap h3 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.ccoc-title-wrap p {
+  margin: 6px 0 0;
+  color: var(--ccoc-muted);
+  font-size: 13px;
+}
+
+/* Actions container */
+.ccoc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Search input styling */
+.ccoc-actions input[type="text"] {
+  width: 260px;
+  max-width: 100%;
+  padding: 11px 14px;
+  border: 1px solid #c9d4d2;
+  border-radius: 12px;
+  outline: none;
+  background: #fff;
+  font-size: 14px;
+}
+
+.ccoc-actions input[type="text"]:focus {
+  border-color: var(--ccoc-accent);
+  box-shadow: 0 0 0 3px rgba(40, 95, 99, 0.14);
+}
+
+/* Button styling */
+.ccoc-actions button {
+  border: 0;
+  background: var(--ccoc-accent);
+  color: #fff;
+  padding: 11px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ccoc-actions button.ccoc-secondary {
+  background: var(--ccoc-secondary-bg);
+  color: var(--ccoc-accent);
+}
+
+/* Statistics cards container */
+.ccoc-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+/* Individual stat card */
+.ccoc-stat {
+  background: var(--ccoc-card-soft);
+  border-radius: 16px;
+  padding: 14px 16px;
+  min-width: 150px;
+  border: 1px solid var(--ccoc-border);
+  box-shadow: var(--ccoc-shadow);
+}
+
+/* Stat label styling */
+.ccoc-stat-label {
+  font-size: 12px;
+  color: var(--ccoc-muted);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Stat value styling */
+.ccoc-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* Chart shell with scroll and background */
+.ccoc-chart-shell {
+  overflow: auto;
+  background: linear-gradient(180deg, #f5efe4 0%, #eef4f3 100%);
+  border-radius: 24px;
+  border: 1px solid var(--ccoc-border);
+  box-shadow: var(--ccoc-shadow);
+  padding: 22px;
+}
+
+/* Org chart container */
+.ccoc-org-chart {
+  min-width: max-content;
+  display: inline-block;
+  padding: 8px 30px 30px;
+}
+
+/* Tree structure styling */
+.ccoc-tree,
+.ccoc-tree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+.ccoc-tree {
+  display: flex;
+  justify-content: center;
+}
+
+.ccoc-tree ul {
+  display: flex;
+  justify-content: center;
+  gap: var(--ccoc-gap-x);
+  padding-top: var(--ccoc-gap-y);
+}
+
+/* Node item styling */
+.ccoc-node-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding: 0 4px;
+}
+
+/* Tree connector lines */
+.ccoc-node-item::before,
+.ccoc-node-item::after {
+  content: "";
+  position: absolute;
+  top: calc(var(--ccoc-gap-y) / 2);
+  width: 50%;
+  height: 2px;
+  background: var(--ccoc-line);
+}
+
+.ccoc-node-item::before {
+  left: -2px;
+}
+
+.ccoc-node-item::after {
+  right: -2px;
+}
+
+/* Hide lines for only child */
+.ccoc-node-item:only-child::before,
+.ccoc-node-item:only-child::after {
+  display: none;
+}
+
+/* Hide lines for first and last children */
+.ccoc-node-item:first-child::before,
+.ccoc-node-item:last-child::after {
+  display: none;
+}
+
+/* Vertical line from parent to children */
+.ccoc-node-item > ul::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: calc(var(--ccoc-gap-y) / 2);
+  background: var(--ccoc-line);
+  transform: translateX(-50%);
+}
+
+/* Card wrapper */
+.ccoc-card-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+/* Downline connector */
+.ccoc-downline {
+  width: 2px;
+  height: calc(var(--ccoc-gap-y) / 2);
+  background: var(--ccoc-line);
+}
+
+/* Node card styling */
+.ccoc-node {
+  width: var(--ccoc-card-w);
+  background: var(--ccoc-card-soft);
+  border: 1px solid #cfddd9;
+  border-radius: var(--ccoc-radius);
+  box-shadow: var(--ccoc-shadow);
+  overflow: hidden;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+  cursor: pointer;
+}
+
+/* Node hover effect */
+.ccoc-node:hover {
+  transform: translateY(-2px);
+  border-color: #7aa9a4;
+  box-shadow: 0 14px 28px rgba(40, 95, 99, 0.2);
+}
+
+/* Selected node state */
+.ccoc-node.ccoc-selected {
+  border-color: var(--ccoc-accent-strong);
+  box-shadow:
+    0 0 0 3px rgba(40, 95, 99, 0.22),
+    0 14px 28px rgba(40, 95, 99, 0.2);
+}
+
+/* Node header with gradient */
+.ccoc-node-header {
+  background: linear-gradient(135deg, var(--ccoc-accent) 0%, #3a8287 100%);
+  color: #ffffff;
+  padding: 14px;
+}
+
+/* Node name styling */
+.ccoc-node-name {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 4px;
+}
+
+/* Node role styling */
+.ccoc-node-role {
+  font-size: 13px;
+  opacity: 0.95;
+}
+
+/* Node body content */
+.ccoc-node-body {
+  padding: 12px 14px 14px;
+}
+
+/* Meta information */
+.ccoc-meta {
+  font-size: 12px;
+  color: var(--ccoc-muted);
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Profile row with avatar */
+.ccoc-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* Avatar image styling */
+.ccoc-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid #c8d8d4;
+  background: #eef4f3;
+}
+
+/* Avatar fallback for missing images */
+.ccoc-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--ccoc-accent) 0%, var(--ccoc-accent-strong) 100%);
+}
+
+/* Profile text container */
+.ccoc-profile-text {
+  min-width: 0;
+  flex: 1;
+}
+
+/* Email styling */
+.ccoc-email {
+  font-size: 11px;
+  color: #335c59;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Level indicator */
+.ccoc-level {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--ccoc-muted);
+}
+
+/* Badge row container */
+.ccoc-badge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Badge styling */
+.ccoc-badge {
+  background: var(--ccoc-accent-soft);
+  color: var(--ccoc-accent);
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+/* Toggle button for collapsing nodes */
+.ccoc-toggle {
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--ccoc-accent);
+  background: var(--ccoc-secondary-bg);
+}
+
+/* Hidden toggle state */
+.ccoc-toggle-hidden {
+  visibility: hidden;
+}
+
+/* Collapsed node state */
+.ccoc-node-item.ccoc-collapsed > ul {
+  display: none;
+}
+
+/* Highlighted node state */
+.ccoc-node-item.ccoc-highlight > .ccoc-card-wrap .ccoc-node {
+  border-color: #7aa9a4;
+  box-shadow:
+    0 0 0 3px rgba(122, 169, 164, 0.25),
+    0 10px 30px rgba(40, 95, 99, 0.14);
+}
+
+/* Empty state styling */
+.ccoc-empty {
+  border: 1px solid var(--ccoc-border);
+  border-radius: 12px;
+  background: var(--ccoc-card-soft);
+  padding: 24px;
+  text-align: center;
+  color: var(--ccoc-muted);
+}
+
+/* Responsive styles for mobile */
+@media (max-width: 768px) {
+  .ccoc-toolbar {
+    padding: 14px;
+  }
+
+  .ccoc-actions {
+    width: 100%;
+  }
+
+  .ccoc-actions input[type="text"] {
+    width: 100%;
+  }
+
+  .ccoc-chart-shell {
+    padding: 14px;
+  }
+}

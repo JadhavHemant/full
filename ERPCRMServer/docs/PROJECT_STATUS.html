@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERP CRM Project — Status Report</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #1a1a2e; padding: 20px; }
+  .container { max-width: 1200px; margin: 0 auto; }
+  h1 { text-align: center; color: #16213e; margin-bottom: 8px; font-size: 28px; }
+  .subtitle { text-align: center; color: #666; margin-bottom: 24px; font-size: 14px; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .stat-card .num { font-size: 32px; font-weight: 700; }
+  .stat-card .label { font-size: 12px; color: #666; margin-top: 4px; }
+  .green { color: #10b981; }
+  .yellow { color: #f59e0b; }
+  .red { color: #ef4444; }
+  .blue { color: #3b82f6; }
+  .section { background: white; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; }
+  .section-header { padding: 14px 20px; font-weight: 600; font-size: 16px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+  .section-header .badge { font-size: 12px; padding: 4px 10px; border-radius: 20px; font-weight: 500; }
+  .badge-done { background: #d1fae5; color: #065f46; }
+  .badge-partial { background: #fef3c7; color: #92400e; }
+  .badge-pending { background: #fee2e2; color: #991b1b; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 16px; background: #f8fafc; color: #475569; font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover { background: #f8fafc; }
+  .status { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .s-done { background: #d1fae5; color: #065f46; }
+  .s-partial { background: #fef3c7; color: #92400e; }
+  .s-pending { background: #fee2e2; color: #991b1b; }
+  .s-na { background: #f1f5f9; color: #64748b; }
+  .api { font-family: 'Courier New', monospace; font-size: 12px; color: #6366f1; }
+  .file { font-family: 'Courier New', monospace; font-size: 12px; color: #059669; }
+  .credentials { background: #1e293b; color: #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+  .credentials h3 { color: #38bdf8; margin-bottom: 12px; }
+  .cred-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .cred-card { background: #334155; border-radius: 8px; padding: 12px; }
+  .cred-card .name { color: #f1f5f9; font-weight: 600; font-size: 13px; }
+  .cred-card .email { color: #94a3b8; font-size: 11px; margin-top: 4px; }
+  .cred-card .pass { color: #34d399; font-size: 11px; margin-top: 2px; font-family: monospace; }
+  .cred-card .role { color: #fbbf24; font-size: 11px; margin-top: 2px; }
+  .timestamp { text-align: center; color: #94a3b8; font-size: 11px; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>ERP CRM Project — Status Report</h1>
+  <p class="subtitle">Generated: June 16, 2026 | Database: PostgreSQL | Server: Node.js/Express</p>
+
+  <div class="summary">
+    <div class="stat-card"><div class="num green">42</div><div class="label">APIs Working</div></div>
+    <div class="stat-card"><div class="num yellow">12</div><div class="label">Partial / Fixed Today</div></div>
+    <div class="stat-card"><div class="num red">8</div><div class="label">Pending</div></div>
+    <div class="stat-card"><div class="num blue">100+</div><div class="label">DB Tables</div></div>
+  </div>
+
+  <div class="credentials">
+    <h3>User Credentials (Password: Admin@123 for all)</h3>
+    <div class="cred-grid">
+      <div class="cred-card"><div class="name">Rahul Sharma</div><div class="email">rahul.sharma@example.com</div><div class="pass">Admin@123</div><div class="role">Owner / Admin</div></div>
+      <div class="cred-card"><div class="name">Priya Patel</div><div class="email">priya.patel@example.com</div><div class="pass">Admin@123</div><div class="role">Manager</div></div>
+      <div class="cred-card"><div class="name">Amit Kumar</div><div class="email">amit.kumar@example.com</div><div class="pass">Admin@123</div><div class="role">TeamLead</div></div>
+      <div class="cred-card"><div class="name">Sneha Reddy</div><div class="email">sneha.reddy@example.com</div><div class="pass">Admin@123</div><div class="role">Employee</div></div>
+      <div class="cred-card"><div class="name">Vikram Singh</div><div class="email">vikram.singh@example.com</div><div class="pass">Admin@123</div><div class="role">Employee</div></div>
+    </div>
+  </div>
+
+  <!-- 1. Dashboard -->
+  <div class="section">
+    <div class="section-header">1. Dashboard <span class="badge badge-partial">PARTIAL</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Total Stock Value</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/dashboard</td><td>Fixed CostPrice→Cost column</td></tr>
+      <tr><td>Low Stock Alerts</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/dashboard</td><td>Fixed IsDeleted→IsDelete</td></tr>
+      <tr><td>Out of Stock Items</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/dashboard</td><td>Working</td></tr>
+      <tr><td>Purchase Summary</td><td><span class="status s-partial">PARTIAL</span></td><td class="api">GET /api/dashboard</td><td>Query needs column fixes</td></tr>
+      <tr><td>Sales Summary</td><td><span class="status s-partial">PARTIAL</span></td><td class="api">GET /api/dashboard</td><td>Query needs column fixes</td></tr>
+      <tr><td>Recent Transactions</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/dashboard</td><td>Working</td></tr>
+      <tr><td>Expiry Alerts</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/dashboard</td><td>Working</td></tr>
+      <tr><td>Monthly Sales/Purchases</td><td><span class="status s-partial">PARTIAL</span></td><td class="api">GET /api/dashboard</td><td>Query needs column fixes</td></tr>
+      <tr><td>Top Products</td><td><span class="status s-partial">PARTIAL</span></td><td class="api">GET /api/dashboard</td><td>Query needs column fixes</td></tr>
+    </table>
+  </div>
+
+  <!-- 2. Master Management -->
+  <div class="section">
+    <div class="section-header">2. Master Management <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Company Master</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/company</td><td>Companies table with GST, branches</td></tr>
+      <tr><td>User Management (CRUD)</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/users</td><td>5 users created with hierarchy</td></tr>
+      <tr><td>Role-Based Access Control</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/roles</td><td>Owner, Manager, TeamLead, Employee</td></tr>
+      <tr><td>User Types</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/usertypes</td><td>Admin, Manager, TeamLead, Employee</td></tr>
+      <tr><td>Login / JWT Auth</td><td><span class="status s-done">DONE</span></td><td class="api">POST /api/users/login</td><td>AccessToken + RefreshToken</td></tr>
+      <tr><td>Password Reset</td><td><span class="status s-done">DONE</span></td><td class="api">POST /api/users/forgot-password</td><td>Email OTP verification</td></tr>
+      <tr><td>Employee Management</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/employees</td><td>Full CRUD, departments, designations</td></tr>
+      <tr><td>Department Management</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/departments</td><td>Working with correct column names</td></tr>
+      <tr><td>Designation Management</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/designations</td><td>Working with correct column names</td></tr>
+      <tr><td>Supplier/Vendor Management</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/suppliers</td><td>Full CRUD</td></tr>
+      <tr><td>Customer Management</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/customers</td><td>Full CRUD</td></tr>
+    </table>
+  </div>
+
+  <!-- 3. Product Management -->
+  <div class="section">
+    <div class="section-header">3. Product Management <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Product Master (CRUD)</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/products</td><td>ProductName, Code, SKU, Barcode, HSN, GST</td></tr>
+      <tr><td>Category Management</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/productcategory</td><td>Main + Sub categories</td></tr>
+      <tr><td>Brand Management</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/brands</td><td>Working</td></tr>
+      <tr><td>Unit Management</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/units</td><td>Kg, Nos, Box, Meter, Liter</td></tr>
+      <tr><td>Product Tax Mapping</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/product-tax-map</td><td>GST rate per product</td></tr>
+    </table>
+  </div>
+
+  <!-- 4. Inventory Management -->
+  <div class="section">
+    <div class="section-header">4. Inventory Management <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Stock Inward (GRN)</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/grn</td><td>Goods Receipt Note</td></tr>
+      <tr><td>Stock Outward (Sales Dispatch)</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/sales-orders</td><td>Full CRUD</td></tr>
+      <tr><td>Stock Transfer</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/stock-transfers</td><td>Branch/Warehouse transfer</td></tr>
+      <tr><td>Stock Adjustment</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/stock-adjustments</td><td>Damage, Lost, Manual</td></tr>
+      <tr><td>Product Stock per Warehouse</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/product-stock</td><td>Current, Available, Reserved</td></tr>
+      <tr><td>Stock Movements</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/stock-movements</td><td>Full movement history</td></tr>
+      <tr><td>Tax Management</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/taxes</td><td>GST, CGST, SGST, IGST</td></tr>
+    </table>
+  </div>
+
+  <!-- 5. Warehouse Management -->
+  <div class="section">
+    <div class="section-header">5. Warehouse Management <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Warehouse Master</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/warehouses</td><td>Multiple warehouses</td></tr>
+      <tr><td>Rack Management</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/racks</td><td>Working</td></tr>
+      <tr><td>Bin Management</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/bins</td><td>Working</td></tr>
+      <tr><td>Location Tracking</td><td><span class="status s-done">DONE</span></td><td class="file">WarehouseLocations.js</td><td>Rack, Shelf, Bin</td></tr>
+    </table>
+  </div>
+
+  <!-- 6. Purchase Management -->
+  <div class="section">
+    <div class="section-header">6. Purchase Management <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Purchase Requisition</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/purchase-requisitions</td><td>Working via pgQuery wrapper</td></tr>
+      <tr><td>Purchase Order (PO)</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/purchase-orders</td><td>Full CRUD with items</td></tr>
+      <tr><td>GRN (Goods Receipt)</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/grn</td><td>Working</td></tr>
+      <tr><td>Purchase Return</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/purchase-returns</td><td>Working via pgQuery wrapper</td></tr>
+      <tr><td>Purchase Order Items</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/purchase-order-items</td><td>Working</td></tr>
+    </table>
+  </div>
+
+  <!-- 7. Sales Management -->
+  <div class="section">
+    <div class="section-header">7. Sales Management <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Quotation</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/sales-quotations</td><td>Working via pgQuery wrapper</td></tr>
+      <tr><td>Sales Order</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/sales-orders</td><td>Full CRUD with items</td></tr>
+      <tr><td>Delivery Challan</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/delivery-challans</td><td>Working via pgQuery wrapper</td></tr>
+      <tr><td>Invoice (CRM)</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/crm/invoices</td><td>Working</td></tr>
+      <tr><td>Sales Return</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/sales-returns</td><td>Working via pgQuery wrapper</td></tr>
+    </table>
+  </div>
+
+  <!-- 8. Batch & Serial -->
+  <div class="section">
+    <div class="section-header">8. Batch & Serial Number Management <span class="status s-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Batch Tracking</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/batches</td><td>Mfg Date, Expiry Date</td></tr>
+      <tr><td>Serial Number Tracking</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/serial-numbers</td><td>Mobile, Electronics, Machinery</td></tr>
+    </table>
+  </div>
+
+  <!-- 9. Production Management -->
+  <div class="section">
+    <div class="section-header">9. Production Management <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>BOM (Bill of Materials)</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/bom</td><td>Working via pgQuery wrapper</td></tr>
+      <tr><td>Production Orders</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/production-orders</td><td>Working via pgQuery wrapper</td></tr>
+      <tr><td>Production Tracking</td><td><span class="status s-done">DONE</span></td><td class="file">ProductionTracking.js</td><td>Model exists</td></tr>
+    </table>
+  </div>
+
+  <!-- 10. CRM Module -->
+  <div class="section">
+    <div class="section-header">10. CRM Module <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Accounts</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/crm/accounts</td><td>Full CRUD</td></tr>
+      <tr><td>Contacts</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/crm/contacts</td><td>Full CRUD</td></tr>
+      <tr><td>Leads</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/crm/leads</td><td>Full CRUD with assignment</td></tr>
+      <tr><td>Opportunities</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/crm/opportunities</td><td>Full CRUD</td></tr>
+      <tr><td>Activities</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/crm/activities</td><td>Calls, Emails, Meetings, Tasks</td></tr>
+      <tr><td>Quotes</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/crm/quotes</td><td>Working</td></tr>
+      <tr><td>Invoices</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/crm/invoices</td><td>Working</td></tr>
+      <tr><td>Payments</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/crm/payments</td><td>Working</td></tr>
+      <tr><td>Cases</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/crm/cases</td><td>Working</td></tr>
+      <tr><td>Pre-Sales</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/crm/presales</td><td>Working</td></tr>
+      <tr><td>Task Types</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/crm/task-types</td><td>Working</td></tr>
+      <tr><td>Sales Stages</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/crm/sales-stages</td><td>Working</td></tr>
+      <tr><td>Industries</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/crm/industries</td><td>Working</td></tr>
+      <tr><td>Lead Sources</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/crm/lead-sources</td><td>Working</td></tr>
+      <tr><td>Followup Types</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/crm/followup-types</td><td>Working</td></tr>
+    </table>
+  </div>
+
+  <!-- 11. Financial Integration -->
+  <div class="section">
+    <div class="section-header">11. Financial Integration <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Expense Management</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/expenses</td><td>Full CRUD</td></tr>
+      <tr><td>Profit & Loss Reports</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/profit-loss-reports</td><td>Working</td></tr>
+      <tr><td>Tax Management</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/taxes</td><td>GST, CGST, SGST, IGST</td></tr>
+    </table>
+  </div>
+
+  <!-- 12. Notifications -->
+  <div class="section">
+    <div class="section-header">12. Notifications <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Notification CRUD</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/erp/notifications</td><td>Full CRUD with read/unread</td></tr>
+      <tr><td>Email Notifications</td><td><span class="status s-done">DONE</span></td><td class="file">utils/email.js</td><td>Nodemailer configured</td></tr>
+      <tr><td>Notification Preferences</td><td><span class="status s-done">DONE</span></td><td class="file">NotificationPreferences.js</td><td>Model exists</td></tr>
+    </table>
+  </div>
+
+  <!-- 13. Reports -->
+  <div class="section">
+    <div class="section-header">13. Reports <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Report Overview</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/reports/overview</td><td>Summary + API health + alerts</td></tr>
+      <tr><td>Employee Activity Report</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/reports/employee-activity</td><td>Leads, Opps, Revenue per user</td></tr>
+      <tr><td>CRM Digest Report</td><td><span class="status s-done">DONE</span></td><td class="api">POST /api/reports/digest</td><td>Weekly + Monthly email digest</td></tr>
+      <tr><td>Profit & Loss</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/profit-loss-reports</td><td>Working</td></tr>
+    </table>
+  </div>
+
+  <!-- 14. Approval Workflow -->
+  <div class="section">
+    <div class="section-header">14. Approval Workflow <span class="badge badge-partial">PARTIAL</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Create Approval Request</td><td><span class="status s-done">DONE</span></td><td class="api">POST /api/erp/approvals</td><td>Working</td></tr>
+      <tr><td>Get Approvals List</td><td><span class="status s-pending">PENDING</span></td><td class="api">GET /api/erp/approvals</td><td>Column mismatch: RequestedById</td></tr>
+      <tr><td>Process Approval</td><td><span class="status s-done">DONE</span></td><td class="api">PUT /api/erp/approvals/:id/process</td><td>Working</td></tr>
+    </table>
+  </div>
+
+  <!-- 15. Audit Trail -->
+  <div class="section">
+    <div class="section-header">15. Audit Trail <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Audit Logs</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/audit-logs</td><td>Working</td></tr>
+      <tr><td>Audit Events</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/system/audit-events</td><td>Working</td></tr>
+      <tr><td>Company Settings</td><td><span class="status s-done">DONE</span></td><td class="api">GET /api/system/company-settings</td><td>Working</td></tr>
+      <tr><td>CreatedBy/UpdatedBy tracking</td><td><span class="status s-done">DONE</span></td><td class="file">All tables</td><td>Every table has audit fields</td></tr>
+      <tr><td>Soft Delete (IsDeleted)</td><td><span class="status s-done">DONE</span></td><td class="file">All tables</td><td>Soft delete on all entities</td></tr>
+    </table>
+  </div>
+
+  <!-- 16. Monitoring -->
+  <div class="section">
+    <div class="section-header">16. API Monitoring (Grafana + Prometheus) <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Prometheus Metrics Middleware</td><td><span class="status s-done">DONE</span></td><td class="file">middlewares/prometheusMetrics.js</td><td>7 metrics: requests, duration, in-flight, sizes, DB, socket, circuit breaker</td></tr>
+      <tr><td>/metrics Endpoint</td><td><span class="status s-done">DONE</span></td><td class="api">GET /metrics</td><td>Prometheus text format</td></tr>
+      <tr><td>Prometheus Config</td><td><span class="status s-done">DONE</span></td><td class="file">prometheus.yml</td><td>Scrape every 15s</td></tr>
+      <tr><td>Grafana Dashboard (21 panels)</td><td><span class="status s-done">DONE</span></td><td class="file">grafana/erp-api-dashboard.json</td><td>Import directly into Grafana</td></tr>
+      <tr><td>Alerting Rules (12 rules)</td><td><span class="status s-done">DONE</span></td><td class="file">grafana/alerting_rules.yml</td><td>Error rate, latency, traffic, memory</td></tr>
+    </table>
+  </div>
+
+  <!-- 17. Real-time Communication -->
+  <div class="section">
+    <div class="section-header">17. Real-time Communication <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>Socket.IO Chat</td><td><span class="status s-done">DONE</span></td><td class="file">sockets/chatSocket.js</td><td>Real-time messaging</td></tr>
+      <tr><td>Chat Channels</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/chat</td><td>Working</td></tr>
+      <tr><td>Chat Messages</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/chat</td><td>Working</td></tr>
+      <tr><td>Teams Chat</td><td><span class="status s-done">DONE</span></td><td class="api">GET/POST /api/teams-chat</td><td>Working</td></tr>
+    </table>
+  </div>
+
+  <!-- 18. Security -->
+  <div class="section">
+    <div class="section-header">18. Security <span class="badge badge-done">DONE</span></div>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>API / File</th><th>Notes</th></tr>
+      <tr><td>JWT Authentication</td><td><span class="status s-done">DONE</span></td><td class="file">middlewares/authMiddleware.js</td><td>Access + Refresh tokens</td></tr>
+      <tr><td>Rate Limiting</td><td><span class="status s-done">DONE</span></td><td class="file">server.js</td><td>5000 req/15min (dev), 100 (prod)</td></tr>
+      <tr><td>CORS Configuration</td><td><span class="status s-done">DONE</span></td><td class="file">server.js</td><td>Multiple allowed origins</td></tr>
+      <tr><td>Helmet Security Headers</td><td><span class="status s-done">DONE</span></td><td class="file">server.js</td><td>CSP, CORS, etc.</td></tr>
+      <tr><td>RBAC Middleware</td><td><span class="status s-done">DONE</span></td><td class="file">middlewares/rbac.js</td><td>Role-based access control</td></tr>
+      <tr><td>Token Revocation</td><td><span class="status s-done">DONE</span></td><td class="file">token_revocation_list table</td><td>Logout support</td></tr>
+    </table>
+  </div>
+
+  <!-- PENDING WORK -->
+  <div class="section" style="border: 2px solid #ef4444;">
+    <div class="section-header" style="background: #fef2f2;">🔴 PENDING WORK — Needs Attention</div>
+    <table>
+      <tr><th>#</th><th>Item</th><th>Priority</th><th>Effort</th><th>Notes</th></tr>
+      <tr><td>1</td><td><strong>Quality Control Module</strong></td><td><span class="status s-pending">HIGH</span></td><td>2-3 days</td><td>Inspection Records, Rejected Material, Quality Reports</td></tr>
+      <tr><td>2</td><td><strong>WhatsApp Notifications</strong></td><td><span class="status s-pending">HIGH</span></td><td>1-2 days</td><td>WhatsApp Business API integration</td></tr>
+      <tr><td>3</td><td><strong>Barcode Generation</strong></td><td><span class="status s-pending">MEDIUM</span></td><td>1-2 days</td><td>Barcode + QR Code generation for products</td></tr>
+      <tr><td>4</td><td><strong>Excel Import/Export</strong></td><td><span class="status s-pending">MEDIUM</span></td><td>2-3 days</td><td>Product, Sales, Purchase bulk import/export</td></tr>
+      <tr><td>5</td><td><strong>PDF Reports</strong></td><td><span class="status s-pending">MEDIUM</span></td><td>1-2 days</td><td>Invoice, Purchase Order, Quotation PDF generation</td></tr>
+      <tr><td>6</td><td><strong>ERP Module Column Fixes</strong></td><td><span class="status s-pending">HIGH</span></td><td>1 day</td><td>Remaining MSSQL→PostgreSQL column name fixes in 8 controllers</td></tr>
+      <tr><td>7</td><td><strong>Dashboard Query Fixes</strong></td><td><span class="status s-pending">HIGH</span></td><td>0.5 day</td><td>Remaining unquoted column names in dashboard queries</td></tr>
+      <tr><td>8</td><td><strong>Raw Material Management</strong></td><td><span class="status s-pending">LOW</span></td><td>1-2 days</td><td>Consumption tracking, Wastage tracking</td></tr>
+    </table>
+  </div>
+
+  <p class="timestamp">Report generated by ERP CRM Project Audit | June 16, 2026</p>
+</div>
+</body>
+</html>

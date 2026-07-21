@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Load Test Report</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #18212f;
+      --muted: #657184;
+      --border: #d9dee7;
+      --accent: #176b87;
+      --ok: #137a43;
+      --warn: #9a5a00;
+      --danger: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    header {
+      padding: 28px 32px 18px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: 0; }
+    h2 { margin: 0 0 14px; font-size: 18px; letter-spacing: 0; }
+    main { padding: 24px 32px 40px; }
+    .muted { color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .metric, .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+      margin-bottom: 6px;
+    }
+    .metric strong { font-size: 24px; }
+    .panel { margin-top: 18px; overflow: auto; }
+    table {
+      width: 100%;
+      min-width: 1100px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      background: #eef2f6;
+      color: #344054;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+    .path {
+      max-width: 360px;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      font-family: Consolas, Monaco, monospace;
+    }
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 8px;
+      margin: 0 4px 4px 0;
+      font-size: 12px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+    }
+    .badge.ok { color: var(--ok); border-color: #b8dec7; background: #eefbf3; }
+    .badge.warn { color: var(--warn); border-color: #f1cf8a; background: #fff8e8; }
+    .badge.danger { color: var(--danger); border-color: #f2b8b5; background: #fff1f0; }
+    .danger-text { color: var(--danger); font-weight: 700; }
+    .failed-row { background: #fff8f7; }
+    .empty-state {
+      color: var(--ok);
+      font-weight: 700;
+      padding: 12px 0 2px;
+    }
+    code {
+      background: #eef2f6;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px 6px;
+    }
+    @media (max-width: 720px) {
+      header, main { padding-left: 16px; padding-right: 16px; }
+      h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Load Test Report</h1>
+    <div class="muted">2026-06-11T04:27:28.728Z to 2026-06-11T04:27:38.748Z</div>
+    <div class="muted">Base URL: <code>http://localhost:5351</code></div>
+  </header>
+  <main>
+    <section class="grid">
+      <div class="metric"><span>Total Requests</span><strong>31</strong></div>
+      <div class="metric"><span>Success</span><strong>31</strong></div>
+      <div class="metric"><span>Failed</span><strong>0</strong></div>
+      <div class="metric"><span>Throughput</span><strong>3.09 req/s</strong></div>
+      <div class="metric"><span>Average Latency</span><strong>8.5 ms</strong></div>
+      <div class="metric"><span>P95 Latency</span><strong>33.6 ms</strong></div>
+    </section>
+
+    <section class="panel">
+      <h2>Run Configuration</h2>
+      <div>Duration: <strong>10s</strong> | Concurrency: <strong>1</strong> | Timeout: <strong>10000ms</strong> | Max RPS: <strong>3</strong> | Authenticated: <strong>yes</strong></div>
+      <div style="margin-top: 8px;">Overall statuses: <span class="badge ok">200: 31</span></div>
+    </section>
+
+    <section class="panel">
+      <h2>Failed APIs</h2>
+      <div class="empty-state">No failed APIs in this run.</div>
+    </section>
+
+    <section class="panel">
+      <h2>API Wise Results</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>API Name</th>
+            <th>Method</th>
+            <th>API</th>
+            <th>Requests</th>
+            <th>Success</th>
+            <th>Failed</th>
+            <th>Error Rate</th>
+            <th>Req/S</th>
+            <th>Avg ms</th>
+            <th>P50</th>
+            <th>P90</th>
+            <th>P95</th>
+            <th>P99</th>
+            <th>Max</th>
+            <th>Status Codes</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr class="">
+          <td><strong>CRM Accounts</strong></td>
+          <td><strong>GET</strong></td>
+          <td class="path">/api/crm/accounts</td>
+          <td>3</td>
+          <td>3</td>
+          <td class="">0</td>
+          <td>0.00%</td>
+          <td>0.30</td>
+          <td>5.3</td>
+          <td>5.2</td>
+          <td>5.6</td>
+          <td>5.6</td>
+          <td>5.6</td>
+          <td>5.6</td>
+          <td><span class="badge ok">200: 3</span></td>
+          <td>-</td>
+        </tr>
+        <tr class="">
+          <td><strong>CRM Leads</strong></td>
+          <td><strong>GET</strong></td>
+          <td class="path">/api/crm/leads</td>
+          <td>3</td>
+          <td>3</td>
+          <td class="">0</td>
+          <td>0.00%</td>
+          <td>0.30</td>
+          <td>33.6</td>
+          <td>33.6</td>
+          <td>35.7</td>
+          <td>35.7</td>
+          <td>35.7</td>
+          <td>35.7</td>
+          <td><span class="badge ok">200: 3</span></td>
+          <td>-</td>
+        </tr>
+        <tr class="">
+          <td><strong>Health Check</strong></td>
+          <td><strong>GET</strong></td>
+          <td class="path">/api/health</td>
+          <td>4</td>
+          <td>4</td>
+          <td class="">0</td>
+          <td>0.00%</td>
+          <td>0.40</td>
+          <td>4.3</td>
+          <td>2.9</td>
+          <td>8.2</td>
+          <td>8.2</td>
+          <td>8.2</td>
+          <td>8.2</td>
+          <td><span class="badge ok">200: 4</span></td>
+          <td>-</td>
+        </tr>
+        <tr class="">
+          <td><strong>Active Products</strong></td>
+          <td><strong>GET</strong></td>
+          <td class="path">/api/products/active</td>
+          <td>3</td>
+          <td>3</td>
+          <td class="">0</td>
+          <td>0.00%</td>
+          <td>0.30</td>
+          <td>8.8</td>
+          <td>8.9</td>
+          <td>9.7</td>
+          <td>9.7</td>
+          <td>9.7</td>
+          <td>9.7</td>
+          <td><span class="badge ok">200: 3</span></td>
+          <td>-</td>
+        </tr>
+        <tr class="">
+          <td><strong>Products List</strong></td>
+          <td><strong>GET</strong></td>
+          <td class="path">/api/products/list</td>
+          <td>3</td>
+          <td>3</td>
+          <td class="">0</td>
+          <td>0.00%</td>
+          <td>0.30</td>
+          <td>8.8</td>
+          <td>9.8</td>
+          <td>10.5</td>
+          <td>10.5</td>
+          <td>10.5</td>
+          <td>10.5</td>
+          <td><span class="badge ok">200: 3</span></td>
+          <td>-</td>
+        </tr>
+        <tr class="">
+          <td><strong>Product Stats</strong></td>
+          <td><strong>GET</strong></td>
+          <td class="path">/api/products/reports/stats</td>
+          <td>3</td>
+          <td>3</td>
+          <td class="">0</td>
+          <td>0.00%</td>
+          <td>0.30</td>
+          <td>4.3</td>
+          <td>4.5</td>
+          <td>5.2</td>
+          <td>5.2</td>
+          <td>5.2</td>
+          <td>5.2</td>
+          <td><span class="badge ok">200: 3</span></td>
+          <td>-</td>
+        </tr>
+        <tr class="">
+          <td><strong>Teams Chat Teams</strong></td>
+          <td><strong>GET</strong></td>
+          <td class="path">/api/teams-chat/teams</td>
+          <td>4</td>
+          <td>4</td>
+          <td class="">0</td>
+          <td>0.00%</td>
+          <td>0.40</td>
+          <td>7.4</td>
+          <td>5.5</td>
+          <td>11.9</td>
+          <td>11.9</td>
+          <td>11.9</td>
+          <td>11.9</td>
+          <td><span class="badge ok">200: 4</span></td>
+          <td>-</td>
+        </tr>
+        <tr class="">
+          <td><strong>Teams Chat Users</strong></td>
+          <td><strong>GET</strong></td>
+          <td class="path">/api/teams-chat/users</td>
+          <td>4</td>
+          <td>4</td>
+          <td class="">0</td>
+          <td>0.00%</td>
+          <td>0.40</td>
+          <td>4.7</td>
+          <td>4.1</td>
+          <td>6.4</td>
+          <td>6.4</td>
+          <td>6.4</td>
+          <td>6.4</td>
+          <td><span class="badge ok">200: 4</span></td>
+          <td>-</td>
+        </tr>
+        <tr class="">
+          <td><strong>User Profile</strong></td>
+          <td><strong>GET</strong></td>
+          <td class="path">/api/users/profile</td>
+          <td>4</td>
+          <td>4</td>
+          <td class="">0</td>
+          <td>0.00%</td>
+          <td>0.40</td>
+          <td>4.1</td>
+          <td>3.5</td>
+          <td>5.7</td>
+          <td>5.7</td>
+          <td>5.7</td>
+          <td>5.7</td>
+          <td><span class="badge ok">200: 4</span></td>
+          <td>-</td>
+        </tr></tbody>
+      </table>
+    </section>
+
+    
+  </main>
+</body>
+</html>

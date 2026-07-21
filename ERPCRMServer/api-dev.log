@@ -1,0 +1,67 @@
+
+> server@1.0.0 start
+> node server.js
+
+📦 Loading Purchase Order Items Controller
+✅ Purchase Order Items Controller Loaded Successfully
+👥 Loading Customers Controller
+✅ Customers Controller Loaded Successfully
+🛒 Loading Sales Orders Controller
+✅ Sales Orders Controller Loaded Successfully
+Database 'ERP' already exists.
+✅ Roles table ready
+✅ Companies table ready with all features
+✅ UserTypes table ready
+Users table ready
+✅ refresh_tokens table ready
+✅ Users table ready
+✅ Email OTP verifications table ready
+✅ Units table ready
+✅ ProductCategories table ready
+✅ Products table ready with indexes
+✅ Warehouses table ready with indexes
+✅ ProductStockPerWarehouse table ready with indexes and triggers
+✅ StockMovements table ready
+✅ Suppliers table ready
+✅ PurchaseOrders table ready
+✅ PurchaseOrderItems table ready with indexes and triggers
+✅ Customers table ready with indexes and triggers
+✅ SalesOrders table created
+✅ Indexes created
+✅ Triggers and functions created
+✅ SalesOrders table ready with all features
+✅ SalesOrderItems table ready
+✅ Taxes table ready
+✅ ProductTaxMap table ready
+✅ AuditLogs table ready
+✅ ProfitLossReports table ready
+✅ TaskTypes table ready
+✅ LeadSources table ready
+ProductCategories table ready
+✅ FollowupTypes table ready
+✅ Industries table ready
+✅ SalesStages table ready
+✅ Accounts table ready
+✅ Contacts table ready
+✅ Leads table ready
+✅ Opportunities table ready
+Activities table ready
+Quotes table ready
+Invoices table ready
+Payments table ready
+Retentions table ready
+✅ Presales table ready
+Cases table ready
+OpportunityProducts table ready
+✅ Comments table ready
+✅ PresalesAssignments table ready
+✅ Groups table ready
+✅ GroupMembers table ready
+✅ Assignments table ready
+✅ EntityVisibility table ready
+Platform core tables ready
+CompanySettings table ready
+NotificationPreferences table ready
+AuditEvents table ready
+Teams chat tables ready
+Inbound email routing tables ready

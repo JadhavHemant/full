@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: erpcrm-server
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: PORT
+        sync: false
+      - key: REMOTE_DB_USER
+        sync: false
+      - key: REMOTE_DB_PASSWORD
+        sync: false
+      - key: REMOTE_DB_HOST
+        sync: false
+      - key: REMOTE_DB_NAME
+        sync: false
+      - key: ACCESS_TOKEN_SECRET
+        sync: false
+      - key: REFRESH_TOKEN_SECRET
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
