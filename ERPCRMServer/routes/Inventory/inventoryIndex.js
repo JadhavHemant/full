@@ -25,6 +25,8 @@ const GRNRoutes = require('./grn/grn.routes');
 const BatchSerialRoutes = require('./batchSerial/batchSerial.routes');
 const erpModulesRoutes = require('./erpModules/erpModules.routes');
 const exportRoutes = require('./utils/exportRoutes');
+const StockValuationRoutes = require('./stockValuation/stockValuation.routes');
+const ReorderLevelsRoutes = require('./reorderLevels/reorderLevels.routes');
 
 module.exports = {
   productCategoryRoutes,
@@ -49,4 +51,6 @@ module.exports = {
   BatchSerialRoutes,
   erpModulesRoutes,
   exportRoutes,
+  StockValuationRoutes,
+  ReorderLevelsRoutes,
 };

@@ -80,6 +80,21 @@ const { createAuditEventsTable } = require('./System/AuditEvents');
 const { createTeamsChatTables } = require('./System/TeamsChat');
 const { createInboundEmailRoutingTables } = require('./System/InboundEmailRouting');
 const { QualityControl, QualityControlItems } = require('./InventoryManagement/QualityControl');
+const { StockValuation } = require('./InventoryManagement/StockValuation');
+const { CostingMethod } = require('./InventoryManagement/CostingMethod');
+const { LandedCost } = require('./InventoryManagement/LandedCost');
+const { CostAdjustment } = require('./InventoryManagement/CostAdjustment');
+const { ReorderLevels } = require('./InventoryManagement/ReorderLevels');
+const { ReorderHistory } = require('./InventoryManagement/ReorderHistory');
+const { FinancialYear, AccountingPeriod } = require('./InventoryManagement/FinancialYear');
+const { Documents, DocumentVersions, DocumentAccess } = require('./InventoryManagement/Documents');
+const { RFQ, RFQItems, RFQVendors } = require('./InventoryManagement/RFQ');
+const { PriceList, PriceListItem, PriceListCustomer } = require('./InventoryManagement/PriceList');
+const { HSNCode } = require('./InventoryManagement/HSNCode');
+const { InvoiceMatch, InvoiceMatchLine } = require('./InventoryManagement/InvoiceMatch');
+const { PutawayTask, PickingList, PickingItem, CycleCount, CycleCountItem } = require('./InventoryManagement/WarehouseOperations');
+const { Currencies, ExchangeRates } = require('./InventoryManagement/Currencies');
+const { ChartOfAccounts, JournalEntry, JournalEntryLine } = require('./InventoryManagement/Accounting');
 
 const initModels = async () => {
   // Core user and auth tables (maintain dependency order)
@@ -178,6 +193,36 @@ const initModels = async () => {
   await createInboundEmailRoutingTables();
   await QualityControl();
   await QualityControlItems();
+  await StockValuation();
+  await CostingMethod();
+  await LandedCost();
+  await CostAdjustment();
+  await ReorderLevels();
+  await ReorderHistory();
+  await FinancialYear();
+  await AccountingPeriod();
+  await Documents();
+  await DocumentVersions();
+  await DocumentAccess();
+  await RFQ();
+  await RFQItems();
+  await RFQVendors();
+  await PriceList();
+  await PriceListItem();
+  await PriceListCustomer();
+  await HSNCode();
+  await InvoiceMatch();
+  await InvoiceMatchLine();
+  await PutawayTask();
+  await PickingList();
+  await PickingItem();
+  await CycleCount();
+  await CycleCountItem();
+  await Currencies();
+  await ExchangeRates();
+  await ChartOfAccounts();
+  await JournalEntry();
+  await JournalEntryLine();
 };
 
 module.exports = { initModels };

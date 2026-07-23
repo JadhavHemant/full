@@ -6,7 +6,7 @@ const createPurchaseReturn = async (req, res) => {
     const { ReturnNumber, PurchaseOrderId, SupplierId, CompanyId, BranchId, WarehouseId, ReturnDate, Reason, Items } = req.body;
     const retNumber = ReturnNumber || `PR-${Date.now()}`;
     const result = await pgQuery(appPool, 
-      `INSERT INTO PurchaseReturns (ReturnNumber, PurchaseOrderId, SupplierId, CompanyId, BranchId, WarehouseId, ReturnDate, Reason) VALUES (@ReturnNumber, @PurchaseOrderId, @SupplierId, @CompanyId, @BranchId, @WarehouseId, @ReturnDate, @Reason); SELECT SCOPE_IDENTITY() AS Id;`,
+      `INSERT INTO PurchaseReturns (ReturnNumber, PurchaseOrderId, SupplierId, CompanyId, BranchId, WarehouseId, ReturnDate, Reason) VALUES (@ReturnNumber, @PurchaseOrderId, @SupplierId, @CompanyId, @BranchId, @WarehouseId, @ReturnDate, @Reason) RETURNING "Id" AS Id;`,
       { ReturnNumber: retNumber, PurchaseOrderId: PurchaseOrderId||null, SupplierId: SupplierId||null, CompanyId: CompanyId||null, BranchId: BranchId||null, WarehouseId: WarehouseId||null, ReturnDate: ReturnDate||new Date(), Reason: Reason||null }
     );
     const returnId = result.recordset[0].Id;
@@ -49,7 +49,7 @@ const getPurchaseReturns = async (req, res) => {
 const getPurchaseReturnById = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pgQuery(appPool, 'SELECT * FROM PurchaseReturns WHERE Id=@id AND IsDeleted=0', { id: parseInt(id) });
+    const result = await pgQuery(appPool, 'SELECT * FROM PurchaseReturns WHERE "Id"=@id AND "IsDeleted"=0', { id: parseInt(id) });
     if (!result.recordset.length) return res.status(404).json({ message: 'Purchase return not found' });
     const items = await pgQuery(appPool, 'SELECT pri.*, p."ProductName" AS ProductName FROM PurchaseReturnItems pri LEFT JOIN Products p ON pri."ProductId" = p."Id" WHERE pri."ReturnId"=@id AND pri.IsDeleted=0', { id: parseInt(id) });
     res.json({ data: { ...result.recordset[0], Items: items.recordset } });
@@ -63,7 +63,7 @@ const updatePurchaseReturnStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { Status } = req.body;
-    await pgQuery(appPool, 'UPDATE PurchaseReturns SET Status=@Status, UpdatedAt=GETDATE() WHERE Id=@id', { Status, id: parseInt(id) });
+    await pgQuery(appPool, 'UPDATE PurchaseReturns SET Status=@Status, "UpdatedAt"=NOW() WHERE "Id"=@id', { Status, id: parseInt(id) });
     res.json({ message: 'Purchase return status updated' });
   } catch (error) {
     console.error('Update Purchase Return Status Error:', error);
@@ -74,8 +74,8 @@ const updatePurchaseReturnStatus = async (req, res) => {
 const deletePurchaseReturn = async (req, res) => {
   try {
     const { id } = req.params;
-    await pgQuery(appPool, 'UPDATE PurchaseReturns SET IsDeleted=1, UpdatedAt=GETDATE() WHERE Id=@id', { id: parseInt(id) });
-    await pgQuery(appPool, 'UPDATE PurchaseReturnItems SET IsDeleted=1 WHERE ReturnId=@id', { id: parseInt(id) });
+    await pgQuery(appPool, 'UPDATE PurchaseReturns SET "IsDeleted"=1, "UpdatedAt"=NOW() WHERE "Id"=@id', { id: parseInt(id) });
+    await pgQuery(appPool, 'UPDATE PurchaseReturnItems SET "IsDeleted"=1 WHERE "ReturnId"=@id', { id: parseInt(id) });
     res.json({ message: 'Purchase return deleted' });
   } catch (error) {
     console.error('Delete Purchase Return Error:', error);

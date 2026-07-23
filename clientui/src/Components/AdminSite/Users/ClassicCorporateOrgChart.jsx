@@ -408,11 +408,8 @@ const ClassicCorporateOrgChart = ({
     );
   };
 
-  if (!chartNodes.length) {
-    return <div className="ccoc-empty">No hierarchy data available.</div>;
-  }
-
-  return (
+  // Let parent component handle empty state display
+  return chartNodes.length === 0 ? null : (
     <div className="ccoc-wrapper">
       <div className="ccoc-toolbar">
         <div className="ccoc-title-wrap">

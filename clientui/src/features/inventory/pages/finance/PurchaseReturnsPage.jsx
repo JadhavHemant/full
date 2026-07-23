@@ -1,5 +1,5 @@
 import InventoryWorkspace from "../../components/InventoryWorkspace";
-import { ERP } from "../../../Components/Endpoint/Endpoint";
+import { ERP } from "../../../../Components/Endpoint/Endpoint";
 import { ArrowUturnUpIcon } from "@heroicons/react/24/outline";
 
 const columns = [
