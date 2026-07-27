@@ -16,14 +16,18 @@
  */
 
 const { appPool } = require('../config/db');
+const { ROLE_IDS, updateRoleSets } = require('../config/roleConfig');
+
+// Ensure ROLE_IDS are loaded from DB
+updateRoleSets();
 
 // ── Constants ──────────────────────────────────────────────────────────
 
-const SUPER_ADMIN_ID = 1;
-const ADMIN_ID = 2;
-const MANAGER_ID = 3;
-const EMPLOYEE_ID = 4;
-const CUSTOMER_ID = 5;
+const SUPER_ADMIN_ID = ROLE_IDS.SUPERADMIN;
+const ADMIN_ID = ROLE_IDS.ADMIN;
+const MANAGER_ID = ROLE_IDS.MANAGER;
+const EMPLOYEE_ID = ROLE_IDS.EMPLOYEE;
+const CUSTOMER_ID = ROLE_IDS.CUSTOMER;
 
 /**
  * Parses a permission string like "users:view" into { resource, action }

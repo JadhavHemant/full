@@ -1,13 +1,10 @@
 const { appPool } = require("../config/db");
-
-const PRIVILEGED_ROLE_IDS = new Set([1, 2]);
-
-const normalizeRoleName = (value) => String(value || "").trim().toLowerCase();
+const { PRIVILEGED_ROLE_IDS, PRIVILEGED_ROLE_NAMES, normalizeRoleName } = require("../config/roleConfig");
 
 const isPrivilegedUser = (user) => {
   const roleId = Number(user?.roleId ?? user?.RoleId ?? 0);
   const roleName = normalizeRoleName(user?.roleName ?? user?.RoleName ?? user?.role);
-  return PRIVILEGED_ROLE_IDS.has(roleId) || roleName === "super admin" || roleName === "admin";
+  return PRIVILEGED_ROLE_IDS.has(roleId) || PRIVILEGED_ROLE_NAMES.has(roleName);
 };
 
 const getAccessibleUserIds = async ({ userId, companyId = null }) => {
@@ -45,7 +42,7 @@ const getAccessibleUserIds = async ({ userId, companyId = null }) => {
       INNER JOIN "AccessibleUsers" au
         ON child."ReportingManagerId" = au."UserId"
       WHERE child."IsDelete" = FALSE
-        ${childCompanyClause}
+        AND (child."CompanyId" = $2 OR $2 IS NULL)
     )
     SELECT DISTINCT "UserId"
     FROM "AccessibleUsers";

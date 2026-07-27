@@ -15,6 +15,7 @@ const { appPool }          = require('../../config/db');
 const { logPermissionChange, logRoleAssignment, logDataChange }
                            = require('../../services/auditLogService');
 const { invalidateRoleCache } = require('../../middlewares/rbac');
+const { ROLE_IDS, isSuperAdmin, isAdminOrSuperAdmin } = require('../../config/roleConfig');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -28,11 +29,14 @@ const handleValidation = (req, res) => {
   return null;
 };
 
-const isSuperAdmin    = (user) => (user?.roleId || user?.RoleId) === 1;
-const isCompanyAdmin  = (user) => (user?.roleId || user?.RoleId) === 2;
-const isPrivileged    = (user) => isSuperAdmin(user) || isCompanyAdmin(user);
-const getIp           = (req)  => req.ip || req.connection?.remoteAddress || '0.0.0.0';
-const getUserId       = (req)  => req.user?.userId || req.user?.UserId;
+const isSuperAdminUser    = (user) => isSuperAdmin(user);
+const isCompanyAdmin      = (user) => {
+  const roleId = Number(user?.roleId ?? user?.RoleId ?? 0);
+  return roleId === ROLE_IDS.ADMIN || isAdminOrSuperAdmin(user);
+};
+const isPrivileged        = (user) => isSuperAdminUser(user) || isCompanyAdmin(user);
+const getIp               = (req)  => req.ip || req.connection?.remoteAddress || '0.0.0.0';
+const getUserId           = (req)  => req.user?.userId || req.user?.UserId;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MODULES
@@ -75,7 +79,7 @@ const createModule = async (req, res) => {
   const err = handleValidation(req, res);
   if (err !== null) return;
 
-  if (!isSuperAdmin(req.user)) {
+  if (!isSuperAdminUser(req.user)) {
     return res.status(403).json({ message: 'Only SuperAdmin can create modules' });
   }
 
@@ -107,7 +111,7 @@ const updateModule = async (req, res) => {
   const err = handleValidation(req, res);
   if (err !== null) return;
 
-  if (!isSuperAdmin(req.user)) {
+  if (!isSuperAdminUser(req.user)) {
     return res.status(403).json({ message: 'Only SuperAdmin can update modules' });
   }
 
@@ -146,7 +150,7 @@ const updateModule = async (req, res) => {
 };
 
 const deleteModule = async (req, res) => {
-  if (!isSuperAdmin(req.user)) {
+  if (!isSuperAdminUser(req.user)) {
     return res.status(403).json({ message: 'Only SuperAdmin can delete modules' });
   }
   const { moduleId } = req.params;
@@ -201,7 +205,7 @@ const createPermission = async (req, res) => {
   const err = handleValidation(req, res);
   if (err !== null) return;
 
-  if (!isSuperAdmin(req.user)) {
+  if (!isSuperAdminUser(req.user)) {
     return res.status(403).json({ message: 'Only SuperAdmin can create permissions' });
   }
 
@@ -223,7 +227,7 @@ const createPermission = async (req, res) => {
 };
 
 const deletePermission = async (req, res) => {
-  if (!isSuperAdmin(req.user)) {
+  if (!isSuperAdminUser(req.user)) {
     return res.status(403).json({ message: 'Only SuperAdmin can delete permissions' });
   }
   const { permissionId } = req.params;
@@ -268,7 +272,7 @@ const getUserMenus = async (req, res) => {
   const userId = getUserId(req);
   try {
     // SuperAdmin sees everything
-    if (isSuperAdmin(req.user)) {
+    if (isSuperAdminUser(req.user)) {
       const result = await appPool.query(`
         SELECT "MenuId","ParentMenuId","MenuName","MenuKey","MenuPath","MenuIcon","DisplayOrder","MenuType"
         FROM "Menus"
@@ -392,7 +396,7 @@ const getUserRoles = async (req, res) => {
     let p = 1;
 
     // Non-SuperAdmin can only see their own company's data
-    if (requestingRoleId !== 1) {
+    if (!isSuperAdminUser(req.user)) {
       query += ` AND ur."CompanyId" = $${p++}`;
       params.push(requestingCompanyId);
     }
@@ -420,17 +424,17 @@ const assignRole = async (req, res) => {
 
   try {
     // Permission check: only SuperAdmin or CompanyAdmin may assign
-    if (requestingRoleId !== 1 && requestingRoleId !== 2) {
+    if (!isSuperAdminUser(req.user) && !isCompanyAdmin(req.user)) {
       return res.status(403).json({ message: 'Insufficient privileges to assign roles' });
     }
 
-    // CompanyAdmin cannot assign roles ≥ their own (roleId 1 or 2)
-    if (requestingRoleId === 2 && parseInt(roleId) <= 2) {
+    // CompanyAdmin cannot assign roles at or above their own level
+    if (isCompanyAdmin(req.user) && parseInt(roleId) <= ROLE_IDS.ADMIN) {
       return res.status(403).json({ message: 'CompanyAdmin cannot assign SuperAdmin or CompanyAdmin roles' });
     }
 
     // CompanyAdmin can only assign within their company
-    if (requestingRoleId === 2) {
+    if (isCompanyAdmin(req.user)) {
       const adminCompany = requestingUser.companyId || requestingUser.CompanyId;
       if (companyId && parseInt(companyId) !== adminCompany) {
         return res.status(403).json({ message: 'Cross-company role assignment not allowed' });
@@ -464,7 +468,7 @@ const assignRole = async (req, res) => {
 
 const revokeRole = async (req, res) => {
   const requestingRoleId = req.user?.roleId || req.user?.RoleId;
-  if (requestingRoleId !== 1 && requestingRoleId !== 2) {
+  if (!isSuperAdminUser(req.user) && !isCompanyAdmin(req.user)) {
     return res.status(403).json({ message: 'Insufficient privileges to revoke roles' });
   }
   const { userRoleId } = req.params;
@@ -528,7 +532,7 @@ const assignPermissionsToRole = async (req, res) => {
 
   // CompanyAdmin cannot grant permissions to SuperAdmin or CompanyAdmin roles
   const requestingRoleId = req.user?.roleId || req.user?.RoleId;
-  if (requestingRoleId === 2 && parseInt(roleId) <= 2) {
+  if (isCompanyAdmin(req.user) && parseInt(roleId) <= ROLE_IDS.ADMIN) {
     return res.status(403).json({ message: 'CompanyAdmin cannot modify SuperAdmin/CompanyAdmin permissions' });
   }
 
@@ -625,10 +629,10 @@ const setMenuPermissions = async (req, res) => {
   if (!isPrivileged(req.user)) return res.status(403).json({ message: 'Insufficient privileges' });
 
   const { roleId } = req.params;
-  const { menuPermissions } = req.body; // [{ menuId, canView, canCreate, canEdit, canDelete }]
+  const { menuPermissions } = req.body;
 
   const requestingRoleId = req.user?.roleId || req.user?.RoleId;
-  if (requestingRoleId === 2 && parseInt(roleId) <= 2) {
+  if (isCompanyAdmin(req.user) && parseInt(roleId) <= ROLE_IDS.ADMIN) {
     return res.status(403).json({ message: 'CompanyAdmin cannot modify SuperAdmin/CompanyAdmin menus' });
   }
 
@@ -678,7 +682,7 @@ const getUserPermissionsSummary = async (req, res) => {
   const requestingRoleId = requestingUser?.roleId || requestingUser?.RoleId;
 
   // Users can view their own permissions; admins can view any
-  if (getUserId(req) !== targetUserId && requestingRoleId !== 1 && requestingRoleId !== 2) {
+  if (getUserId(req) !== targetUserId && !isSuperAdminUser(req.user) && !isCompanyAdmin(req.user)) {
     return res.status(403).json({ message: 'Cannot view permissions of another user' });
   }
 

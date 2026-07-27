@@ -5,6 +5,7 @@ import * as API from "../../Endpoint/Endpoint";
 import toast from "react-hot-toast";
 import { resolveAssetUrl } from "../../../utils/assetUrl";
 import { compressImageFile, formatFileSize } from "../../../utils/imageCompression";
+import { SUPER_ADMIN_ROLE_ID } from "../../../utils/sessionUser";
 
 const initialForm = {
   name: "",
@@ -145,7 +146,7 @@ const EditProfilePage = () => {
             <h2 className="text-2xl font-bold text-slate-800">Edit Profile</h2>
             <p className="text-sm text-slate-500">Update your account information and profile picture.</p>
           </div>
-          <Link to={profile?.roleId === 1 ? "/Admin/profile" : "/user/profile"} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <Link to={profile?.roleId === SUPER_ADMIN_ROLE_ID ? "/Admin/profile" : "/user/profile"} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
             Back To Profile
           </Link>
         </div>

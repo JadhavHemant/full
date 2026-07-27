@@ -32,8 +32,6 @@ export default function NavigationBar() {
   const [isHovering, setIsHovering] = useState(false);
   const location = useLocation();
 
-  console.log(loading, error);
-
   // Determine if user is super admin from the loaded profile data
   const isSuperAdmin = uData && isSuperAdminUser(uData);
 
@@ -58,12 +56,23 @@ export default function NavigationBar() {
         { name: "PreSales",        href: "/Admin/PreSales" },
         { name: "Cases",           href: "/Admin/Cases" },
         { name: "Retention",       href: "/Admin/Retentions" },
-        { name: "Master Details",  href: "/Admin/Master" },
-        { name: "Task Types",      href: "/Admin/CRM/TaskTypes" },
-        { name: "Sales Stages",    href: "/Admin/CRM/SalesStages" },
-        { name: "Industries",      href: "/Admin/CRM/Industries" },
-        { name: "Follow-up Types", href: "/Admin/CRM/FollowupTypes" },
-        { name: "Lead Sources",    href: "/Admin/CRM/LeadSources" },
+      ],
+    },
+    {
+      name: "Master",
+      icon: FolderIcon,
+      children: [
+        { name: "All Master Data",   href: "/Admin/Master" },
+        { name: "Task Types",        href: "/Admin/CRM/TaskTypes" },
+        { name: "Sales Stages",      href: "/Admin/CRM/SalesStages" },
+        { name: "Industries",        href: "/Admin/CRM/Industries" },
+        { name: "Follow-up Types",   href: "/Admin/CRM/FollowupTypes" },
+        { name: "Lead Sources",      href: "/Admin/CRM/LeadSources" },
+        { name: "Roles & Access",    href: "/Admin/HR/Roles" },
+        { name: "User Types",        href: "/Admin/HR/UserTypes" },
+        { name: "Product Categories",href: "/Admin/ERP/ProductCategory" },
+        { name: "Units",             href: "/Admin/ERP/Units" },
+        { name: "Brands",            href: "/Admin/ERP/Brands" },
       ],
     },
     {
@@ -99,9 +108,35 @@ export default function NavigationBar() {
       name: "Sales",
       icon: FolderIcon,
       children: [
-        { name: "Sales Orders",  href: "/Admin/ERP/SalesOrders" },
-        { name: "Sell",          href: "/Admin/ERP/Sell" },
-        { name: "Customers",     href: "/Admin/ERP/Customers" },
+        { name: "Sales Orders",     href: "/Admin/ERP/SalesOrders" },
+        { name: "Sales Quotations", href: "/Admin/ERP/SalesQuotations" },
+        { name: "Delivery Challans", href: "/Admin/ERP/DeliveryChallans" },
+        { name: "Sales Returns",    href: "/Admin/ERP/SalesReturns" },
+        { name: "Sell",             href: "/Admin/ERP/Sell" },
+        { name: "Customers",        href: "/Admin/ERP/Customers" },
+      ],
+    },
+    {
+      name: "Finance",
+      icon: FolderIcon,
+      children: [
+        { name: "Expenses",        href: "/Admin/ERP/Expenses" },
+        { name: "Purchase Returns", href: "/Admin/ERP/PurchaseReturns" },
+      ],
+    },
+    {
+      name: "Production",
+      icon: FolderIcon,
+      children: [
+        { name: "Bill of Materials",  href: "/Admin/ERP/BOM" },
+        { name: "Production Orders",  href: "/Admin/ERP/ProductionOrders" },
+      ],
+    },
+    {
+      name: "Approvals",
+      icon: FolderIcon,
+      children: [
+        { name: "Approval Requests", href: "/Admin/ERP/Approvals" },
       ],
     },
     {
@@ -114,6 +149,7 @@ export default function NavigationBar() {
         { name: "Roles",       href: "/Admin/HR/Roles" },
       ],
     },
+    { name: "Chat",      href: "/Admin/Chat",       icon: FolderIcon },
     { name: "Reports",   href: "/Admin/Reports",    icon: FolderIcon },
     {
       name: "Settings",
@@ -182,8 +218,8 @@ export default function NavigationBar() {
           {isSidebarExpanded ? (
             <>
               <div>
-                <h1 className="text-xl font-bold text-white whitespace-nowrap">CRM System</h1>
-                <p className="text-[11px] text-gray-400">Customer Relationship Management</p>
+                <h1 className="text-xl font-bold text-white whitespace-nowrap">Shivani.ERP</h1>
+                <p className="text-[11px] text-gray-400">All in one</p>
               </div>
               <button
                 onClick={toggleSidebar}

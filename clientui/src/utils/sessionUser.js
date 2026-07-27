@@ -31,38 +31,73 @@ export const getSessionUser = () => {
   return getUserFromToken() || null;
 };
 
+// Role ID constants - loaded dynamically from backend
+// Exported for use in components that need role-based logic
+export let SUPER_ADMIN_ROLE_ID = 1;
+export let ADMIN_ROLE_ID = 2;
+export let MANAGER_ROLE_ID = 3;
+
+/**
+ * Load role configuration from backend
+ */
+export const loadRoleConfig = async () => {
+  try {
+    const response = await fetch('/api/roles/config', {
+      headers: { 'Authorization': `Bearer ${getSessionUser()?.token || ''}` }
+    });
+    if (response.ok) {
+      const config = await response.json();
+      SUPER_ADMIN_ROLE_ID = config.SUPERADMIN || 1;
+      ADMIN_ROLE_ID = config.ADMIN || 2;
+      MANAGER_ROLE_ID = config.MANAGER || 3;
+    }
+  } catch (error) {
+    console.warn('Could not load role config from backend, using defaults:', error);
+  }
+};
+
 /**
  * Check if the user is a Super Admin
- * Super Admin has roleId 1 or roleName "super admin"
+ * Super Admin has roleId matching SUPER_ADMIN_ROLE_ID or roleName "super admin"
  * @param {object} user - User object (defaults to current session user)
  * @returns {boolean} True if user is Super Admin
  */
 export const isSuperAdminUser = (user = getSessionUser()) => {
   const roleId = Number(user?.roleId ?? user?.RoleId ?? 0);
   const roleName = normalizeRoleName(user?.roleName ?? user?.RoleName ?? user?.role);
-  return roleId === 1 || roleName === "super admin";
+  return roleId === SUPER_ADMIN_ROLE_ID || roleName === "super admin";
 };
 
 /**
  * Check if the user is an Admin
- * Admin has roleId 2 or roleName "admin"
+ * Admin has roleId matching ADMIN_ROLE_ID or roleName "admin"
  * @param {object} user - User object (defaults to current session user)
  * @returns {boolean} True if user is Admin
  */
 export const isAdminUser = (user = getSessionUser()) => {
   const roleId = Number(user?.roleId ?? user?.RoleId ?? 0);
   const roleName = normalizeRoleName(user?.roleName ?? user?.RoleName ?? user?.role);
-  return roleId === 2 || roleName === "admin";
+  return roleId === ADMIN_ROLE_ID || roleName === "admin";
 };
 
 /**
  * Check if the user can access the Admin Portal
- * User must be either Super Admin or Admin
+ * User must be either Super Admin, Admin, or have a user type
+ * that includes ERP/CRM modules (user types 1-6)
+ * User types 7-9 (Support, Employee, Viewer) use the limited User Portal
  * @param {object} user - User object (defaults to current session user)
  * @returns {boolean} True if user can access Admin Portal
  */
-export const canAccessAdminPortal = (user = getSessionUser()) =>
-  isSuperAdminUser(user) || isAdminUser(user);
+export const canAccessAdminPortal = (user = getSessionUser()) => {
+  if (isSuperAdminUser(user) || isAdminUser(user)) {
+    return true;
+  }
+
+  // Allow user types 3-6 (Company Owner, Manager, Team Lead, Sales Executive)
+  // to access the Admin portal since they have ERP/CRM module permissions
+  const userTypeId = Number(user?.userTypeId ?? user?.UserTypeId ?? 0);
+  return [3, 4, 5, 6].includes(userTypeId);
+};
 
 /**
  * Get the default portal path for the user

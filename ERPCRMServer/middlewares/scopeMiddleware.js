@@ -6,6 +6,7 @@
  */
 
 const { appPool } = require('../config/db');
+const { ROLE_IDS, isSuperAdmin } = require('../config/roleConfig');
 
 /**
  * Company Scope Middleware
@@ -20,7 +21,7 @@ const requireCompanyScope = async (req, res, next) => {
     }
 
     // Super admin bypass — tagged for audit
-    if (req.user.roleId === 1) {
+    if (isSuperAdmin(req.user)) {
       if (req.body.CompanyId || req.query.companyId) {
         req.authCompanyId = Number(req.body.CompanyId || req.query.companyId);
       }
@@ -54,7 +55,7 @@ const requireCompanyScope = async (req, res, next) => {
  */
 const assertCompanyAccess = (authUser, requestedCompanyId) => {
   if (!authUser) return false;
-  if (authUser.roleId === 1) return true; // Super admin
+  if (isSuperAdmin(authUser)) return true;
   const userCompanyId = authUser.companyId || authUser.CompanyId;
   if (!userCompanyId) return false;
   if (requestedCompanyId && Number(requestedCompanyId) !== Number(userCompanyId)) return false;
@@ -92,8 +93,8 @@ const WAREHOUSE_ACTIONS = {
 
 const assertWarehouseAccess = (authUser, warehouseId, action = 'view') => {
   if (!authUser || !warehouseId) return false;
-  if (authUser.roleId === 1) return true; // Super admin
-  if (authUser.roleId === 2) return true; // Company admin (all warehouses in company)
+  if (isSuperAdmin(authUser)) return true; // Super admin
+  if (authUser.roleId === ROLE_IDS.ADMIN) return true; // Company admin (all warehouses in company)
 
   // Check warehouse IDs assigned to user
   const userWarehouses = authUser.warehouseIds || [];

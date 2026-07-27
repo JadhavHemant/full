@@ -1,4 +1,5 @@
 const { appPool } = require("../../config/db");
+const { ROLE_IDS } = require("../../config/roleConfig");
 
 /**
  * Get audit logs with optional filtering
@@ -198,7 +199,7 @@ const cleanupAuditLogs = async (req, res) => {
     const { days = 90 } = req.query;
     
     // Only allow Super Admin to cleanup logs
-    if (!req.user || Number(req.user.roleId) !== 1) {
+    if (!req.user || Number(req.user.roleId) !== ROLE_IDS.SUPERADMIN) {
       return res.status(403).json({ message: "Forbidden: Only Super Admin can cleanup audit logs" });
     }
 

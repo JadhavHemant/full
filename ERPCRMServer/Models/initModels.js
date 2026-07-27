@@ -1,3 +1,4 @@
+const { appPool } = require("../config/db");
 const { Roles } = require('./Users/Roles');
 const { createCompaniesTable } = require('./Users/companyModel');
 const { createUserTypesTable } = require('./Users/userTypeModel');
@@ -13,11 +14,14 @@ const { UserRoles } = require('./RBAC/UserRoles');
 const { RolePermissions } = require('./RBAC/RolePermissions');
 const { Menus } = require('./RBAC/Menus');
 const { MenuPermissions } = require('./RBAC/MenuPermissions');
+const { FieldPermissions } = require('./RBAC/FieldPermissions');
+const { RecordPermissions } = require('./RBAC/RecordPermissions');
 
 // Security Models
 const { RefreshTokens } = require('./Security/RefreshTokens');
 const { EmailVerificationTokens } = require('./Security/EmailVerificationTokens');
 const { LoginHistory } = require('./Security/LoginHistory');
+const { User2FA } = require('./Users/User2FA');
 
 const { Units } = require('./InventoryManagement/Units');
 const { ProductCategoriesTable } = require('./InventoryManagement/ProductCategories');
@@ -80,6 +84,15 @@ const { createAuditEventsTable } = require('./System/AuditEvents');
 const { createTeamsChatTables } = require('./System/TeamsChat');
 const { createInboundEmailRoutingTables } = require('./System/InboundEmailRouting');
 const { QualityControl, QualityControlItems } = require('./InventoryManagement/QualityControl');
+const { StockValuation } = require('./InventoryManagement/StockValuation');
+const { CostingMethod } = require('./InventoryManagement/CostingMethod');
+const { LandedCost } = require('./InventoryManagement/LandedCost');
+const { CostAdjustment } = require('./InventoryManagement/CostAdjustment');
+const { ReorderLevels } = require('./InventoryManagement/ReorderLevels');
+const { ReorderHistory } = require('./InventoryManagement/ReorderHistory');
+const { FinancialYear } = require('./InventoryManagement/FinancialYear');
+const { Documents } = require('./InventoryManagement/Documents');
+const { EmailLogs } = require('./InventoryManagement/EmailLogs');
 
 const initModels = async () => {
   // Core user and auth tables (maintain dependency order)
@@ -98,11 +111,14 @@ const initModels = async () => {
   await RolePermissions();
   await Menus();
   await MenuPermissions();
+  await FieldPermissions();
+  await RecordPermissions();
 
   // Security tables
   await RefreshTokens();
   await EmailVerificationTokens();
   await LoginHistory();
+  await User2FA();
   await Units();
   await ProductCategoriesTable();
   await ProductTable();
@@ -178,6 +194,30 @@ const initModels = async () => {
   await createInboundEmailRoutingTables();
   await QualityControl();
   await QualityControlItems();
+  await StockValuation();
+  await CostingMethod();
+  await LandedCost();
+  await CostAdjustment();
+  await ReorderLevels();
+  await ReorderHistory();
+  await FinancialYear();
+  await Documents();
+  await EmailLogs();
+
+  // Create AuditLogDetails table for field-level change tracking
+  await appPool.query(`
+    CREATE TABLE IF NOT EXISTS "AuditLogDetails" (
+      "Id" SERIAL PRIMARY KEY,
+      "AuditLogId" INT REFERENCES "AuditLogs"("Id") ON DELETE CASCADE,
+      "BeforeValues" JSONB DEFAULT '{}',
+      "AfterValues" JSONB DEFAULT '{}',
+      "ChangedFields" TEXT[] DEFAULT '{}',
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE("AuditLogId")
+    )
+  `);
+  await appPool.query('CREATE INDEX IF NOT EXISTS idx_audit_log_details_log ON "AuditLogDetails"("AuditLogId")');
+  console.log("✅ AuditLogDetails table ready");
 };
 
 module.exports = { initModels };

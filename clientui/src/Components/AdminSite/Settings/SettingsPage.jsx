@@ -1,10 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { getSessionUser } from "../../../utils/sessionUser";
+import { getSessionUser, SUPER_ADMIN_ROLE_ID } from "../../../utils/sessionUser";
 
 const SettingsPage = () => {
   const user = getSessionUser();
-  const basePath = Number(user?.roleId) === 1 ? "/Admin" : "/user";
+  const basePath = Number(user?.roleId) === SUPER_ADMIN_ROLE_ID ? "/Admin" : "/user";
 
   const cards = [
     {
@@ -21,12 +21,12 @@ const SettingsPage = () => {
     },
   ];
 
-  if (Number(user?.roleId) === 1) {
+  if (Number(user?.roleId) === SUPER_ADMIN_ROLE_ID) {
     cards.push({
       title: "Register User",
       description: "Create a new user from a full-page form using the same admin layout style.",
       action: "Open Register",
-      to: `${basePath}/users/register`,
+      to: "/Admin/HR/Users/Register",
     });
   }
 

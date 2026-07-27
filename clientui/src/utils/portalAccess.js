@@ -8,8 +8,27 @@ import { useLocation } from "react-router-dom";
 // Import session user utilities
 import { getSessionUser } from "./sessionUser";
 
-// Super admin role ID constant
-export const SUPER_ADMIN_ROLE_ID = 1;
+// Role ID constants - loaded dynamically from backend if available
+let SUPER_ADMIN_ROLE_ID = 1;
+let ADMIN_ROLE_ID = 2;
+
+/**
+ * Fetch role configuration from backend API
+ */
+export const loadRoleConfig = async () => {
+  try {
+    const response = await fetch('/api/roles/config', {
+      headers: { 'Authorization': `Bearer ${getSessionUser()?.token || ''}` }
+    });
+    if (response.ok) {
+      const config = await response.json();
+      SUPER_ADMIN_ROLE_ID = config.SUPERADMIN || 1;
+      ADMIN_ROLE_ID = config.ADMIN || 2;
+    }
+  } catch (error) {
+    console.warn('Could not load role config from backend, using defaults:', error);
+  }
+};
 
 /**
  * Normalize role name to lowercase string for consistent comparison
@@ -30,7 +49,7 @@ export const getPortalAccess = (pathname = "", user = getSessionUser()) => {
   const hierarchyLevel = Number(user?.hierarchyLevel ?? user?.HierarchyLevel ?? -1);
   const roleName = normalizeRoleName(user?.roleName ?? user?.RoleName ?? user?.role);
   const isSuperAdmin = roleId === SUPER_ADMIN_ROLE_ID || roleName === "super admin";
-  const isAdmin = roleId === 2 || roleName === "admin";
+  const isAdmin = roleId === ADMIN_ROLE_ID || roleName === "admin";
   const isAdminPortal = pathname.startsWith("/Admin");
   const isUserPortal = pathname.startsWith("/user");
   const canManageRestrictedActions =

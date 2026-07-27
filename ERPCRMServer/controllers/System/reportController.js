@@ -1,5 +1,6 @@
 const { appPool } = require("../../config/db");
 const { isPrivilegedUser, getAccessibleUserIds } = require("../../utils/hierarchyAccess");
+const { isSuperAdmin, ROLE_IDS } = require("../../config/roleConfig");
 const { generateAndSendCrmDigest } = require("../../services/crmDigestReportService");
 
 const REPORT_CACHE_TTL_MS = 30 * 1000;
@@ -108,18 +109,18 @@ const resolveReportScope = async (req) => {
     }
   }
 
-  const isSuperAdmin = roleId === 1;
+  const isSuperAdminUser = roleId === ROLE_IDS.SUPERADMIN || isSuperAdmin(req.user);
   const privileged = isPrivilegedUser({ ...req.user, roleId });
 
-  if (!isSuperAdmin && !tokenCompanyId) {
+  if (!isSuperAdminUser && !tokenCompanyId) {
     throw createHttpError(401, "Company context missing. Please login again.");
   }
 
-  if (!isSuperAdmin && requestedCompanyId && requestedCompanyId !== tokenCompanyId) {
+  if (!isSuperAdminUser && requestedCompanyId && requestedCompanyId !== tokenCompanyId) {
     throw createHttpError(403, "You are not allowed to access another company.");
   }
 
-  const companyId = isSuperAdmin ? requestedCompanyId : tokenCompanyId;
+  const companyId = isSuperAdminUser ? requestedCompanyId : tokenCompanyId;
   let userIds = null;
 
   if (!privileged) {
@@ -127,7 +128,7 @@ const resolveReportScope = async (req) => {
   }
 
   if (requestedUserId) {
-    if (isSuperAdmin || privileged) {
+    if (isSuperAdminUser || privileged) {
       userIds = [requestedUserId];
     } else {
       const allowedUsers = new Set((userIds || []).map((id) => Number(id)));

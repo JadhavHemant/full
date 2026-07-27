@@ -1,4 +1,4 @@
-# Prometheus configuration for ERP API Server
+# Prometheus configuration for ERP CRM API Server
 # Save this file and run Prometheus with:
 #   prometheus --config.file=prometheus.yml
 #
@@ -28,7 +28,7 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # Our ERP API Server
+  # Our ERP CRM API Server
   - job_name: 'erp-api-server'
     metrics_path: '/metrics'
     static_configs:
@@ -43,3 +43,23 @@ scrape_configs:
   # - job_name: 'node-exporter'
   #   static_configs:
   #     - targets: ['localhost:9100']
+
+  # Uncomment below if you want separate scrape for CRM-side metrics only
+  # - job_name: 'erp-crm-metrics'
+  #   metrics_path: '/metrics'
+  #   static_configs:
+  #     - targets: ['localhost:5351']
+  #   relabel_configs:
+  #     - source_labels: [__address__]
+  #       target_label: instance
+  #       replacement: 'erp-crm'
+
+  # Uncomment below if you want separate scrape for Inventory-side metrics only
+  # - job_name: 'erp-inventory-metrics'
+  #   metrics_path: '/metrics'
+  #   static_configs:
+  #     - targets: ['localhost:5351']
+  #   relabel_configs:
+  #     - source_labels: [__address__]
+  #       target_label: instance
+  #       replacement: 'erp-inventory'

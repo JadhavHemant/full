@@ -1147,12 +1147,16 @@ const CrmWorkspace = ({
 
   const handleColumnToggle = (fieldName) => {
     setSelectedTableFieldNames((prev) => {
-      if (prev.includes(fieldName)) {
-        const next = prev.filter((name) => name !== fieldName);
+      // If selectedTableFieldNames is empty, the UI is showing fallback columns.
+      // Seed from fallback so we don't wipe all other visible columns on first toggle.
+      const base = prev.length > 0 ? prev : fallbackTableFieldNames;
+
+      if (base.includes(fieldName)) {
+        const next = base.filter((name) => name !== fieldName);
         return next.length ? next : [fieldName];
       }
 
-      return [...prev, fieldName];
+      return [...base, fieldName];
     });
   };
 
@@ -1386,19 +1390,24 @@ const CrmWorkspace = ({
                         </button>
                       </div>
                       <div className="space-y-2">
-                        {selectableTableFields.map((field) => (
-                          <label
-                            key={`column-${field.name}`}
-                            className="flex items-center gap-2 text-sm text-blueGray-600"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedTableFieldNames.includes(field.name)}
-                              onChange={() => handleColumnToggle(field.name)}
-                            />
-                            <span>{field.label}</span>
-                          </label>
-                        ))}
+                        {selectableTableFields.map((field) => {
+                          const isChecked = selectedTableFieldNames.length > 0
+                            ? selectedTableFieldNames.includes(field.name)
+                            : fallbackTableFieldNames.includes(field.name);
+                          return (
+                            <label
+                              key={`column-${field.name}`}
+                              className="flex items-center gap-2 text-sm text-blueGray-600 cursor-pointer select-none"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleColumnToggle(field.name)}
+                              />
+                              <span>{field.label}</span>
+                            </label>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

@@ -3,14 +3,14 @@ import * as API from "../../Endpoint/Endpoint";
 import axiosInstance from '../utils/axiosInstance';
 import { resolveAssetUrl } from "../../../utils/assetUrl";
 import { Link } from "react-router-dom";
-import { getSessionUser } from "../../../utils/sessionUser";
+import { getSessionUser, SUPER_ADMIN_ROLE_ID } from "../../../utils/sessionUser";
 
 const Profile = () => {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const sessionUser = getSessionUser();
-  const basePath = Number(sessionUser?.roleId) === 1 ? "/Admin" : "/user";
+  const basePath = Number(sessionUser?.roleId) === SUPER_ADMIN_ROLE_ID ? "/Admin" : "/user";
 
   const getData = () => {
     axiosInstance.get(API.PROFILE)

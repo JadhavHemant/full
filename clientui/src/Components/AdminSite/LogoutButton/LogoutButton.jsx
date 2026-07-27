@@ -27,7 +27,7 @@ const LogoutButton = () => {
   };
 
   return (
-    <button onClick={handleLogout}className='cursor-pointer'>Logout</button>
+    <button onClick={handleLogout} className='cursor-pointer'>Logout</button>
   );
 };
 

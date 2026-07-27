@@ -490,10 +490,10 @@ const seedRolePermissions = async (client, permissionIdMap) => {
   const allPermIds = Object.values(permissionIdMap);
   for (const permId of allPermIds) {
     await client.query(`
-      INSERT INTO "RolePermissions" ("RoleId", "PermissionId", "IsGranted", "IsActive", "IsDeleted")
-      VALUES (1, $1, TRUE, TRUE, FALSE)
+      INSERT INTO "RolePermissions" ("RoleId", "PermissionId", "Allowed")
+      VALUES (1, $1, TRUE)
       ON CONFLICT ("RoleId", "PermissionId") DO UPDATE
-        SET "IsGranted" = TRUE, "IsActive" = TRUE, "IsDeleted" = FALSE;
+        SET "Allowed" = TRUE;
     `, [permId]);
     count++;
   }
@@ -508,10 +508,10 @@ const seedRolePermissions = async (client, permissionIdMap) => {
         if (!permId) continue;
 
         await client.query(`
-          INSERT INTO "RolePermissions" ("RoleId", "PermissionId", "IsGranted", "IsActive", "IsDeleted")
-          VALUES ($1, $2, TRUE, TRUE, FALSE)
+          INSERT INTO "RolePermissions" ("RoleId", "PermissionId", "Allowed")
+          VALUES ($1, $2, TRUE)
           ON CONFLICT ("RoleId", "PermissionId") DO UPDATE
-            SET "IsGranted" = TRUE, "IsActive" = TRUE, "IsDeleted" = FALSE;
+            SET "Allowed" = TRUE;
         `, [roleId, permId]);
         count++;
       }
@@ -614,7 +614,7 @@ const seedSuperAdmin = async (client) => {
 
   await client.query(`
     INSERT INTO "Users"
-      ("Name", "Email", "Password", "RoleId", "IsActive", "IsDeleted",
+      ("Name", "Email", "Password", "RoleId", "IsActive", "IsDelete",
        "EmailVerified", "Status", "PasswordChangedAt", "CreatedAt", "UpdatedAt")
     VALUES ($1, $2, $3, 1, TRUE, FALSE, TRUE, 'active', NOW(), NOW(), NOW())
     ON CONFLICT ("Email") DO NOTHING;

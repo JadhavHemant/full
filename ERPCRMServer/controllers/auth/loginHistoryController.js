@@ -15,8 +15,9 @@
 const { appPool } = require('../../config/db');
 const { revokeRefreshToken } = require('../../utils/tokenUtils');
 
-const isSuperAdmin   = (u) => (u?.roleId || u?.RoleId) === 1;
-const isPrivileged   = (u) => (u?.roleId || u?.RoleId) <= 2;
+const { ROLE_IDS, isSuperAdmin, isAdminOrSuperAdmin } = require('../../config/roleConfig');
+const isSuperAdminUser = (u) => (u?.roleId || u?.RoleId) === ROLE_IDS.SUPERADMIN || isSuperAdmin(u);
+const isPrivileged     = (u) => (u?.roleId || u?.RoleId) <= ROLE_IDS.ADMIN || isAdminOrSuperAdmin(u);
 const getUserId      = (req) => req.user?.userId || req.user?.UserId;
 
 // ─────────────────────────────────────────────────────────────────────────────

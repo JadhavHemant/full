@@ -16,6 +16,7 @@ import * as companyService from '../../../services/companyService';
 import { resolveAssetUrl } from '../../../utils/assetUrl';
 import { compressImageFile, formatFileSize } from '../../../utils/imageCompression';
 import TitleBar from '../../TitleBar';
+import { usePortalAccess } from '../../../utils/portalAccess';
 
 /**
  * Company component
@@ -26,7 +27,8 @@ import TitleBar from '../../TitleBar';
  * - Active/inactive status toggle
  */
 const Company = () => {
-    // State for companies list
+    // Check if user has permission for restricted actions (delete, flag)
+    const { canManageRestrictedActions, isSuperAdmin } = usePortalAccess();
     const [companies, setCompanies] = useState([]);
     // State for loading status
     const [loading, setLoading] = useState(false);
@@ -751,16 +753,18 @@ const Company = () => {
                             >
                               <PencilIcon className="h-5 w-5" />
                             </button>
-                            <button
-                              onClick={() => {
-                                setSelectedCompany(company);
-                                setShowDeleteModal(true);
-                              }}
-                              className="text-red-500 hover:text-red-700"
-                              title="Delete"
-                            >
-                              <TrashIcon className="h-5 w-5" />
-                            </button>
+                            {canManageRestrictedActions && (
+                              <button
+                                onClick={() => {
+                                  setSelectedCompany(company);
+                                  setShowDeleteModal(true);
+                                }}
+                                className="text-red-500 hover:text-red-700"
+                                title="Delete"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1166,18 +1170,20 @@ const Company = () => {
                       Active
                     </span>
                   </label>
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      name="Flag"
-                      checked={formData.Flag}
-                      onChange={handleChange}
-                      className="w-4 h-4 text-yellow-600 rounded focus:ring-yellow-500"
-                    />
-                    <span className="ml-2 text-sm text-blueGray-600">
-                      Flag
-                    </span>
-                  </label>
+                  {isSuperAdmin && (
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        name="Flag"
+                        checked={formData.Flag}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-yellow-600 rounded focus:ring-yellow-500"
+                      />
+                      <span className="ml-2 text-sm text-blueGray-600">
+                        Flag
+                      </span>
+                    </label>
+                  )}
                 </div>
               )}
             </div>
@@ -1219,7 +1225,7 @@ const Company = () => {
 )}
 
 {/* Delete confirmation modal */}
-{showDeleteModal && selectedCompany && (
+{showDeleteModal && selectedCompany && canManageRestrictedActions && (
   <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
       {/* Modal header */}

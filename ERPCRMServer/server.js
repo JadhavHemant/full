@@ -36,16 +36,22 @@ const { initializeChatSocket } = require("./sockets/chatSocket");
 const { startCrmDigestScheduler } = require("./services/crmDigestReportService");
 const { startCrmStaleReminderScheduler } = require("./services/crmStaleReminderService");
 const { metricsMiddleware, prometheusRouter, socketEventsTotal } = require("./middlewares/prometheusMetrics");
+const moduleMetrics = require("./middlewares/moduleMetrics");
 const { rbacMiddleware } = require("./middlewares/rbac");
 const { startAllCrmJobs } = require("./jobs/crm");
+const { loadRoleIdsFromDb, updateRoleSets } = require("./config/roleConfig");
 
 // Route imports
 const companiesRoutes = require('./routes/Company/companiesRoutes');
 const userTypeRoutes = require('./routes/User/userTypeRoutes');
 const roleRoutes = require('./routes/User/roleRoutes');
 const auditLogRoutes = require('./routes/User/auditLogRoutes');
+const advancedAuditRoutes = require('./routes/Inventory/advancedAudit/advancedAudit.routes');
 const inventoryRoutes = require('./routes/Inventory/inventoryIndex');
 const reportRoutes = require('./routes/System/reportRoutes');
+const stockValuationRoutes = require('./routes/Inventory/stockValuation/stockValuation.routes');
+const reorderLevelsRoutes = require('./routes/Inventory/reorderLevels/reorderLevels.routes');
+const twoFactorRoutes = require('./routes/Auth/twoFactorRoutes');
 const { getDashboardStats } = require('./controllers/InventoryApis/dashboard');
 const apiMonitoringRoutes = require('./routes/System/apiMonitoringRoutes');
 const companySettingsRoutes = require('./routes/System/companySettingsRoutes');
@@ -57,6 +63,8 @@ const chatChannelRoutes = require('./routes/channels');
 const chatMessageRoutes = require('./routes/messages');
 const exportRoutes = require('./routes/Inventory/utils/exportRoutes');
 const importRoutes = require('./routes/Inventory/utils/importRoutes');
+const fieldPermissionRoutes = require('./routes/RBAC/fieldPermissions.routes');
+const recordPermissionRoutes = require('./routes/RBAC/recordPermissions.routes');
 
 const rawPort = Number.parseInt(process.env.PORT, 10);
 const PORT = Number.isInteger(rawPort) && rawPort > 0 && rawPort < 65536 ? rawPort : 5351;
@@ -151,6 +159,10 @@ app.use(metricsMiddleware);
 
 // Expose Prometheus metrics endpoint (excluded from rate limiting and auth)
 app.use('/metrics', prometheusRouter);
+
+// Module-specific metrics are available via moduleMetrics object
+// Use in controllers/services to track CRM, Inventory, and RBAC business metrics
+// Example: moduleMetrics.crmRecordsTotal.set({ entity: 'leads' }, 150)
 
 app.use(express.json({ limit: '10mb' })); // Limit body size to prevent DoS attacks
 app.get('/api/health', async (_req, res) => {
@@ -321,6 +333,7 @@ app.use('/api', rbacMiddleware);
 app.use('/api/users/login', authLimiter);
 app.use('/api/users/forgot-password', authLimiter);
 app.use('/api/users/reset-password', authLimiter);
+app.use('/api/auth', twoFactorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/token', authLimiter, refreshToken);
 
@@ -329,6 +342,7 @@ app.use('/api/company', companiesRoutes);
 app.use('/api/usertypes', userTypeRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/audit-logs', advancedAuditRoutes);
 
 // --- Inventory Routes (consolidated) ---
 app.use('/api/productcategory', inventoryRoutes.productCategoryRoutes);
@@ -352,6 +366,11 @@ app.use('/api/grn', inventoryRoutes.GRNRoutes);
 app.use('/api/batches', inventoryRoutes.BatchSerialRoutes);
 app.use('/api/serial-numbers', inventoryRoutes.BatchSerialRoutes);
 app.use('/api/erp', inventoryRoutes.erpModulesRoutes);
+app.use('/api/stock-valuation', stockValuationRoutes);
+app.use('/api/reorder-levels', reorderLevelsRoutes);
+app.use('/api/financial-years', inventoryRoutes.FinancialYearsRoutes);
+app.use('/api/documents', inventoryRoutes.DocumentsRoutes);
+app.use('/api/email', inventoryRoutes.EmailRoutes);
 const dashboardRouter = require('express').Router();
 dashboardRouter.get('/', getDashboardStats);
 app.use('/api/dashboard', dashboardRouter);
@@ -401,6 +420,10 @@ app.use("/api/chat", chatChannelRoutes);
 app.use("/api/chat", chatMessageRoutes);
 app.use("/api/utils", exportRoutes);
 app.use("/api/utils", importRoutes);
+
+// --- RBAC Permission Management Routes ---
+app.use("/api/field-permissions", fieldPermissionRoutes);
+app.use("/api/record-permissions", recordPermissionRoutes);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
@@ -504,6 +527,15 @@ ensureDatabaseExists().then(async () => {
   // Note: RBAC migration is handled automatically by the role controller (self-healing)
   // and via the standalone script: node scripts/runMigration.js
   // Database pool is kept alive - do NOT close it here
+  
+  // Load role IDs dynamically from database
+  try {
+    await loadRoleIdsFromDb();
+    updateRoleSets();
+    console.log('✅ Role IDs loaded successfully from database');
+  } catch (error) {
+    console.warn('⚠️ Could not load dynamic role IDs, using fallbacks:', error.message);
+  }
   
   await initModels();
   startCrmDigestScheduler();

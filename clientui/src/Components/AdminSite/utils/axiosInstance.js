@@ -298,7 +298,7 @@ axiosInstance.interceptors.response.use(
       if (!savedRefreshToken) {
         console.error('❌ No refresh token available. Logging out user.');
         clearSessionTokens();
-        window.location.href = '/';
+        window.location.href = '/login';
         return Promise.reject(error);
       }
 

@@ -25,6 +25,12 @@ const GRNRoutes = require('./grn/grn.routes');
 const BatchSerialRoutes = require('./batchSerial/batchSerial.routes');
 const erpModulesRoutes = require('./erpModules/erpModules.routes');
 const exportRoutes = require('./utils/exportRoutes');
+const StockValuationRoutes = require('./stockValuation/stockValuation.routes');
+const ReorderLevelsRoutes = require('./reorderLevels/reorderLevels.routes');
+const FinancialYearsRoutes = require('./financialYears/financialYears.routes');
+const DocumentsRoutes = require('./documents/documents.routes');
+const EmailRoutes = require('./email/email.routes');
+const AdvancedAuditRoutes = require('./advancedAudit/advancedAudit.routes');
 
 module.exports = {
   productCategoryRoutes,
@@ -49,4 +55,10 @@ module.exports = {
   BatchSerialRoutes,
   erpModulesRoutes,
   exportRoutes,
+  StockValuationRoutes,
+  ReorderLevelsRoutes,
+  FinancialYearsRoutes,
+  DocumentsRoutes,
+  EmailRoutes,
+  AdvancedAuditRoutes,
 };

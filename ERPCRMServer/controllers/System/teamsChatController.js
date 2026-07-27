@@ -15,7 +15,8 @@ const getCurrentUserId = (req) =>
 
 const getCurrentCompanyId = (req) => toInt(req.user?.companyId ?? req.user?.CompanyId);
 
-const isSuperAdminUser = (user) => Number(user?.roleId ?? user?.RoleId) === 1;
+const { isSuperAdmin, ROLE_IDS } = require('../../config/roleConfig');
+const isSuperAdminUser = (user) => Number(user?.roleId ?? user?.RoleId) === ROLE_IDS.SUPERADMIN || isSuperAdmin(user);
 
 const resolveCompanyContext = (req, explicitCompanyId = null) => {
   const privileged = isPrivilegedUser(req.user);

@@ -20,6 +20,7 @@
  */
 
 const { appPool } = require('../config/db');
+const { ROLE_IDS, isSuperAdmin } = require('../config/roleConfig');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal helpers
@@ -28,7 +29,7 @@ const { appPool } = require('../config/db');
 const getUserId = (req)  => req.user?.userId || req.user?.UserId;
 const getRoleId = (req)  => req.user?.roleId  || req.user?.RoleId;
 
-const isSuperAdmin = (req) => getRoleId(req) === 1;
+const isSuperAdminUser = (req) => getRoleId(req) === ROLE_IDS.SUPERADMIN || isSuperAdmin(req.user);
 
 /**
  * Check permission using DB-driven RolePermissions table.
@@ -103,7 +104,7 @@ const checkMenuAccessInDb = async (roleId, menuKey) => {
  */
 const hasPermission = (permissionKey) => async (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: 'Authentication required' });
-  if (isSuperAdmin(req)) return next();
+  if (isSuperAdminUser(req)) return next();
 
   try {
     const allowed = await checkPermissionInDb(getUserId(req), getRoleId(req), permissionKey);
@@ -129,7 +130,7 @@ const hasPermission = (permissionKey) => async (req, res, next) => {
  */
 const hasModuleAccess = (moduleKey, action) => async (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: 'Authentication required' });
-  if (isSuperAdmin(req)) return next();
+  if (isSuperAdminUser(req)) return next();
 
   const permKey = `${moduleKey}.${action}`;
   try {
@@ -156,7 +157,7 @@ const hasModuleAccess = (moduleKey, action) => async (req, res, next) => {
  */
 const hasMenuAccess = (menuKey) => async (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: 'Authentication required' });
-  if (isSuperAdmin(req)) return next();
+  if (isSuperAdminUser(req)) return next();
 
   try {
     const allowed = await checkMenuAccessInDb(getRoleId(req), menuKey);
@@ -179,7 +180,7 @@ const hasMenuAccess = (menuKey) => async (req, res, next) => {
 
 const hasAnyPermission = (permissionKeys) => async (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: 'Authentication required' });
-  if (isSuperAdmin(req)) return next();
+  if (isSuperAdminUser(req)) return next();
 
   try {
     const userId = getUserId(req);
@@ -203,7 +204,7 @@ const hasAnyPermission = (permissionKeys) => async (req, res, next) => {
 
 const hasAllPermissions = (permissionKeys) => async (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: 'Authentication required' });
-  if (isSuperAdmin(req)) return next();
+  if (isSuperAdminUser(req)) return next();
 
   try {
     const userId = getUserId(req);

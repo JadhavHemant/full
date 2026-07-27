@@ -28,7 +28,7 @@ const getUserTypeById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await appPool.query('SELECT * FROM "UserTypes" WHERE "UserTypeId" = $1', [id]);
+    const result = await appPool.query('SELECT * FROM "UserTypes" WHERE "Id" = $1', [id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'User type not found' });
@@ -47,7 +47,7 @@ const updateUserType = async (req, res) => {
 
   try {
     const result = await appPool.query(
-      'UPDATE "UserTypes" SET "UserType" = $1 WHERE "UserTypeId" = $2 RETURNING *',
+      'UPDATE "UserTypes" SET "UserType" = $1 WHERE "Id" = $2 RETURNING *',
       [userType, id]
     );
 
@@ -67,7 +67,7 @@ const deleteUserType = async (req, res) => {
 
   try {
     const result = await appPool.query(
-      'DELETE FROM "UserTypes" WHERE "UserTypeId" = $1 RETURNING *',
+      'DELETE FROM "UserTypes" WHERE "Id" = $1 RETURNING *',
       [id]
     );
 

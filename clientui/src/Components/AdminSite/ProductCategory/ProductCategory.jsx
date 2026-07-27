@@ -8,9 +8,10 @@ import toast, { Toaster } from 'react-hot-toast';
 import axiosInstance from '../../AdminSite/utils/axiosInstance';
 import { PRODUCT_CATEGORY } from '../../Endpoint/Endpoint';
 import TitleBar from '../../TitleBar';
+import { usePortalAccess } from '../../../utils/portalAccess';
 
 const ProductCategories = () => {
-  const [categories, setCategories] = useState([]);
+  const { canManageRestrictedActions } = usePortalAccess();
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     total: 0, limit: 10, offset: 0, totalPages: 0, currentPage: 1,
@@ -485,13 +486,15 @@ const ProductCategories = () => {
                             >
                               <PencilIcon className="h-5 w-5" />
                             </button>
-                            <button
-                              onClick={() => openDeleteModal(category)}
-                              className="text-red-500 hover:text-red-700 transition-colors"
-                              title="Delete Category"
-                            >
-                              <TrashIcon className="h-5 w-5" />
-                            </button>
+                            {canManageRestrictedActions && (
+                              <button
+                                onClick={() => openDeleteModal(category)}
+                                className="text-red-500 hover:text-red-700 transition-colors"
+                                title="Delete Category"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -785,7 +788,7 @@ const ProductCategories = () => {
         </div>
       )}
 
-      {showDeleteModal && selectedCategory && (
+      {showDeleteModal && selectedCategory && canManageRestrictedActions && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto">
           <div className="flex items-start justify-center min-h-full p-4 sm:p-8">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md my-8 flex flex-col animate-fadeIn">

@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const bcryptjs = require('bcryptjs');
 const { appPool } = require('../config/db');
-const { generateTokens, verifyRefreshToken, revokeRefreshToken } = require('../utils/tokenUtils');
+const { generateTokens, revokeRefreshToken } = require('../utils/tokenUtils');
 
 const refreshAccessToken = async (req, res) => {
   const { refreshToken } = req.body;
@@ -12,15 +13,84 @@ const refreshAccessToken = async (req, res) => {
 
   try {
     console.log('🔄 Refreshing access token...');
-    // Verify and validate the refresh token
-    const payload = await verifyRefreshToken(refreshToken);
-    
-    if (!payload) {
-      console.warn('⚠️ Invalid or expired refresh token provided');
-      return res.status(403).json({ message: 'Invalid or expired refresh token' });
+
+    // ── Step 1: Verify JWT signature and expiry ───────────────────────────
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    } catch (jwtErr) {
+      if (jwtErr.name === 'TokenExpiredError') {
+        console.warn('⚠️ Refresh token JWT has expired');
+        return res.status(403).json({
+          message: 'Refresh token has expired. Please log in again.',
+          code: 'REFRESH_TOKEN_EXPIRED',
+        });
+      }
+      console.warn('⚠️ Invalid refresh token JWT:', jwtErr.message);
+      return res.status(403).json({
+        message: 'Invalid refresh token. Please log in again.',
+        code: 'INVALID_REFRESH_TOKEN',
+      });
     }
 
-    // Fetch user to generate new tokens
+    // ── Step 2: Look up token record in the active `refresh_tokens` table ──
+    const tokenResult = await appPool.query(
+      `SELECT * FROM "refresh_tokens"
+       WHERE "Jti" = $1 AND "Revoked" = FALSE AND "ExpiresAt" > NOW()`,
+      [decoded.jti]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      // Check whether the record exists at all (revoked or expired) to give
+      // a more precise error message.
+      const anyResult = await appPool.query(
+        `SELECT * FROM "refresh_tokens" WHERE "Jti" = $1`,
+        [decoded.jti]
+      );
+
+      if (anyResult.rows.length > 0) {
+        const record = anyResult.rows[0];
+        if (record.Revoked) {
+          console.warn('⚠️ Refresh token has been revoked (logout or rotation)');
+          return res.status(403).json({
+            message: 'Refresh token has been revoked. Please log in again.',
+            code: 'REFRESH_TOKEN_REVOKED',
+          });
+        }
+        if (new Date(record.ExpiresAt) <= new Date()) {
+          console.warn('⚠️ Refresh token has expired in database');
+          return res.status(403).json({
+            message: 'Refresh token has expired. Please log in again.',
+            code: 'REFRESH_TOKEN_EXPIRED',
+          });
+        }
+      }
+
+      // JWT is valid but NO matching DB record — most common cause:
+      // the database was reset/truncated after login.
+      console.warn('⚠️ Invalid or expired refresh token provided');
+      console.warn('   JWT signature is valid but no matching record found in `refresh_tokens` table');
+      console.warn('   This typically happens after a database reset/truncation');
+      return res.status(403).json({
+        message: 'Invalid or expired refresh token. The session may have been invalidated. Please log in again.',
+        code: 'REFRESH_TOKEN_NOT_FOUND',
+        details: 'JWT signature is valid but no matching record was found in the database. This typically happens after a database reset or truncation.',
+      });
+    }
+
+    const tokenRecord = tokenResult.rows[0];
+
+    // ── Step 3: Verify bcrypt hash (tamper detection) ─────────────────────
+    const isValid = await bcryptjs.compare(refreshToken, tokenRecord.TokenHash);
+    if (!isValid) {
+      console.warn('⚠️ Refresh token hash mismatch — possible tampering');
+      return res.status(403).json({
+        message: 'Invalid refresh token. Please log in again.',
+        code: 'REFRESH_TOKEN_HASH_MISMATCH',
+      });
+    }
+
+    // ── Step 4: Fetch user to generate new tokens ─────────────────────────
     const userResult = await appPool.query(
       `
         SELECT
@@ -36,23 +106,20 @@ const refreshAccessToken = async (req, res) => {
         WHERE u."UserId" = $1
         LIMIT 1
       `,
-      [payload.userId]
+      [decoded.userId]
     );
 
     const dbUser = userResult.rows[0];
     if (!dbUser) {
-      console.error('❌ User not found during token refresh:', payload.userId);
+      console.error('❌ User not found during token refresh:', decoded.userId);
       return res.status(403).json({ message: 'User not found' });
     }
 
-    // IMPLEMENT TOKEN ROTATION: Revoke old refresh token and issue new ones
-    await revokeRefreshToken(payload.jti);
-
-    // Generate new access + refresh tokens
+    // ── Step 5: Rotate — revoke old, issue new ───────────────────────────
+    await revokeRefreshToken(decoded.jti);
     const { accessToken, refreshToken: newRefreshToken } = await generateTokens(dbUser);
 
     console.log('✅ Tokens refreshed successfully');
-    // Return both tokens (client should update its stored refresh token)
     return res.status(200).json({
       accessToken,
       refreshToken: newRefreshToken,
@@ -68,7 +135,7 @@ const refreshAccessToken = async (req, res) => {
 const logout = async (req, res) => {
   try {
     const userId = req.user?.userId;
-    
+
     if (!userId) {
       return res.status(401).json({ message: 'Unauthorized' });
     }

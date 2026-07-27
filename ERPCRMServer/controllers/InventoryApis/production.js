@@ -5,6 +5,15 @@ const { pgQuery } = require("../../utils/pgCompat");
 const createBOM = async (req, res) => {
   try {
     const { BOMCode, ProductId, ProductName, Version, Description, Quantity, UnitId, CompanyId, Items } = req.body;
+    
+    // Validate required fields
+    if (!ProductId) {
+      return res.status(400).json({ 
+        message: 'ProductId is required',
+        error: 'ProductId must be provided and cannot be null'
+      });
+    }
+    
     const code = BOMCode || `BOM-${Date.now()}`;
     const result = await pgQuery(appPool, 
       `INSERT INTO BOM (BOMCode, ProductId, ProductName, Version, Description, Quantity, UnitId, CompanyId) VALUES (@BOMCode, @ProductId, @ProductName, @Version, @Description, @Quantity, @UnitId, @CompanyId); SELECT SCOPE_IDENTITY() AS Id;`,

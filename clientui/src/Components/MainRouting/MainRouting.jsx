@@ -56,6 +56,8 @@ const Batches           = lazy(() => import("../AdminSite/Batches/BatchesPage"))
 const SerialNumbers     = lazy(() => import("../AdminSite/SerialNumbers/SerialNumbersPage"));
 const Brands            = lazy(() => import("../AdminSite/Brands/BrandsPage"));
 const ERPModule         = lazy(() => import("../AdminSite/ERPModule/ERPModulePage"));
+const StockValuation    = lazy(() => import("../../features/inventory/pages/StockValuationPage"));
+const ReorderLevels     = lazy(() => import("../../features/inventory/pages/ReorderLevelsPage"));
 
 // ── ERP — Procurement ────────────────────────────────────────────────────────
 const PurchaseOrders     = lazy(() => import("../AdminSite/PurchaseOrders/PurchaseOrderManagement"));
@@ -74,6 +76,23 @@ const RegisterUserPage = lazy(() => import("../AdminSite/Users/RegisterUserPage"
 const OrgChart         = lazy(() => import("../AdminSite/Users/ClassicCorporateOrgChart"));
 const Company          = lazy(() => import("../AdminSite/Company/Company"));
 const RoleAccess       = lazy(() => import("../AdminSite/RoleAccess/RoleAccess"));
+const UserTypesPage    = lazy(() => import("../AdminSite/UserTypes/UserTypesPage"));
+
+// ── ERP — Finance ────────────────────────────────────────────────────────────
+const Expenses        = lazy(() => import("../../features/inventory/pages/finance/ExpensesPage"));
+const PurchaseReturns = lazy(() => import("../../features/inventory/pages/finance/PurchaseReturnsPage"));
+
+// ── ERP — Production ─────────────────────────────────────────────────────────
+const Bom              = lazy(() => import("../../features/inventory/pages/production/BomPage"));
+const ProductionOrders = lazy(() => import("../../features/inventory/pages/production/ProductionOrdersPage"));
+
+// ── ERP — Sales Sub-modules ──────────────────────────────────────────────────
+const SalesQuotations   = lazy(() => import("../../features/inventory/pages/sales/SalesQuotationsPage"));
+const DeliveryChallans  = lazy(() => import("../../features/inventory/pages/sales/DeliveryChallansPage"));
+const SalesReturns      = lazy(() => import("../../features/inventory/pages/sales/SalesReturnsPage"));
+
+// ── ERP — Approvals ──────────────────────────────────────────────────────────
+const Approvals = lazy(() => import("../../features/inventory/pages/approvals/ApprovalsPage"));
 
 // ── Shared / System ──────────────────────────────────────────────────────────
 const Profile       = lazy(() => import("../AdminSite/Profile/Profile"));
@@ -83,6 +102,8 @@ const ModulesPage   = lazy(() => import("../AdminSite/Modules/ModulesPage"));
 const Reports       = lazy(() => import("../AdminSite/Reports/Reports"));
 const DataImportExport = lazy(() => import("../../features/inventory/pages/DataImportExportPage"));
 const PurchaseRequisitions = lazy(() => import("../../features/inventory/pages/PurchaseRequisitionsPage"));
+const TeamsChatPage  = lazy(() => import("../AdminSite/Chat/TeamsChatPage"));
+const ChatPage       = lazy(() => import("../../pages/ChatPage"));
 
 const RouteLoader = () => (
   <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm font-medium text-slate-600">
@@ -142,6 +163,8 @@ const MainRouting = () => {
               <Route path="ERP/Batches"               element={<Batches />} />
               <Route path="ERP/SerialNumbers"         element={<SerialNumbers />} />
               <Route path="ERP/Brands"                element={<Brands />} />
+              <Route path="ERP/StockValuation"        element={<StockValuation />} />
+              <Route path="ERP/ReorderLevels"         element={<ReorderLevels />} />
 
               {/* ERP — Procurement */}
               <Route path="ERP/PurchaseOrders"        element={<PurchaseOrders />} />
@@ -154,9 +177,26 @@ const MainRouting = () => {
               <Route path="ERP/SalesOrders"           element={<SalesOrders />} />
               <Route path="ERP/Sell"                  element={<Sell />} />
               <Route path="ERP/Customers"             element={<Customers />} />
+              <Route path="ERP/SalesQuotations"       element={<SalesQuotations />} />
+              <Route path="ERP/DeliveryChallans"      element={<DeliveryChallans />} />
+              <Route path="ERP/SalesReturns"          element={<SalesReturns />} />
+
+              {/* ERP — Finance */}
+              <Route path="ERP/Expenses"              element={<Expenses />} />
+              <Route path="ERP/PurchaseReturns"       element={<PurchaseReturns />} />
+
+              {/* ERP — Production */}
+              <Route path="ERP/BOM"                   element={<Bom />} />
+              <Route path="ERP/ProductionOrders"      element={<ProductionOrders />} />
+
+              {/* ERP — Approvals */}
+              <Route path="ERP/Approvals"             element={<Approvals />} />
 
               {/* ERP — Import / Export */}
               <Route path="ERP/ImportExport"          element={<DataImportExport />} />
+
+              {/* Chat / Teams */}
+              <Route path="Chat"                      element={<TeamsChatPage />} />
 
               {/* HR / Admin */}
               <Route path="HR/Users"                  element={<Users />} />
@@ -164,6 +204,7 @@ const MainRouting = () => {
               <Route path="HR/OrgChart"               element={<OrgChart />} />
               <Route path="HR/Companies"              element={<Company />} />
               <Route path="HR/Roles"                  element={<RoleAccess />} />
+              <Route path="HR/UserTypes"              element={<UserTypesPage />} />
 
               {/* Reports */}
               <Route path="Reports"                   element={<Reports />} />

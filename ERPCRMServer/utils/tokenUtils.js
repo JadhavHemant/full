@@ -40,7 +40,7 @@ const generateTokens = async (user) => {
   });
 
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
-  
+
   // Hash the refresh token before storing (security best practice)
   const hashedToken = await hashToken(refreshToken);
 
@@ -66,18 +66,18 @@ const verifyAccessToken = async (token) => {
     }
 
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    
+
     // Check if token is in revocation list (optional: for immediate logout)
     const revocationResult = await appPool.query(
       'SELECT 1 FROM token_revocation_list WHERE "Jti" = $1 AND "ExpiresAt" > NOW()',
       [decoded.jti]
     );
-    
+
     if (revocationResult.rows.length > 0) {
       console.warn('⚠️ Token is revoked:', decoded.jti);
       return null; // Token is revoked
     }
-    
+
     return decoded;
   } catch (err) {
     console.error('❌ Token verification error:', err.message);
@@ -89,7 +89,7 @@ const verifyAccessToken = async (token) => {
 const verifyRefreshToken = async (token) => {
   try {
     const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
-    
+
     // Find token record by jti
     const result = await appPool.query(
       'SELECT * FROM refresh_tokens WHERE "Jti" = $1 AND "Revoked" = FALSE AND "ExpiresAt" > NOW()',
@@ -101,10 +101,10 @@ const verifyRefreshToken = async (token) => {
     }
 
     const tokenRecord = result.rows[0];
-    
+
     // Verify hashed token matches
     const isValid = await bcryptjs.compare(token, tokenRecord.TokenHash);
-    
+
     if (!isValid) {
       // Token hash doesn't match - possible tampering
       return null;
@@ -167,14 +167,100 @@ const verifyToken = (token, secret) => {
   }
 };
 
+/**
+ * Verify a refresh token and return detailed diagnostic information.
+ * Returns { valid: true, payload } on success, or
+ *         { valid: false, reason, payload? } on failure.
+ *
+ * Reasons:
+ *   - 'jwt_expired'             JWT signature valid but token expired
+ *   - 'jwt_invalid'             JWT signature invalid / malformed
+ *   - 'not_found_in_db'         JWT valid but no DB record (DB was reset)
+ *   - 'revoked'                 Token exists in DB but is revoked
+ *   - 'db_expired'              Token exists in DB but ExpiresAt passed
+ *   - 'hash_mismatch'           bcrypt hash comparison failed (tampering)
+ */
+const verifyRefreshTokenDetailed = async (token) => {
+  // Step 1: Verify JWT signature and expiry
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return { valid: false, reason: 'jwt_expired' };
+    }
+    return { valid: false, reason: 'jwt_invalid' };
+  }
+
+  // Step 2: Look up in DB (active only)
+  const result = await appPool.query(
+    'SELECT * FROM refresh_tokens WHERE "Jti" = $1 AND "Revoked" = FALSE AND "ExpiresAt" > NOW()',
+    [decoded.jti]
+  );
+
+  if (result.rows.length === 0) {
+    // Check if it exists at all (revoked or expired)
+    const anyResult = await appPool.query(
+      'SELECT * FROM refresh_tokens WHERE "Jti" = $1',
+      [decoded.jti]
+    );
+
+    if (anyResult.rows.length > 0) {
+      const record = anyResult.rows[0];
+      if (record.Revoked) {
+        return { valid: false, reason: 'revoked', payload: decoded };
+      }
+      if (new Date(record.ExpiresAt) <= new Date()) {
+        return { valid: false, reason: 'db_expired', payload: decoded };
+      }
+    }
+
+    // JWT valid but no DB record — most common: DB was reset
+    return { valid: false, reason: 'not_found_in_db', payload: decoded };
+  }
+
+  const tokenRecord = result.rows[0];
+
+  // Step 3: Verify bcrypt hash
+  const isValid = await bcryptjs.compare(token, tokenRecord.TokenHash);
+  if (!isValid) {
+    return { valid: false, reason: 'hash_mismatch', payload: decoded };
+  }
+
+  return { valid: true, payload: decoded };
+};
+
+/**
+ * Delete expired and revoked refresh tokens older than 30 days.
+ * Safe to call periodically (e.g., via a cron job or at server startup).
+ */
+const cleanupExpiredTokens = async () => {
+  try {
+    const result = await appPool.query(
+      `DELETE FROM "refresh_tokens"
+       WHERE "ExpiresAt" < NOW() - INTERVAL '30 days'
+          OR ("Revoked" = TRUE AND "CreatedAt" < NOW() - INTERVAL '30 days')`
+    );
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`🧹 Cleaned up ${result.rowCount} expired/revoked refresh tokens`);
+    }
+    return result.rowCount;
+  } catch (err) {
+    console.error('Error cleaning up expired tokens:', err.message);
+    return 0;
+  }
+};
+
 module.exports = {
   generateTokens,
   verifyToken,
   verifyAccessToken,
   verifyRefreshToken,
+  verifyRefreshTokenDetailed,
   revokeRefreshToken,
   revokeAccessToken,
   revokeAllUserTokens,
+  cleanupExpiredTokens,
   hashToken,
   generateJti,
 };

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
 import * as API from "../../Endpoint/Endpoint";
 import toast from "react-hot-toast";
-import { getSessionUser, isSuperAdminUser } from "../../../utils/sessionUser";
+import { getSessionUser, isSuperAdminUser, SUPER_ADMIN_ROLE_ID, ADMIN_ROLE_ID, MANAGER_ROLE_ID } from "../../../utils/sessionUser";
 import { compressImageFile, formatFileSize } from "../../../utils/imageCompression";
 
 const initialForm = {
@@ -73,9 +73,9 @@ const RegisterUserPage = () => {
 
   const filteredRoles = useMemo(() => {
     const sessionRoleId = Number(sessionUser.roleId || sessionUser.RoleId || 0);
-    if (sessionRoleId === 1) return roles; // superadmin sees all
-    if (sessionRoleId === 2) return roles.filter(r => [3, 4, 5].includes(Number(r.Id)));
-    if (sessionRoleId === 3) return roles.filter(r => [4, 5].includes(Number(r.Id)));
+    if (sessionRoleId === SUPER_ADMIN_ROLE_ID) return roles; // superadmin sees all
+    if (sessionRoleId === ADMIN_ROLE_ID) return roles.filter(r => [MANAGER_ROLE_ID, 4, 5].includes(Number(r.Id)));
+    if (sessionRoleId === MANAGER_ROLE_ID) return roles.filter(r => [4, 5].includes(Number(r.Id)));
     return []; // employee and customer cannot create users
   }, [roles, sessionUser]);
 
@@ -226,7 +226,7 @@ const RegisterUserPage = () => {
   };
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 md:p-8">
+    <div className="space-y-6 p-4 sm:p-6 md:p-8 max-h-screen overflow-y-auto">
       <section className="rounded-2xl bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

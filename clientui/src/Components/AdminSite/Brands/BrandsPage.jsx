@@ -2,8 +2,11 @@ import React, { useState, useEffect, useCallback } from "react";
 import axiosInstance from "../utils/axiosInstance";
 import * as API from "../../Endpoint/Endpoint";
 import toast from "react-hot-toast";
+import { usePortalAccess } from "../../../utils/portalAccess";
+import { getSessionUser } from "../../../utils/sessionUser";
 
 const BrandsPage = () => {
+  const { canManageRestrictedActions } = usePortalAccess();
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -15,7 +18,7 @@ const BrandsPage = () => {
 
   const fetchBrands = useCallback(async () => {
     setLoading(true);
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const user = getSessionUser() || {};
     const companyId = user?.companyId || "";
     try {
       const res = await axiosInstance.get(API.BRANDS.GET_ALL({ page, limit: 10, search, companyId }));
@@ -34,7 +37,7 @@ const BrandsPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const user = getSessionUser() || {};
     const payload = { ...form, CompanyId: form.CompanyId || user?.companyId };
     if (!payload.BrandName) return toast.error("Brand name is required");
 
@@ -77,12 +80,12 @@ const BrandsPage = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Brands</h1>
         <button onClick={() => { setEditing(null); setForm({ BrandName: "", Description: "", CompanyId: "" }); setShowModal(true); }}
-          className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition">+ Add Brand</button>
+          className="bg-blue-500 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md transition">+ Add Brand</button>
       </div>
 
       <div className="mb-4">
         <input type="text" placeholder="Search brands..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="w-full max-w-md px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          className="w-full max-w-md border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring" />
       </div>
 
       {loading ? (
@@ -109,7 +112,9 @@ const BrandsPage = () => {
                     <td className="px-6 py-4"><span className={`px-2 py-1 text-xs rounded-full ${brand.IsActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>{brand.IsActive ? "Active" : "Inactive"}</span></td>
                     <td className="px-6 py-4 text-sm space-x-2">
                       <button onClick={() => openEdit(brand)} className="text-blue-600 hover:text-blue-800">Edit</button>
-                      <button onClick={() => handleDelete(brand.Id)} className="text-red-600 hover:text-red-800">Delete</button>
+                      {canManageRestrictedActions && (
+                        <button onClick={() => handleDelete(brand.Id)} className="text-red-600 hover:text-red-800">Delete</button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -128,19 +133,23 @@ const BrandsPage = () => {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-lg p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <h2 className="text-xl font-bold mb-4">{editing ? "Edit Brand" : "Add Brand"}</h2>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowModal(false)}>
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <h2 className="text-xl font-bold mb-4 text-blueGray-700">{editing ? "Edit Brand" : "Add Brand"}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Brand Name *</label>
+              <div>
+                <label className="block text-blueGray-600 text-sm font-bold mb-2">Brand Name <span className="text-red-500">*</span></label>
                 <input type="text" required value={form.BrandName} onChange={e => setForm({ ...form, BrandName: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full" />
+              </div>
+              <div>
+                <label className="block text-blueGray-600 text-sm font-bold mb-2">Description</label>
                 <textarea value={form.Description} onChange={e => setForm({ ...form, Description: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500" rows="3" /></div>
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full" rows="3" />
+              </div>
               <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">{editing ? "Update" : "Create"}</button>
+                <button type="button" onClick={() => setShowModal(false)} className="bg-gray-500 text-white font-bold uppercase text-xs px-6 py-3 rounded shadow hover:shadow-md transition">Cancel</button>
+                <button type="submit" className="bg-blue-500 text-white font-bold uppercase text-xs px-6 py-3 rounded shadow hover:shadow-md transition">{editing ? "Update" : "Create"}</button>
               </div>
             </form>
           </div>

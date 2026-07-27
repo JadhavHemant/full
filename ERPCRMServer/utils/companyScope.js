@@ -6,7 +6,8 @@ const toInt = (value) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const isSuperAdminUser = (user) => Number(user?.roleId) === 1;
+const { isSuperAdmin } = require('../config/roleConfig');
+const isSuperAdminUser = (user) => isSuperAdmin(user);
 
 const resolveCompanyScope = ({
   req,
@@ -40,20 +41,15 @@ const resolveCompanyScope = ({
   }
 
   if (superAdmin) {
-    if (requested) {
-      return {
-        ok: true,
-        companyId: requested,
-        requesterCompanyId,
-        requestedCompanyId: requested,
-        isSuperAdmin: true,
-      };
-    }
-
+    // SuperAdmin has access to all companies
+    // If a specific company is requested, scope to that company
+    // If no company is requested, allow access without company scope
     return {
-      ok: false,
-      status: 400,
-      message: "CompanyId is required for single-company mode",
+      ok: true,
+      companyId: requested || null,
+      requesterCompanyId,
+      requestedCompanyId: requested,
+      isSuperAdmin: true,
     };
   }
 

@@ -16,6 +16,7 @@
 
 const jwt = require('jsonwebtoken');
 const { verifyAccessToken: verifyWithRevocation } = require('../utils/tokenUtils');
+const { ROLE_IDS, isSuperAdmin } = require('../config/roleConfig');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Internal helpers
@@ -111,7 +112,7 @@ const companyIsolation = (req, res, next) => {
   const roleId = req.user.roleId || req.user.RoleId;
 
   // SuperAdmin bypasses all company restrictions
-  if (roleId === 1) {
+  if (roleId === ROLE_IDS.SUPERADMIN || isSuperAdmin(req.user)) {
     req.isSuperAdmin   = true;
     req.authCompanyId  = null; // access all companies
 
@@ -149,19 +150,23 @@ const companyIsolation = (req, res, next) => {
 // Role gates
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Only SuperAdmin (roleId = 1) may proceed. */
+/** Only SuperAdmin may proceed. */
 const requireSuperAdmin = (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: 'Authentication required' });
   const roleId = req.user.roleId || req.user.RoleId;
-  if (roleId !== 1) return res.status(403).json({ message: 'SuperAdmin access required' });
+  if (roleId !== ROLE_IDS.SUPERADMIN && !isSuperAdmin(req.user)) {
+    return res.status(403).json({ message: 'SuperAdmin access required' });
+  }
   return next();
 };
 
-/** SuperAdmin (1) or CompanyAdmin (2) may proceed. */
+/** SuperAdmin or Admin may proceed. */
 const requireAdmin = (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: 'Authentication required' });
   const roleId = req.user.roleId || req.user.RoleId;
-  if (roleId !== 1 && roleId !== 2) return res.status(403).json({ message: 'Admin access required' });
+  if (roleId !== ROLE_IDS.SUPERADMIN && roleId !== ROLE_IDS.ADMIN && !isSuperAdmin(req.user)) {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
   return next();
 };
 

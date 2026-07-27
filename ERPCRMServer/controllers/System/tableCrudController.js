@@ -18,6 +18,8 @@ const quoteIdent = (value) => {
   return `"${value}"`;
 };
 
+const { ROLE_IDS } = require("../../config/roleConfig");
+
 const resolveRoleId = async (req) => {
   const tokenRoleId = toInt(req.user?.roleId, null);
   if (tokenRoleId) return tokenRoleId;
@@ -35,7 +37,7 @@ const resolveRoleId = async (req) => {
 
 const ensureSuperAdmin = async (req) => {
   const roleId = await resolveRoleId(req);
-  if (roleId !== 1) {
+  if (roleId !== ROLE_IDS.SUPERADMIN) {
     throw createHttpError(403, "Only Super Admin can access table CRUD");
   }
 };

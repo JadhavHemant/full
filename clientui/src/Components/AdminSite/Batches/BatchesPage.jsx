@@ -70,7 +70,7 @@ const BatchesPage = () => {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition"
+          className="bg-blue-500 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md transition"
         >
           + New Batch
         </button>
@@ -82,14 +82,14 @@ const BatchesPage = () => {
           placeholder="Search batch number..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="flex-1 min-w-[200px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500"
+          className="flex-1 min-w-[200px] border-0 px-3 py-2 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring"
         />
         <input
           type="text"
           placeholder="Product ID filter"
           value={productFilter}
           onChange={(e) => { setProductFilter(e.target.value); setPage(1); }}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-40"
+          className="border-0 px-3 py-2 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-40"
         />
       </div>
 
@@ -148,40 +148,40 @@ const BatchesPage = () => {
       <FormWindow isOpen={showForm} onClose={() => setShowForm(false)} title="New Batch Entry" icon="🏷️">
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Batch Number *</label>
-            <input type="text" name="BatchNumber" value={formData.BatchNumber} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <label className="block text-blueGray-600 text-sm font-bold mb-2">Batch Number <span className="text-red-500">*</span></label>
+            <input type="text" name="BatchNumber" value={formData.BatchNumber} onChange={handleInputChange} required className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Product ID *</label>
-            <input type="number" name="ProductId" value={formData.ProductId} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <label className="block text-blueGray-600 text-sm font-bold mb-2">Product ID <span className="text-red-500">*</span></label>
+            <input type="number" name="ProductId" value={formData.ProductId} onChange={handleInputChange} required className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Warehouse ID *</label>
-            <input type="number" name="WarehouseId" value={formData.WarehouseId} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <label className="block text-blueGray-600 text-sm font-bold mb-2">Warehouse ID <span className="text-red-500">*</span></label>
+            <input type="number" name="WarehouseId" value={formData.WarehouseId} onChange={handleInputChange} required className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Quantity *</label>
-            <input type="number" name="Quantity" value={formData.Quantity} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <label className="block text-blueGray-600 text-sm font-bold mb-2">Quantity <span className="text-red-500">*</span></label>
+            <input type="number" name="Quantity" value={formData.Quantity} onChange={handleInputChange} required className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Manufacturing Date</label>
-            <input type="date" name="ManufacturingDate" value={formData.ManufacturingDate} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <label className="block text-blueGray-600 text-sm font-bold mb-2">Manufacturing Date</label>
+            <input type="date" name="ManufacturingDate" value={formData.ManufacturingDate} onChange={handleInputChange} className="border-0 px-3 py-3 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Expiry Date</label>
-            <input type="date" name="ExpiryDate" value={formData.ExpiryDate} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <label className="block text-blueGray-600 text-sm font-bold mb-2">Expiry Date</label>
+            <input type="date" name="ExpiryDate" value={formData.ExpiryDate} onChange={handleInputChange} className="border-0 px-3 py-3 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Purchase Price</label>
-            <input type="number" step="0.01" name="PurchasePrice" value={formData.PurchasePrice} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <label className="block text-blueGray-600 text-sm font-bold mb-2">Purchase Price</label>
+            <input type="number" step="0.01" name="PurchasePrice" value={formData.PurchasePrice} onChange={handleInputChange} className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Notes</label>
-            <textarea name="Notes" value={formData.Notes} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <label className="block text-blueGray-600 text-sm font-bold mb-2">Notes</label>
+            <textarea name="Notes" value={formData.Notes} onChange={handleInputChange} rows={3} className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full" />
           </div>
           <div className="flex justify-end gap-3 mt-6">
-            <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">Cancel</button>
-            <button type="submit" className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600">Create</button>
+            <button type="button" onClick={() => setShowForm(false)} className="bg-gray-500 text-white font-bold uppercase text-xs px-6 py-3 rounded shadow hover:shadow-md transition">Cancel</button>
+            <button type="submit" className="bg-blue-500 text-white font-bold uppercase text-xs px-6 py-3 rounded shadow hover:shadow-md transition">Create</button>
           </div>
         </form>
       </FormWindow>

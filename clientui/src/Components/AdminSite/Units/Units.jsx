@@ -24,6 +24,8 @@ import toast, { Toaster } from 'react-hot-toast';
 import { UNITS } from '../../Endpoint/Endpoint';
 // Import TitleBar component
 import TitleBar from '../../TitleBar';
+// Import portal access hook
+import { usePortalAccess } from '../../../utils/portalAccess';
 
 /**
  * Units component
@@ -34,7 +36,7 @@ import TitleBar from '../../TitleBar';
  * - Export to CSV functionality
  */
 const Units = () => {
-  // State for units list
+  const { canManageRestrictedActions } = usePortalAccess();
   const [units, setUnits] = useState([]);
   // State for loading status
   const [loading, setLoading] = useState(false);
@@ -603,13 +605,15 @@ const Units = () => {
                             >
                               <PencilIcon className="h-5 w-5" />
                             </button>
-                            <button
-                              onClick={() => openDeleteModal(unit)}
-                              className="text-red-500 hover:text-red-700 transition-colors"
-                              title="Delete Unit"
-                            >
-                              <TrashIcon className="h-5 w-5" />
-                            </button>
+                            {canManageRestrictedActions && (
+                              <button
+                                onClick={() => openDeleteModal(unit)}
+                                className="text-red-500 hover:text-red-700 transition-colors"
+                                title="Delete Unit"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -917,7 +921,7 @@ const Units = () => {
       )}
 
       {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedUnit && (
+      {showDeleteModal && selectedUnit && canManageRestrictedActions && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto">
           <div className="flex items-start justify-center min-h-full p-4 sm:p-8">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md my-8 flex flex-col animate-fadeIn">

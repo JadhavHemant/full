@@ -2,89 +2,11 @@ const { appPool } = require("../../config/db");
 
 const createPlatformCoreTables = async () => {
   const queries = [
-    `
-      CREATE TABLE IF NOT EXISTS "Modules" (
-        "Id" SERIAL PRIMARY KEY,
-        "ModuleName" VARCHAR(120) NOT NULL,
-        "Code" VARCHAR(80) UNIQUE NOT NULL,
-        "IsActive" BOOLEAN DEFAULT TRUE,
-        "CreatedAt" TIMESTAMP DEFAULT NOW()
-      );
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS "Permissions" (
-        "Id" SERIAL PRIMARY KEY,
-        "PermissionName" VARCHAR(150) NOT NULL,
-        "Code" VARCHAR(120) UNIQUE NOT NULL,
-        "CreatedAt" TIMESTAMP DEFAULT NOW()
-      );
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS "RolePermissions" (
-        "Id" SERIAL PRIMARY KEY,
-        "RoleId" INT REFERENCES "Roles"("Id") ON DELETE CASCADE,
-        "ModuleId" INT REFERENCES "Modules"("Id") ON DELETE CASCADE,
-        "PermissionId" INT REFERENCES "Permissions"("Id") ON DELETE CASCADE,
-        "Allowed" BOOLEAN DEFAULT TRUE,
-        "CreatedAt" TIMESTAMP DEFAULT NOW(),
-        UNIQUE ("RoleId", "ModuleId", "PermissionId")
-      );
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS "UserPermissions" (
-        "Id" SERIAL PRIMARY KEY,
-        "UserId" INT REFERENCES "Users"("UserId") ON DELETE CASCADE,
-        "PermissionId" INT REFERENCES "Permissions"("Id") ON DELETE CASCADE,
-        "Allowed" BOOLEAN DEFAULT TRUE,
-        "CreatedAt" TIMESTAMP DEFAULT NOW(),
-        UNIQUE ("UserId", "PermissionId")
-      );
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS "Departments" (
-        "Id" SERIAL PRIMARY KEY,
-        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
-        "DepartmentName" VARCHAR(150) NOT NULL,
-        "IsActive" BOOLEAN DEFAULT TRUE,
-        "CreatedAt" TIMESTAMP DEFAULT NOW(),
-        UNIQUE ("CompanyId", "DepartmentName")
-      );
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS "Designations" (
-        "Id" SERIAL PRIMARY KEY,
-        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
-        "DesignationName" VARCHAR(150) NOT NULL,
-        "IsActive" BOOLEAN DEFAULT TRUE,
-        "CreatedAt" TIMESTAMP DEFAULT NOW(),
-        UNIQUE ("CompanyId", "DesignationName")
-      );
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS "Notifications" (
-        "Id" SERIAL PRIMARY KEY,
-        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
-        "UserId" INT REFERENCES "Users"("UserId") ON DELETE CASCADE,
-        "Title" VARCHAR(200) NOT NULL,
-        "Message" TEXT NOT NULL,
-        "Type" VARCHAR(80) NOT NULL,
-        "Severity" VARCHAR(30) DEFAULT 'info',
-        "EntityType" VARCHAR(80),
-        "EntityId" INT,
-        "IsRead" BOOLEAN DEFAULT FALSE,
-        "ReadAt" TIMESTAMP,
-        "ExpiresAt" TIMESTAMP,
-        "CreatedAt" TIMESTAMP DEFAULT NOW()
-      );
-    `,
-    `
-      ALTER TABLE "Notifications"
-      ADD COLUMN IF NOT EXISTS "ReadAt" TIMESTAMP;
-    `,
-    `
-      ALTER TABLE "Notifications"
-      ADD COLUMN IF NOT EXISTS "ExpiresAt" TIMESTAMP;
-    `,
+    // NOTE: Modules, Permissions, and RolePermissions tables are created by RBAC models
+    // (RBAC/Modules.js, RBAC/Permissions.js, RBAC/RolePermissions.js)
+    // They use ModuleId and PermissionId as primary keys, not Id
+    // NOTE: Departments, Designations, Notifications, and ApprovalWorkflows tables are created by InventoryManagement models
+    // Removed duplicate definitions to prevent schema conflicts
     `
       CREATE TABLE IF NOT EXISTS "NotificationTemplates" (
         "Id" SERIAL PRIMARY KEY,
@@ -199,51 +121,6 @@ const createPlatformCoreTables = async () => {
         "UploadedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
         "UploadedAt" TIMESTAMP DEFAULT NOW(),
         UNIQUE ("DocumentId", "VersionNo")
-      );
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS "ApprovalWorkflows" (
-        "Id" SERIAL PRIMARY KEY,
-        "CompanyId" INT REFERENCES "Companies"("Id") ON DELETE CASCADE,
-        "EntityType" VARCHAR(80) NOT NULL,
-        "WorkflowName" VARCHAR(200) NOT NULL,
-        "IsActive" BOOLEAN DEFAULT TRUE,
-        "CreatedAt" TIMESTAMP DEFAULT NOW()
-      );
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS "ApprovalSteps" (
-        "Id" SERIAL PRIMARY KEY,
-        "WorkflowId" INT REFERENCES "ApprovalWorkflows"("Id") ON DELETE CASCADE,
-        "StepNo" INT NOT NULL,
-        "RoleId" INT REFERENCES "Roles"("Id") ON DELETE SET NULL,
-        "MinAmount" NUMERIC(15,2),
-        "MaxAmount" NUMERIC(15,2),
-        "IsMandatory" BOOLEAN DEFAULT TRUE,
-        UNIQUE ("WorkflowId", "StepNo")
-      );
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS "ApprovalTransactions" (
-        "Id" SERIAL PRIMARY KEY,
-        "EntityType" VARCHAR(80) NOT NULL,
-        "EntityId" INT NOT NULL,
-        "WorkflowId" INT REFERENCES "ApprovalWorkflows"("Id") ON DELETE SET NULL,
-        "CurrentStepNo" INT DEFAULT 1,
-        "Status" VARCHAR(40) DEFAULT 'Pending',
-        "RequestedBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
-        "RequestedAt" TIMESTAMP DEFAULT NOW()
-      );
-    `,
-    `
-      CREATE TABLE IF NOT EXISTS "ApprovalActions" (
-        "Id" SERIAL PRIMARY KEY,
-        "ApprovalTransactionId" INT REFERENCES "ApprovalTransactions"("Id") ON DELETE CASCADE,
-        "StepNo" INT NOT NULL,
-        "ActionBy" INT REFERENCES "Users"("UserId") ON DELETE SET NULL,
-        "ActionType" VARCHAR(40) NOT NULL,
-        "Comments" TEXT,
-        "ActionAt" TIMESTAMP DEFAULT NOW()
       );
     `,
     `

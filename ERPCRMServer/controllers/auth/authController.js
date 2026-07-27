@@ -20,6 +20,7 @@ const { generateTokens, verifyRefreshToken, revokeRefreshToken, revokeAllUserTok
 const { sendEmail, isEmailConfigured } = require('../../utils/email');
 const { logLoginAttempt, logLogout }   = require('../../services/loginHistoryService');
 const { logAuthEvent, logPermissionChange } = require('../../services/auditLogService');
+const { ROLE_IDS } = require('../../config/roleConfig');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -98,8 +99,8 @@ const sanitizeUser = (u) => ({
 /**
  * POST /api/auth/register
  * Creates a new user account and sends an email verification link.
- * Only SuperAdmin (roleId=1) or CompanyAdmin (roleId=2) may set arbitrary roles.
- * A self-registration always gets roleId=4 (Employee).
+ * Only SuperAdmin or CompanyAdmin may set arbitrary roles.
+ * A self-registration always gets the Employee role.
  */
 const register = async (req, res) => {
   const err = handleValidation(req, res);
@@ -126,18 +127,18 @@ const register = async (req, res) => {
 
     // Resolve role: authenticated callers may specify a role, otherwise default Employee
     const requestingUser = req.user;
-    let resolvedRoleId = 4; // Employee default
+    let resolvedRoleId = ROLE_IDS.EMPLOYEE;
     if (roleId) {
       if (!requestingUser) {
         return res.status(403).json({ message: 'Role assignment requires authentication' });
       }
       const requestingRoleId = requestingUser.roleId || requestingUser.RoleId;
       // Only SuperAdmin / CompanyAdmin can assign roles
-      if (requestingRoleId !== 1 && requestingRoleId !== 2) {
+      if (requestingRoleId !== ROLE_IDS.SUPERADMIN && requestingRoleId !== ROLE_IDS.ADMIN) {
         return res.status(403).json({ message: 'You do not have permission to assign roles' });
       }
       // Cannot assign a role ≥ your own (except SuperAdmin)
-      if (requestingRoleId !== 1 && parseInt(roleId) <= requestingRoleId) {
+      if (requestingRoleId !== ROLE_IDS.SUPERADMIN && parseInt(roleId) <= requestingRoleId) {
         return res.status(403).json({ message: 'Cannot assign a role equal to or higher than your own' });
       }
       resolvedRoleId = parseInt(roleId);
@@ -145,7 +146,7 @@ const register = async (req, res) => {
 
     // Resolve company
     let resolvedCompanyId = companyId ? parseInt(companyId) : null;
-    if (requestingUser && requestingUser.roleId !== 1) {
+    if (requestingUser && requestingUser.roleId !== ROLE_IDS.SUPERADMIN) {
       // Non-SuperAdmin can only create users in their own company
       const userCompanyId = requestingUser.companyId || requestingUser.CompanyId;
       if (resolvedCompanyId && resolvedCompanyId !== userCompanyId) {
@@ -332,6 +333,30 @@ const login = async (req, res) => {
       WHERE "UserId" = $4
     `, [device.ip, device.userAgent, rememberMe, user.UserId]);
 
+    // Check if 2FA is enabled for this user
+    const twoFAResult = await appPool.query(
+      `SELECT "IsEnabled" FROM "User2FA" WHERE "UserId" = $1 AND "IsEnabled" = TRUE`,
+      [user.UserId]
+    );
+
+    if (twoFAResult.rows.length > 0) {
+      // 2FA is enabled — do not issue tokens yet, require 2FA verification
+      await logLoginAttempt({
+        userId: user.UserId, email: normalizedEmail, loginStatus: '2fa_required',
+        ipAddress: device.ip, userAgent: device.userAgent,
+        deviceId: device.deviceId, deviceType: device.deviceType,
+        browser: device.browser, sessionId,
+      });
+
+      return res.status(200).json({
+        message: '2FA verification required',
+        requires2FA: true,
+        userId: user.UserId,
+        sessionId,
+      });
+    }
+
+    // 2FA not enabled — issue tokens directly
     const tokens = await generateTokens(user);
 
     await logLoginAttempt({
@@ -836,7 +861,7 @@ const unlockAccount = async (req, res) => {
 
   try {
     const requestingRoleId = requestingUser?.roleId || requestingUser?.RoleId;
-    if (requestingRoleId !== 1 && requestingRoleId !== 2) {
+    if (requestingRoleId !== ROLE_IDS.SUPERADMIN && requestingRoleId !== ROLE_IDS.ADMIN) {
       return res.status(403).json({ message: 'Only administrators can unlock accounts' });
     }
 
@@ -854,7 +879,7 @@ const unlockAccount = async (req, res) => {
     const target = result.rows[0];
 
     // CompanyAdmin can only unlock users in their own company
-    if (requestingRoleId === 2) {
+    if (requestingRoleId === ROLE_IDS.ADMIN) {
       const adminCompany = requestingUser.companyId || requestingUser.CompanyId;
       if (target.CompanyId !== adminCompany) {
         return res.status(403).json({ message: 'You can only unlock users in your own company' });

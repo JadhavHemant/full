@@ -9,7 +9,7 @@ import './styles/shadcn-theme.css'
 
 // Find the root DOM element and render the App component
 createRoot(document.getElementById('root')).render(
-  // <StrictMode>
+  <StrictMode>
     <App />
-  // </StrictMode>,
+  </StrictMode>,
 )

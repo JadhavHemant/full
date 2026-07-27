@@ -135,17 +135,17 @@ const InventoryWorkspace = ({
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-[#0F172A] flex items-center gap-2">
             {Icon && <Icon className="h-6 w-6 text-orange-500" />}
             {title}
           </h1>
-          {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
-          <p className="text-xs text-gray-400 mt-1">{total} total records</p>
+          {description && <p className="text-sm text-[#64748B] mt-1">{description}</p>}
+          <p className="text-xs text-blueGray-400 mt-1">{total} total records</p>
         </div>
         {enableCreate && (
           <button
             onClick={() => { setEditingItem(null); setShowForm(true); }}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition"
+            className="bg-blue-500 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md transition"
           >
             + Add New
           </button>
@@ -159,13 +159,13 @@ const InventoryWorkspace = ({
           placeholder="Search..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="flex-1 min-w-[200px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+          className="flex-1 min-w-[200px] border-0 px-3 py-2 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring"
         />
         {statusOptions && (
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500"
+            className="border-0 px-3 py-2 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring"
           >
             <option value="">All Status</option>
             {statusOptions.map((opt) => (
@@ -289,8 +289,8 @@ const InventoryWorkspace = ({
 
       {/* Create/Edit Modal */}
       {showForm && fieldConfig && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-4 flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-4 flex flex-col">
             <TitleBar title={editingItem ? `Edit ${title}` : `New ${title}`} onClose={() => setShowForm(false)} />
             <div className="p-6">
               <form onSubmit={(e) => {
@@ -303,21 +303,21 @@ const InventoryWorkspace = ({
                 <div className="space-y-4">
                   {fieldConfig.map((field) => (
                     <div key={field.key}>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {field.label}{field.required && <span className="text-red-500">*</span>}
+                      <label className="block text-blueGray-600 text-sm font-bold mb-2">
+                        {field.label}{field.required && <span className="text-red-500 ml-1">*</span>}
                       </label>
                       {field.type === "textarea" ? (
                         <textarea
                           name={field.key}
                           required={field.required}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500"
+                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
                           rows={3}
                         />
                       ) : field.type === "select" ? (
                         <select
                           name={field.key}
                           required={field.required}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500"
+                          className="border-0 px-3 py-3 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
                         >
                           <option value="">Select...</option>
                           {field.options.map((opt) => (
@@ -329,7 +329,7 @@ const InventoryWorkspace = ({
                           type={field.type}
                           name={field.key}
                           required={field.required}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500"
+                          className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full"
                         />
                       )}
                     </div>
@@ -339,13 +339,13 @@ const InventoryWorkspace = ({
                   <button
                     type="button"
                     onClick={() => setShowForm(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
+                    className="bg-gray-500 text-white font-bold uppercase text-xs px-6 py-3 rounded shadow hover:shadow-md transition"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600"
+                    className="bg-blue-500 text-white font-bold uppercase text-xs px-6 py-3 rounded shadow hover:shadow-md transition"
                   >
                     Create
                   </button>

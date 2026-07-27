@@ -81,23 +81,31 @@ const run = async () => {
     const companyId = companyResult.rows[0].Id;
     console.log(`✅ Company created (ID: ${companyId})`);
 
-    // 2. Create Roles
+    // 2. Map to standard 5-role system (1=superadmin, 2=admin, 3=manager, 4=employee, 5=customer)
+    const roleNameToId = {
+      'Owner': 1,      // superadmin
+      'Admin': 2,      // admin
+      'Manager': 3,    // manager
+      'TeamLead': 3,   // manager
+      'Employee': 4,   // employee
+    };
     const roleIds = {};
     for (const u of users) {
-      if (!roleIds[u.role]) {
-        const existing = await client.query(`SELECT "Id" FROM "Roles" WHERE "RoleName" = $1`, [u.role]);
-        if (existing.rows.length) {
-          roleIds[u.role] = existing.rows[0].Id;
-        } else {
-          const ins = await client.query(
-            `INSERT INTO "Roles" ("RoleName", "IsActive", "IsDeleted", "Flag") VALUES ($1, TRUE, FALSE, TRUE) RETURNING "Id"`,
-            [u.role]
-          );
-          roleIds[u.role] = ins.rows[0].Id;
-        }
+      const standardRoleId = roleNameToId[u.role] || 4; // default to employee
+      const existing = await client.query(`SELECT "Id" FROM "Roles" WHERE "Id" = $1`, [standardRoleId]);
+      if (existing.rows.length) {
+        roleIds[u.role] = standardRoleId;
+      } else {
+        // Create the standard role if it doesn't exist
+        const roleNameMap = { 1: 'superadmin', 2: 'admin', 3: 'manager', 4: 'employee', 5: 'customer' };
+        const ins = await client.query(
+          `INSERT INTO "Roles" ("Id", "RoleName", "IsActive", "IsDeleted", "Flag") VALUES ($1, $2, TRUE, FALSE, TRUE) RETURNING "Id"`,
+          [standardRoleId, roleNameMap[standardRoleId] || u.role]
+        );
+        roleIds[u.role] = standardRoleId;
       }
     }
-    console.log(`✅ Roles created: ${JSON.stringify(roleIds)}`);
+    console.log(`✅ Roles mapped: ${JSON.stringify(roleIds)} (using standard 5-role system)`);
 
     // 3. Create UserTypes
     const userTypeIds = {};

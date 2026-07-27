@@ -445,11 +445,34 @@ const registerUser = async (req, res) => {
     const normalizedRoleId = normalizeNullableInt(roleId);
     const normalizedUserTypeId = normalizeNullableInt(userTypeId);
     const normalizedCreatedBy = normalizeNullableInt(createdBy);
-    const normalizedReportingManagerId = normalizeNullableInt(reportingManagerId);
+    let normalizedReportingManagerId = normalizeNullableInt(reportingManagerId);
     const normalizedDepartmentId = normalizeNullableInt(departmentId);
     const normalizedDesignationId = normalizeNullableInt(designationId);
-    const normalizedHierarchyLevel = normalizeNullableInt(hierarchyLevel) ?? 0;
     const effectiveCompanyId = companyScope.companyId;
+    
+    // Auto-assign SuperAdmin as reporting manager for admin-level roles if no manager specified
+    if (!normalizedReportingManagerId && normalizedRoleId && normalizedRoleId <= 2) {
+      const superAdminResult = await appPool.query(
+        `SELECT "UserId" FROM "Users" WHERE "RoleId" = 1 AND "IsDelete" = FALSE AND "IsActive" = TRUE LIMIT 1`
+      );
+      if (superAdminResult.rows.length > 0) {
+        normalizedReportingManagerId = superAdminResult.rows[0].UserId;
+      }
+    }
+    
+    // If reporting manager is provided, calculate hierarchy level from manager
+    // Otherwise use provided hierarchyLevel or default to 0
+    let finalHierarchyLevel = 0;
+    if (normalizedReportingManagerId) {
+      const managerHierarchyResult = await appPool.query(
+        `SELECT "HierarchyLevel" FROM "Users" WHERE "UserId" = $1 LIMIT 1`,
+        [normalizedReportingManagerId]
+      );
+      const managerHierarchyLevel = managerHierarchyResult.rows[0]?.HierarchyLevel ?? 0;
+      finalHierarchyLevel = managerHierarchyLevel + 1;
+    } else {
+      finalHierarchyLevel = normalizeNullableInt(hierarchyLevel) ?? 0;
+    }
 
     if (normalizedReportingManagerId) {
       const managerResult = await appPool.query(
@@ -495,7 +518,7 @@ const registerUser = async (req, res) => {
         normalizedReportingManagerId,
         normalizedDepartmentId,
         normalizedDesignationId,
-        normalizedHierarchyLevel,
+        finalHierarchyLevel,
         normalizeNullableText(address),
         normalizeNullableText(city),
         normalizeNullableText(state),
@@ -506,6 +529,10 @@ const registerUser = async (req, res) => {
     );
 
     const user = result.rows[0];
+    
+    // Recalculate hierarchy for this user and all descendants
+    await recalculateUserBranchHierarchy(appPool, user.UserId);
+    
     if (otpValidation.otpId) {
       await consumeOtp(otpValidation.otpId);
     }
@@ -607,7 +634,6 @@ const updateUser = async (req, res) => {
     const normalizedReportingManagerId = normalizeNullableInt(reportingManagerId);
     const normalizedDepartmentId = normalizeNullableInt(departmentId);
     const normalizedDesignationId = normalizeNullableInt(designationId);
-    const normalizedHierarchyLevel = normalizeNullableInt(hierarchyLevel);
     const hasReportingManagerInput = Object.prototype.hasOwnProperty.call(
       req.body,
       "reportingManagerId"
@@ -616,6 +642,22 @@ const updateUser = async (req, res) => {
     const nextReportingManagerId = hasReportingManagerInput
       ? normalizedReportingManagerId
       : existingUser.ReportingManagerId;
+    
+    // If reporting manager changed, recalculate hierarchy level based on new manager
+    let finalHierarchyLevel = existingUser.HierarchyLevel ?? 0;
+    if (hasReportingManagerInput && nextReportingManagerId) {
+      const managerHierarchyResult = await client.query(
+        `SELECT "HierarchyLevel" FROM "Users" WHERE "UserId" = $1 LIMIT 1`,
+        [nextReportingManagerId]
+      );
+      const managerHierarchyLevel = managerHierarchyResult.rows[0]?.HierarchyLevel ?? 0;
+      finalHierarchyLevel = managerHierarchyLevel + 1;
+    } else if (!hasReportingManagerInput || !nextReportingManagerId) {
+      // If manager was removed, reset to 0
+      finalHierarchyLevel = 0;
+    } else if (normalizedHierarchyLevel !== null && normalizedHierarchyLevel !== undefined) {
+      finalHierarchyLevel = normalizedHierarchyLevel;
+    }
 
     if (nextReportingManagerId && Number(nextReportingManagerId) === Number(normalizedUserId)) {
       await client.query("ROLLBACK");
@@ -705,7 +747,7 @@ const updateUser = async (req, res) => {
       nextReportingManagerId,
       normalizedDepartmentId ?? existingUser.DepartmentId,
       normalizedDesignationId ?? existingUser.DesignationId,
-      normalizedHierarchyLevel ?? existingUser.HierarchyLevel ?? 0,
+      finalHierarchyLevel,
       normalizedUserId,
     ];
 
@@ -1009,14 +1051,15 @@ const getCompanies = async (req, res) => {
   const userId = req.user.userId;
   try {
     const userResult = await appPool.query(
-      'SELECT "UserTypeId" FROM "Users" WHERE "UserId" = $1',
+      'SELECT "RoleId", "UserTypeId" FROM "Users" WHERE "UserId" = $1',
       [userId]
     );
     const user = userResult.rows[0];
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    if (![1].includes(user.UserTypeId)) {
+    // Allow SuperAdmin (RoleId=1) OR users with UserTypeId=1
+    if (user.RoleId !== 1 && ![1].includes(user.UserTypeId)) {
       return res
         .status(403)
         .json({ message: "Forbidden: You do not have access to this resource" });
@@ -1035,14 +1078,15 @@ const adminGetCompanies = async (req, res) => {
   const userId = req.user.userId;
   try {
     const userResult = await appPool.query(
-      'SELECT "UserTypeId", "CompanyId" FROM "Users" WHERE "UserId" = $1',
+      'SELECT "RoleId", "UserTypeId", "CompanyId" FROM "Users" WHERE "UserId" = $1',
       [userId]
     );
     const user = userResult.rows[0];
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    if (![1, 2].includes(user.UserTypeId)) {
+    // Allow SuperAdmin (RoleId=1) OR CompanyAdmin (RoleId=2) OR users with UserTypeId 1 or 2
+    if (user.RoleId !== 1 && user.RoleId !== 2 && ![1, 2].includes(user.UserTypeId)) {
       return res.status(403).json({ message: "Access denied" });
     }
     const companyResult = await appPool.query(

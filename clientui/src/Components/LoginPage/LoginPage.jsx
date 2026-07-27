@@ -314,7 +314,7 @@ const LoginPage = () => {
 
         <p className={`relative mt-6 text-center text-sm ${darkMode ? "text-slate-300" : "text-slate-600"}`}>
           New to the platform?{" "}
-          <Link to="/Admin/users/register" className="font-bold text-cyan-500 transition hover:text-cyan-400 hover:underline">
+          <Link to="/Admin/HR/Users/Register" className="font-bold text-cyan-500 transition hover:text-cyan-400 hover:underline">
             Create account
           </Link>
         </p>
