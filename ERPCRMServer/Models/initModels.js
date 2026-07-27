@@ -90,9 +90,21 @@ const { LandedCost } = require('./InventoryManagement/LandedCost');
 const { CostAdjustment } = require('./InventoryManagement/CostAdjustment');
 const { ReorderLevels } = require('./InventoryManagement/ReorderLevels');
 const { ReorderHistory } = require('./InventoryManagement/ReorderHistory');
+<<<<<<< HEAD
 const { FinancialYear } = require('./InventoryManagement/FinancialYear');
 const { Documents } = require('./InventoryManagement/Documents');
 const { EmailLogs } = require('./InventoryManagement/EmailLogs');
+=======
+const { FinancialYear, AccountingPeriod } = require('./InventoryManagement/FinancialYear');
+const { Documents, DocumentVersions, DocumentAccess } = require('./InventoryManagement/Documents');
+const { RFQ, RFQItems, RFQVendors } = require('./InventoryManagement/RFQ');
+const { PriceList, PriceListItem, PriceListCustomer } = require('./InventoryManagement/PriceList');
+const { HSNCode } = require('./InventoryManagement/HSNCode');
+const { InvoiceMatch, InvoiceMatchLine } = require('./InventoryManagement/InvoiceMatch');
+const { PutawayTask, PickingList, PickingItem, CycleCount, CycleCountItem } = require('./InventoryManagement/WarehouseOperations');
+const { Currencies, ExchangeRates } = require('./InventoryManagement/Currencies');
+const { ChartOfAccounts, JournalEntry, JournalEntryLine } = require('./InventoryManagement/Accounting');
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 
 const initModels = async () => {
   // Core user and auth tables (maintain dependency order)
@@ -201,6 +213,7 @@ const initModels = async () => {
   await ReorderLevels();
   await ReorderHistory();
   await FinancialYear();
+<<<<<<< HEAD
   await Documents();
   await EmailLogs();
 
@@ -218,6 +231,31 @@ const initModels = async () => {
   `);
   await appPool.query('CREATE INDEX IF NOT EXISTS idx_audit_log_details_log ON "AuditLogDetails"("AuditLogId")');
   console.log("✅ AuditLogDetails table ready");
+=======
+  await AccountingPeriod();
+  await Documents();
+  await DocumentVersions();
+  await DocumentAccess();
+  await RFQ();
+  await RFQItems();
+  await RFQVendors();
+  await PriceList();
+  await PriceListItem();
+  await PriceListCustomer();
+  await HSNCode();
+  await InvoiceMatch();
+  await InvoiceMatchLine();
+  await PutawayTask();
+  await PickingList();
+  await PickingItem();
+  await CycleCount();
+  await CycleCountItem();
+  await Currencies();
+  await ExchangeRates();
+  await ChartOfAccounts();
+  await JournalEntry();
+  await JournalEntryLine();
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 };
 
 module.exports = { initModels };

@@ -6,9 +6,13 @@ import TitleBar from "../../../Components/TitleBar";
 const ReorderLevelsPage = () => {
   const [reorderLevels, setReorderLevels] = useState([]);
   const [alerts, setAlerts] = useState([]);
+<<<<<<< HEAD
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
+=======
+  const [loading, setLoading] = useState(true);
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
   const [showModal, setShowModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [activeTab, setActiveTab] = useState("levels");
@@ -44,6 +48,7 @@ const ReorderLevelsPage = () => {
     }
   };
 
+<<<<<<< HEAD
   const fetchHistory = async () => {
     setHistoryLoading(true);
     try {
@@ -56,6 +61,8 @@ const ReorderLevelsPage = () => {
     }
   };
 
+=======
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
   useEffect(() => {
     fetchReorderLevels();
     fetchAlerts();
@@ -65,8 +72,12 @@ const ReorderLevelsPage = () => {
     e.preventDefault();
     try {
       if (selectedItem) {
+<<<<<<< HEAD
         // Fixed: Use POST (upsert) instead of PUT - the route only supports POST
         await axiosInstance.post("/reorder-levels", formData);
+=======
+        await axiosInstance.put(`/reorder-levels/${selectedItem.Id}`, formData);
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
         toast.success("Reorder level updated successfully");
       } else {
         await axiosInstance.post("/reorder-levels", formData);
@@ -118,6 +129,7 @@ const ReorderLevelsPage = () => {
     }
   };
 
+<<<<<<< HEAD
   const handleBulkAutoReplenish = async () => {
     if (!window.confirm(`Auto-replenish all ${alerts.length} items with alerts?`)) return;
     let success = 0;
@@ -135,6 +147,8 @@ const ReorderLevelsPage = () => {
     fetchAlerts();
   };
 
+=======
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
   const resetForm = () => {
     setSelectedItem(null);
     setFormData({
@@ -175,7 +189,11 @@ const ReorderLevelsPage = () => {
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
             </div>
+<<<<<<< HEAD
             <div className="ml-3 flex-1">
+=======
+            <div className="ml-3">
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
               <h3 className="text-sm font-medium text-red-800">
                 {alerts.length} Reorder Alert{alerts.length > 1 ? "s" : ""}
               </h3>
@@ -189,6 +207,7 @@ const ReorderLevelsPage = () => {
               </div>
             </div>
           </div>
+<<<<<<< HEAD
           <div className="mt-3">
             <button
               onClick={handleBulkAutoReplenish}
@@ -197,6 +216,8 @@ const ReorderLevelsPage = () => {
               Auto-Replenish All
             </button>
           </div>
+=======
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
         </div>
       )}
 
@@ -225,7 +246,11 @@ const ReorderLevelsPage = () => {
               Alerts ({alerts.length})
             </button>
             <button
+<<<<<<< HEAD
               onClick={() => { setActiveTab("history"); fetchHistory(); }}
+=======
+              onClick={() => setActiveTab("history")}
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
               className={`py-4 px-6 text-sm font-medium ${
                 activeTab === "history"
                   ? "border-b-2 border-orange-500 text-orange-600"
@@ -361,6 +386,7 @@ const ReorderLevelsPage = () => {
       {/* History Table */}
       {activeTab === "history" && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
+<<<<<<< HEAD
           {historyLoading ? (
             <div className="p-8 text-center text-gray-500">Loading history...</div>
           ) : history.length === 0 ? (
@@ -401,6 +427,9 @@ const ReorderLevelsPage = () => {
               </table>
             </div>
           )}
+=======
+          <div className="p-8 text-center text-gray-500">History feature coming soon</div>
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
         </div>
       )}
 
@@ -510,4 +539,8 @@ const ReorderLevelsPage = () => {
   );
 };
 
+<<<<<<< HEAD
 export default ReorderLevelsPage;
+=======
+export default ReorderLevelsPage;
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337

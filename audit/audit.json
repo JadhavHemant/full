@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-07-22T15:48:00.251Z",
+  "project": "ERP/CRM System",
+  "stats": {
+    "totalFiles": 725,
+    "totalLines": 0,
+    "backend": {
+      "controllers": 3,
+      "routes": 2,
+      "models": 1,
+      "services": 7
+    },
+    "frontend": {
+      "pages": 1,
+      "components": 1,
+      "apiCalls": 0
+    },
+    "database": {
+      "tables": 121
+    }
+  },
+  "issues": [],
+  "completion": {
+    "backend": "35%",
+    "frontend": "20%",
+    "database": "90%",
+    "integration": "35%",
+    "overall": "35%"
+  },
+  "risk": {
+    "security": "Medium",
+    "performance": "Medium",
+    "quality": "High",
+    "testing": "Low",
+    "productionReady": "55%"
+  },
+  "topIssues": [
+    "Missing frontend pages for 10+ APIs",
+    "No field-level RBAC",
+    "No hierarchy access",
+    "Missing accounting module",
+    "No stock reservation",
+    "No automated tests",
+    "Missing validation",
+    "No API documentation",
+    "Missing error handling",
+    "No caching"
+  ]
+}

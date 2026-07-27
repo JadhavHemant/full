@@ -6,6 +6,7 @@ const {
   getStockValuationById,
   calculateStockValuation,
   getValuationReport,
+<<<<<<< HEAD
   getDetailedValuationReport,
   exportValuationReport,
   upsertCostingMethod,
@@ -27,6 +28,11 @@ const {
   approveCostAdjustment,
   deleteCostAdjustment,
 } = require("../../../controllers/InventoryApis/costAdjustmentController");
+=======
+  upsertCostingMethod,
+  getCostingMethods,
+} = require("../../../controllers/InventoryApis/stockValuationController");
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 
 router.use(verifyAccessToken);
 
@@ -34,16 +40,21 @@ router.use(verifyAccessToken);
 router.get("/", getAllStockValuations);
 router.get("/:id", getStockValuationById);
 router.post("/calculate", calculateStockValuation);
+<<<<<<< HEAD
 
 // Valuation Reports
 router.get("/report", getValuationReport);
 router.get("/report/detailed", getDetailedValuationReport);
 router.get("/export", exportValuationReport);
+=======
+router.get("/report", getValuationReport);
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 
 // Costing Methods
 router.post("/costing-methods", upsertCostingMethod);
 router.get("/costing-methods", getCostingMethods);
 
+<<<<<<< HEAD
 // Landed Costs
 router.get("/landed-costs", getAllLandedCosts);
 router.get("/landed-costs/:id", getLandedCostById);
@@ -61,3 +72,6 @@ router.post("/adjustments/:id/approve", approveCostAdjustment);
 router.delete("/adjustments/:id", deleteCostAdjustment);
 
 module.exports = router;
+=======
+module.exports = router;
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337

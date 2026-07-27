@@ -227,11 +227,31 @@ const hasModulePermission = (resolvedPermissions, moduleKey, action) => {
   if (resolvedPermissions === null) return true;
 
   const modulePerms = resolvedPermissions[moduleKey];
+<<<<<<< HEAD
   if (!modulePerms) {
     const hasActionKeys = ['view', 'create', 'edit', 'delete', 'export', 'import']
       .some(actionKey => resolvedPermissions[actionKey] !== undefined);
     if (hasActionKeys) return resolvedPermissions[action] === true;
     return false;
+=======
+
+  // If the module key is not found BUT the resolvedPermissions
+  // has top-level action keys (e.g. { view: true, create: true }),
+  // treat as flat permissions that apply to ALL modules.
+  if (!modulePerms) {
+    // Check if resolvedPermissions itself is flat (action-level)
+    const hasActionKeys = ['view', 'create', 'edit', 'delete', 'export', 'import']
+      .some(actionKey => resolvedPermissions[actionKey] !== undefined);
+    if (hasActionKeys) {
+      return resolvedPermissions[action] === true;
+    }
+    return false;
+  }
+
+  // modulePerms could be an object like { view: true } or an array like ['view']
+  if (Array.isArray(modulePerms)) {
+    return modulePerms.includes(action);
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
   }
 
   if (Array.isArray(modulePerms)) return modulePerms.includes(action);

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const { appPool } = require("../../config/db");
 
 // ──────────────────────────────────────────────
@@ -82,6 +83,11 @@ const calculateWeightedAverage = (movements) => {
 // Controllers
 // ──────────────────────────────────────────────
 
+=======
+const { verifyAccessToken } = require("../../middlewares/authMiddleware");
+const { appPool } = require("../../config/db");
+
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 // @desc    Get all stock valuations
 // @route   GET /api/stock-valuation
 // @access  Private
@@ -176,7 +182,11 @@ const calculateStockValuation = async (req, res) => {
 
     // Calculate valuation for each product-warehouse combination
     for (const stock of stockResult.rows) {
+<<<<<<< HEAD
       // Get stock movements for costing calculation (receipts only for FIFO/LIFO)
+=======
+      // Get stock movements for costing calculation
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
       const movements = await appPool.query(
         `SELECT * FROM "StockMovements"
          WHERE "ProductId" = $1 AND "WarehouseId" = $2
@@ -184,13 +194,18 @@ const calculateStockValuation = async (req, res) => {
         [stock.ProductId, stock.WarehouseId]
       );
 
+<<<<<<< HEAD
       const method = costingMethod || 'WeightedAverage';
+=======
+      // Calculate costs based on method
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
       let currentCost = 0;
       let averageCost = 0;
       let fifoCost = 0;
       let lifoCost = 0;
 
       if (movements.rows.length > 0) {
+<<<<<<< HEAD
         // Calculate all costing methods
         averageCost = calculateWeightedAverage(movements.rows);
         fifoCost = calculateFIFO(movements.rows, stock.Quantity);
@@ -217,16 +232,37 @@ const calculateStockValuation = async (req, res) => {
             currentCost = averageCost;
             break;
         }
+=======
+        // Simple weighted average calculation
+        let totalValue = 0;
+        let totalQty = 0;
+
+        movements.rows.forEach(movement => {
+          if (movement.Quantity > 0) {
+            totalValue += movement.Quantity * (movement.UnitCost || 0);
+            totalQty += movement.Quantity;
+          }
+        });
+
+        averageCost = totalQty > 0 ? totalValue / totalQty : 0;
+        currentCost = averageCost;
+        fifoCost = movements.rows[0]?.UnitCost || 0;
+        lifoCost = movements.rows[movements.rows.length - 1]?.UnitCost || 0;
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
       }
 
       const totalValue = currentCost * stock.Quantity;
 
       // Upsert stock valuation
       await appPool.query(
+<<<<<<< HEAD
         `INSERT INTO "StockValuation"
          ("ProductId", "WarehouseId", "CostingMethod", "CurrentCost", "AverageCost",
           "FIFOCost", "LIFOCost", "TotalStock", "TotalValue", "LastCalculatedAt",
           "CreatedBy", "UpdatedBy")
+=======
+        `INSERT INTO "StockValuation" ("ProductId", "WarehouseId", "CostingMethod", "CurrentCost", "AverageCost", "FIFOCost", "LIFOCost", "TotalStock", "TotalValue", "LastCalculatedAt", "CreatedBy", "UpdatedBy")
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, $10, $10)
          ON CONFLICT ("ProductId", "WarehouseId")
          DO UPDATE SET
@@ -239,8 +275,12 @@ const calculateStockValuation = async (req, res) => {
            "TotalValue" = $9,
            "LastCalculatedAt" = CURRENT_TIMESTAMP,
            "UpdatedBy" = $10`,
+<<<<<<< HEAD
         [stock.ProductId, stock.WarehouseId, method, currentCost, averageCost,
          fifoCost, lifoCost, stock.Quantity, totalValue, userId]
+=======
+        [stock.ProductId, stock.WarehouseId, costingMethod || 'WeightedAverage', currentCost, averageCost, fifoCost, lifoCost, stock.Quantity, totalValue, userId]
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
       );
     }
 
@@ -256,10 +296,17 @@ const calculateStockValuation = async (req, res) => {
 // @access  Private
 const getValuationReport = async (req, res) => {
   try {
+<<<<<<< HEAD
     const { warehouseId, productId, categoryId, dateFrom, dateTo, export: exportFormat } = req.query;
 
     let query = `
       SELECT
+=======
+    const { warehouseId } = req.query;
+
+    let query = `
+      SELECT 
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
         w."WarehouseName",
         COUNT(sv."Id") as total_products,
         SUM(sv."TotalStock") as total_stock,
@@ -267,6 +314,7 @@ const getValuationReport = async (req, res) => {
         AVG(sv."AverageCost") as avg_cost
       FROM "StockValuation" sv
       LEFT JOIN "Warehouses" w ON sv."WarehouseId" = w."Id"
+<<<<<<< HEAD
       LEFT JOIN "Products" p ON sv."ProductId" = p."Id"
       WHERE 1=1
     `;
@@ -278,10 +326,21 @@ const getValuationReport = async (req, res) => {
     if (categoryId) { idx++; query += ` AND p."CategoryId" = $${idx}`; params.push(categoryId); }
     if (dateFrom) { idx++; query += ` AND sv."LastCalculatedAt" >= $${idx}`; params.push(dateFrom); }
     if (dateTo) { idx++; query += ` AND sv."LastCalculatedAt" <= $${idx}`; params.push(dateTo); }
+=======
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (warehouseId) {
+      query += ` AND sv."WarehouseId" = $${params.length + 1}`;
+      params.push(warehouseId);
+    }
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 
     query += ` GROUP BY w."Id", w."WarehouseName" ORDER BY total_value DESC`;
 
     const result = await appPool.query(query, params);
+<<<<<<< HEAD
 
     // If export format requested, return raw data for export
     if (exportFormat) {
@@ -292,6 +351,8 @@ const getValuationReport = async (req, res) => {
       });
     }
 
+=======
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
     res.json(result.rows);
   } catch (error) {
     console.error("Error fetching valuation report:", error);
@@ -299,6 +360,7 @@ const getValuationReport = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 // @desc    Get detailed valuation report (per-product breakdown)
 // @route   GET /api/stock-valuation/report/detailed
 // @access  Private
@@ -362,6 +424,8 @@ const getDetailedValuationReport = async (req, res) => {
   }
 };
 
+=======
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 // @desc    Create/Update costing method
 // @route   POST /api/stock-valuation/costing-methods
 // @access  Private
@@ -407,6 +471,7 @@ const getCostingMethods = async (req, res) => {
   }
 };
 
+<<<<<<< HEAD
 // @desc    Export stock valuation report
 // @route   GET /api/stock-valuation/export
 // @access  Private
@@ -473,13 +538,21 @@ const exportValuationReport = async (req, res) => {
   }
 };
 
+=======
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 module.exports = {
   getAllStockValuations,
   getStockValuationById,
   calculateStockValuation,
   getValuationReport,
+<<<<<<< HEAD
   getDetailedValuationReport,
   exportValuationReport,
   upsertCostingMethod,
   getCostingMethods,
 };
+=======
+  upsertCostingMethod,
+  getCostingMethods,
+};
+>>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
