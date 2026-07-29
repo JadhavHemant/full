@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const { appPool } = require("../../config/db");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
@@ -6,12 +5,6 @@ const { generateTokens } = require("../../utils/tokenUtils");
 const { logLoginAttempt } = require("../../services/loginHistoryService");
 const { logAuthEvent } = require("../../services/auditLogService");
 const crypto = require("crypto");
-=======
-const { verifyAccessToken } = require("../../middlewares/authMiddleware");
-const { appPool } = require("../../config/db");
-const speakeasy = require("speakeasy");
-const QRCode = require("qrcode");
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 
 // @desc    Setup 2FA for user
 // @route   POST /api/auth/2fa/setup
@@ -112,8 +105,6 @@ const disable2FA = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Note: In production, use bcrypt to compare hashed passwords
-    // This is a simplified version
     const bcrypt = require("bcryptjs");
     const isPasswordValid = await bcrypt.compare(password, userResult.rows[0].Password);
 
@@ -201,7 +192,6 @@ const verify2FALogin = async (req, res) => {
         `UPDATE "User2FA" SET "LastUsedAt" = CURRENT_TIMESTAMP WHERE "UserId" = $1`,
         [userId]
       );
-<<<<<<< HEAD
 
       // Fetch user details for token generation
       const userResult = await appPool.query(`
@@ -258,9 +248,6 @@ const verify2FALogin = async (req, res) => {
         },
         sessionId,
       });
-=======
-      return res.json({ verified: true, message: "2FA verified successfully" });
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
     }
 
     // Check backup codes

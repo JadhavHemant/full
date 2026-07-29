@@ -27,13 +27,17 @@ const erpModulesRoutes = require('./erpModules/erpModules.routes');
 const exportRoutes = require('./utils/exportRoutes');
 const StockValuationRoutes = require('./stockValuation/stockValuation.routes');
 const ReorderLevelsRoutes = require('./reorderLevels/reorderLevels.routes');
-<<<<<<< HEAD
-const FinancialYearsRoutes = require('./financialYears/financialYears.routes');
-const DocumentsRoutes = require('./documents/documents.routes');
-const EmailRoutes = require('./email/email.routes');
-const AdvancedAuditRoutes = require('./advancedAudit/advancedAudit.routes');
-=======
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
+
+// Optional routes — loaded conditionally to avoid boot failure if files don't exist
+let FinancialYearsRoutes = null;
+let DocumentsRoutes = null;
+let EmailRoutes = null;
+let AdvancedAuditRoutes = null;
+
+try { FinancialYearsRoutes = require('./financialYears/financialYears.routes'); } catch (e) { /* not available */ }
+try { DocumentsRoutes = require('./documents/documents.routes'); } catch (e) { /* not available */ }
+try { EmailRoutes = require('./email/email.routes'); } catch (e) { /* not available */ }
+try { AdvancedAuditRoutes = require('./advancedAudit/advancedAudit.routes'); } catch (e) { /* not available */ }
 
 module.exports = {
   productCategoryRoutes,
@@ -60,11 +64,8 @@ module.exports = {
   exportRoutes,
   StockValuationRoutes,
   ReorderLevelsRoutes,
-<<<<<<< HEAD
   FinancialYearsRoutes,
   DocumentsRoutes,
   EmailRoutes,
   AdvancedAuditRoutes,
-=======
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 };

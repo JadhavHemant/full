@@ -1,8 +1,4 @@
 const express = require("express");
-<<<<<<< HEAD
-const speakeasy = require("speakeasy");
-=======
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 const router = express.Router();
 const { verifyAccessToken } = require("../../middlewares/authMiddleware");
 const {

@@ -90,11 +90,7 @@ const { LandedCost } = require('./InventoryManagement/LandedCost');
 const { CostAdjustment } = require('./InventoryManagement/CostAdjustment');
 const { ReorderLevels } = require('./InventoryManagement/ReorderLevels');
 const { ReorderHistory } = require('./InventoryManagement/ReorderHistory');
-<<<<<<< HEAD
-const { FinancialYear } = require('./InventoryManagement/FinancialYear');
-const { Documents } = require('./InventoryManagement/Documents');
-const { EmailLogs } = require('./InventoryManagement/EmailLogs');
-=======
+
 const { FinancialYear, AccountingPeriod } = require('./InventoryManagement/FinancialYear');
 const { Documents, DocumentVersions, DocumentAccess } = require('./InventoryManagement/Documents');
 const { RFQ, RFQItems, RFQVendors } = require('./InventoryManagement/RFQ');
@@ -104,7 +100,6 @@ const { InvoiceMatch, InvoiceMatchLine } = require('./InventoryManagement/Invoic
 const { PutawayTask, PickingList, PickingItem, CycleCount, CycleCountItem } = require('./InventoryManagement/WarehouseOperations');
 const { Currencies, ExchangeRates } = require('./InventoryManagement/Currencies');
 const { ChartOfAccounts, JournalEntry, JournalEntryLine } = require('./InventoryManagement/Accounting');
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 
 const initModels = async () => {
   // Core user and auth tables (maintain dependency order)
@@ -213,25 +208,6 @@ const initModels = async () => {
   await ReorderLevels();
   await ReorderHistory();
   await FinancialYear();
-<<<<<<< HEAD
-  await Documents();
-  await EmailLogs();
-
-  // Create AuditLogDetails table for field-level change tracking
-  await appPool.query(`
-    CREATE TABLE IF NOT EXISTS "AuditLogDetails" (
-      "Id" SERIAL PRIMARY KEY,
-      "AuditLogId" INT REFERENCES "AuditLogs"("Id") ON DELETE CASCADE,
-      "BeforeValues" JSONB DEFAULT '{}',
-      "AfterValues" JSONB DEFAULT '{}',
-      "ChangedFields" TEXT[] DEFAULT '{}',
-      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE("AuditLogId")
-    )
-  `);
-  await appPool.query('CREATE INDEX IF NOT EXISTS idx_audit_log_details_log ON "AuditLogDetails"("AuditLogId")');
-  console.log("✅ AuditLogDetails table ready");
-=======
   await AccountingPeriod();
   await Documents();
   await DocumentVersions();
@@ -255,7 +231,21 @@ const initModels = async () => {
   await ChartOfAccounts();
   await JournalEntry();
   await JournalEntryLine();
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
+
+  // Create AuditLogDetails table for field-level change tracking
+  await appPool.query(`
+    CREATE TABLE IF NOT EXISTS "AuditLogDetails" (
+      "Id" SERIAL PRIMARY KEY,
+      "AuditLogId" INT REFERENCES "AuditLogs"("Id") ON DELETE CASCADE,
+      "BeforeValues" JSONB DEFAULT '{}',
+      "AfterValues" JSONB DEFAULT '{}',
+      "ChangedFields" TEXT[] DEFAULT '{}',
+      "CreatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE("AuditLogId")
+    )
+  `);
+  await appPool.query('CREATE INDEX IF NOT EXISTS idx_audit_log_details_log ON "AuditLogDetails"("AuditLogId")');
+  console.log("✅ AuditLogDetails table ready");
 };
 
 module.exports = { initModels };

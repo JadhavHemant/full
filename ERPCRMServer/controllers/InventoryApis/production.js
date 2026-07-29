@@ -8,14 +8,10 @@ const createBOM = async (req, res) => {
     
     // Validate required fields
     if (!ProductId) {
-<<<<<<< HEAD
       return res.status(400).json({ 
         message: 'ProductId is required',
         error: 'ProductId must be provided and cannot be null'
       });
-=======
-      return res.status(400).json({ message: 'ProductId is required for BOM' });
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
     }
     
     const code = BOMCode || `BOM-${Date.now()}`;

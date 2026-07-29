@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const { appPool } = require("../../config/db");
 
 // ──────────────────────────────────────────────
@@ -8,9 +7,6 @@ const { appPool } = require("../../config/db");
 /**
  * Calculate FIFO cost for a given product/warehouse.
  * Uses stock movement layers (receipts) and matches them against current stock.
- * @param {Array} movements - Stock movements ordered by CreatedAt ASC
- * @param {number} currentQty - Current stock quantity
- * @returns {number} FIFO cost per unit
  */
 const calculateFIFO = (movements, currentQty) => {
   if (currentQty <= 0) return 0;
@@ -18,7 +14,6 @@ const calculateFIFO = (movements, currentQty) => {
   let remaining = currentQty;
   let totalCost = 0;
 
-  // Process receipts (positive quantity) in chronological order
   for (const m of movements) {
     if (m.Quantity > 0 && (m.UnitCost || 0) > 0) {
       const layerQty = Math.min(remaining, m.Quantity);
@@ -33,11 +28,6 @@ const calculateFIFO = (movements, currentQty) => {
 
 /**
  * Calculate LIFO cost for a given product/warehouse.
- * Uses stock movement layers (receipts) and matches them against current stock
- * starting from the most recent receipts.
- * @param {Array} movements - Stock movements ordered by CreatedAt ASC
- * @param {number} currentQty - Current stock quantity
- * @returns {number} LIFO cost per unit
  */
 const calculateLIFO = (movements, currentQty) => {
   if (currentQty <= 0) return 0;
@@ -45,7 +35,6 @@ const calculateLIFO = (movements, currentQty) => {
   let remaining = currentQty;
   let totalCost = 0;
 
-  // Process receipts (positive quantity) in reverse chronological order
   const receipts = movements
     .filter(m => m.Quantity > 0 && (m.UnitCost || 0) > 0)
     .reverse();
@@ -62,8 +51,6 @@ const calculateLIFO = (movements, currentQty) => {
 
 /**
  * Calculate Weighted Average cost for a given product/warehouse.
- * @param {Array} movements - Stock movements
- * @returns {number} Weighted average cost per unit
  */
 const calculateWeightedAverage = (movements) => {
   let totalValue = 0;
@@ -83,11 +70,6 @@ const calculateWeightedAverage = (movements) => {
 // Controllers
 // ──────────────────────────────────────────────
 
-=======
-const { verifyAccessToken } = require("../../middlewares/authMiddleware");
-const { appPool } = require("../../config/db");
-
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 // @desc    Get all stock valuations
 // @route   GET /api/stock-valuation
 // @access  Private
@@ -159,7 +141,6 @@ const calculateStockValuation = async (req, res) => {
     const { productId, warehouseId, costingMethod } = req.body;
     const userId = req.user?.UserId;
 
-    // Get current stock
     let stockQuery = `
       SELECT ps."ProductId", ps."WarehouseId", ps."Quantity", p."ProductName", p."SKU", w."WarehouseName"
       FROM "ProductStockPerWarehouse" ps
@@ -180,13 +161,8 @@ const calculateStockValuation = async (req, res) => {
 
     const stockResult = await appPool.query(stockQuery, params);
 
-    // Calculate valuation for each product-warehouse combination
     for (const stock of stockResult.rows) {
-<<<<<<< HEAD
       // Get stock movements for costing calculation (receipts only for FIFO/LIFO)
-=======
-      // Get stock movements for costing calculation
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
       const movements = await appPool.query(
         `SELECT * FROM "StockMovements"
          WHERE "ProductId" = $1 AND "WarehouseId" = $2
@@ -194,18 +170,13 @@ const calculateStockValuation = async (req, res) => {
         [stock.ProductId, stock.WarehouseId]
       );
 
-<<<<<<< HEAD
       const method = costingMethod || 'WeightedAverage';
-=======
-      // Calculate costs based on method
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
       let currentCost = 0;
       let averageCost = 0;
       let fifoCost = 0;
       let lifoCost = 0;
 
       if (movements.rows.length > 0) {
-<<<<<<< HEAD
         // Calculate all costing methods
         averageCost = calculateWeightedAverage(movements.rows);
         fifoCost = calculateFIFO(movements.rows, stock.Quantity);
@@ -219,50 +190,28 @@ const calculateStockValuation = async (req, res) => {
           case 'LIFO':
             currentCost = lifoCost;
             break;
-          case 'Standard':
-            // Use existing standard cost from StockValuation or product cost
+          case 'Standard': {
             const existing = await appPool.query(
               `SELECT "StandardCost" FROM "StockValuation" WHERE "ProductId" = $1 AND "WarehouseId" = $2`,
               [stock.ProductId, stock.WarehouseId]
             );
             currentCost = existing.rows.length > 0 ? parseFloat(existing.rows[0].StandardCost) : 0;
             break;
+          }
           case 'WeightedAverage':
           default:
             currentCost = averageCost;
             break;
         }
-=======
-        // Simple weighted average calculation
-        let totalValue = 0;
-        let totalQty = 0;
-
-        movements.rows.forEach(movement => {
-          if (movement.Quantity > 0) {
-            totalValue += movement.Quantity * (movement.UnitCost || 0);
-            totalQty += movement.Quantity;
-          }
-        });
-
-        averageCost = totalQty > 0 ? totalValue / totalQty : 0;
-        currentCost = averageCost;
-        fifoCost = movements.rows[0]?.UnitCost || 0;
-        lifoCost = movements.rows[movements.rows.length - 1]?.UnitCost || 0;
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
       }
 
       const totalValue = currentCost * stock.Quantity;
 
-      // Upsert stock valuation
       await appPool.query(
-<<<<<<< HEAD
         `INSERT INTO "StockValuation"
          ("ProductId", "WarehouseId", "CostingMethod", "CurrentCost", "AverageCost",
           "FIFOCost", "LIFOCost", "TotalStock", "TotalValue", "LastCalculatedAt",
           "CreatedBy", "UpdatedBy")
-=======
-        `INSERT INTO "StockValuation" ("ProductId", "WarehouseId", "CostingMethod", "CurrentCost", "AverageCost", "FIFOCost", "LIFOCost", "TotalStock", "TotalValue", "LastCalculatedAt", "CreatedBy", "UpdatedBy")
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, $10, $10)
          ON CONFLICT ("ProductId", "WarehouseId")
          DO UPDATE SET
@@ -275,12 +224,8 @@ const calculateStockValuation = async (req, res) => {
            "TotalValue" = $9,
            "LastCalculatedAt" = CURRENT_TIMESTAMP,
            "UpdatedBy" = $10`,
-<<<<<<< HEAD
         [stock.ProductId, stock.WarehouseId, method, currentCost, averageCost,
          fifoCost, lifoCost, stock.Quantity, totalValue, userId]
-=======
-        [stock.ProductId, stock.WarehouseId, costingMethod || 'WeightedAverage', currentCost, averageCost, fifoCost, lifoCost, stock.Quantity, totalValue, userId]
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
       );
     }
 
@@ -296,17 +241,10 @@ const calculateStockValuation = async (req, res) => {
 // @access  Private
 const getValuationReport = async (req, res) => {
   try {
-<<<<<<< HEAD
     const { warehouseId, productId, categoryId, dateFrom, dateTo, export: exportFormat } = req.query;
 
     let query = `
       SELECT
-=======
-    const { warehouseId } = req.query;
-
-    let query = `
-      SELECT 
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
         w."WarehouseName",
         COUNT(sv."Id") as total_products,
         SUM(sv."TotalStock") as total_stock,
@@ -314,7 +252,6 @@ const getValuationReport = async (req, res) => {
         AVG(sv."AverageCost") as avg_cost
       FROM "StockValuation" sv
       LEFT JOIN "Warehouses" w ON sv."WarehouseId" = w."Id"
-<<<<<<< HEAD
       LEFT JOIN "Products" p ON sv."ProductId" = p."Id"
       WHERE 1=1
     `;
@@ -326,23 +263,11 @@ const getValuationReport = async (req, res) => {
     if (categoryId) { idx++; query += ` AND p."CategoryId" = $${idx}`; params.push(categoryId); }
     if (dateFrom) { idx++; query += ` AND sv."LastCalculatedAt" >= $${idx}`; params.push(dateFrom); }
     if (dateTo) { idx++; query += ` AND sv."LastCalculatedAt" <= $${idx}`; params.push(dateTo); }
-=======
-      WHERE 1=1
-    `;
-    const params = [];
-
-    if (warehouseId) {
-      query += ` AND sv."WarehouseId" = $${params.length + 1}`;
-      params.push(warehouseId);
-    }
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 
     query += ` GROUP BY w."Id", w."WarehouseName" ORDER BY total_value DESC`;
 
     const result = await appPool.query(query, params);
-<<<<<<< HEAD
 
-    // If export format requested, return raw data for export
     if (exportFormat) {
       return res.json({
         exportData: result.rows,
@@ -351,8 +276,6 @@ const getValuationReport = async (req, res) => {
       });
     }
 
-=======
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
     res.json(result.rows);
   } catch (error) {
     console.error("Error fetching valuation report:", error);
@@ -360,7 +283,6 @@ const getValuationReport = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
 // @desc    Get detailed valuation report (per-product breakdown)
 // @route   GET /api/stock-valuation/report/detailed
 // @access  Private
@@ -374,8 +296,7 @@ const getDetailedValuationReport = async (req, res) => {
         sv.*,
         p."ProductName", p."SKU", p."ProductCode",
         w."WarehouseName",
-        c."CategoryName",
-        sv."TotalValue" as "TotalValue"
+        c."CategoryName"
       FROM "StockValuation" sv
       LEFT JOIN "Products" p ON sv."ProductId" = p."Id"
       LEFT JOIN "Warehouses" w ON sv."WarehouseId" = w."Id"
@@ -394,13 +315,7 @@ const getDetailedValuationReport = async (req, res) => {
 
     const result = await appPool.query(query, params);
 
-    // Get total count for pagination
-    let countQuery = `
-      SELECT COUNT(*) as total
-      FROM "StockValuation" sv
-      LEFT JOIN "Products" p ON sv."ProductId" = p."Id"
-      WHERE 1=1
-    `;
+    let countQuery = `SELECT COUNT(*) as total FROM "StockValuation" sv LEFT JOIN "Products" p ON sv."ProductId" = p."Id" WHERE 1=1`;
     const countParams = [];
     let countIdx = 0;
 
@@ -411,21 +326,13 @@ const getDetailedValuationReport = async (req, res) => {
     const countResult = await appPool.query(countQuery, countParams);
     const total = parseInt(countResult.rows[0].total);
 
-    res.json({
-      data: result.rows,
-      total,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      totalPages: Math.ceil(total / limit)
-    });
+    res.json({ data: result.rows, total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / limit) });
   } catch (error) {
     console.error("Error fetching detailed valuation report:", error);
     res.status(500).json({ message: "Failed to fetch detailed valuation report", error: error.message });
   }
 };
 
-=======
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 // @desc    Create/Update costing method
 // @route   POST /api/stock-valuation/costing-methods
 // @access  Private
@@ -471,7 +378,6 @@ const getCostingMethods = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
 // @desc    Export stock valuation report
 // @route   GET /api/stock-valuation/export
 // @access  Private
@@ -538,21 +444,13 @@ const exportValuationReport = async (req, res) => {
   }
 };
 
-=======
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 module.exports = {
   getAllStockValuations,
   getStockValuationById,
   calculateStockValuation,
   getValuationReport,
-<<<<<<< HEAD
   getDetailedValuationReport,
   exportValuationReport,
   upsertCostingMethod,
   getCostingMethods,
 };
-=======
-  upsertCostingMethod,
-  getCostingMethods,
-};
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337

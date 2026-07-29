@@ -6,13 +6,9 @@ import TitleBar from "../../../Components/TitleBar";
 const ReorderLevelsPage = () => {
   const [reorderLevels, setReorderLevels] = useState([]);
   const [alerts, setAlerts] = useState([]);
-<<<<<<< HEAD
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
-=======
-  const [loading, setLoading] = useState(true);
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
   const [showModal, setShowModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [activeTab, setActiveTab] = useState("levels");
@@ -48,7 +44,6 @@ const ReorderLevelsPage = () => {
     }
   };
 
-<<<<<<< HEAD
   const fetchHistory = async () => {
     setHistoryLoading(true);
     try {
@@ -61,8 +56,6 @@ const ReorderLevelsPage = () => {
     }
   };
 
-=======
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
   useEffect(() => {
     fetchReorderLevels();
     fetchAlerts();
@@ -72,12 +65,8 @@ const ReorderLevelsPage = () => {
     e.preventDefault();
     try {
       if (selectedItem) {
-<<<<<<< HEAD
-        // Fixed: Use POST (upsert) instead of PUT - the route only supports POST
+        // Use POST (upsert) — route supports POST for both create and update
         await axiosInstance.post("/reorder-levels", formData);
-=======
-        await axiosInstance.put(`/reorder-levels/${selectedItem.Id}`, formData);
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
         toast.success("Reorder level updated successfully");
       } else {
         await axiosInstance.post("/reorder-levels", formData);
@@ -129,7 +118,6 @@ const ReorderLevelsPage = () => {
     }
   };
 
-<<<<<<< HEAD
   const handleBulkAutoReplenish = async () => {
     if (!window.confirm(`Auto-replenish all ${alerts.length} items with alerts?`)) return;
     let success = 0;
@@ -138,7 +126,7 @@ const ReorderLevelsPage = () => {
       try {
         await axiosInstance.post("/reorder-levels/auto-replenish", { reorderLevelId: alert.Id });
         success++;
-      } catch (error) {
+      } catch {
         failed++;
       }
     }
@@ -147,8 +135,6 @@ const ReorderLevelsPage = () => {
     fetchAlerts();
   };
 
-=======
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
   const resetForm = () => {
     setSelectedItem(null);
     setFormData({
@@ -164,14 +150,10 @@ const ReorderLevelsPage = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Critical":
-        return "bg-red-100 text-red-800";
-      case "Reorder":
-        return "bg-yellow-100 text-yellow-800";
-      case "Overstocked":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-green-100 text-green-800";
+      case "Critical":    return "bg-red-100 text-red-800";
+      case "Reorder":     return "bg-yellow-100 text-yellow-800";
+      case "Overstocked": return "bg-blue-100 text-blue-800";
+      default:            return "bg-green-100 text-green-800";
     }
   };
 
@@ -189,25 +171,20 @@ const ReorderLevelsPage = () => {
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
             </div>
-<<<<<<< HEAD
             <div className="ml-3 flex-1">
-=======
-            <div className="ml-3">
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
               <h3 className="text-sm font-medium text-red-800">
                 {alerts.length} Reorder Alert{alerts.length > 1 ? "s" : ""}
               </h3>
               <div className="mt-2 text-sm text-red-700">
                 {alerts.slice(0, 3).map((alert, index) => (
                   <p key={index} className="ml-1">
-                    • {alert.ProductName} ({alert.SKU}) - Current: {alert.CurrentStock}, Reorder Point: {alert.ReorderPoint}
+                    • {alert.ProductName} ({alert.SKU}) — Current: {alert.CurrentStock}, Reorder Point: {alert.ReorderPoint}
                   </p>
                 ))}
                 {alerts.length > 3 && <p className="ml-1">...and {alerts.length - 3} more</p>}
               </div>
             </div>
           </div>
-<<<<<<< HEAD
           <div className="mt-3">
             <button
               onClick={handleBulkAutoReplenish}
@@ -216,8 +193,6 @@ const ReorderLevelsPage = () => {
               Auto-Replenish All
             </button>
           </div>
-=======
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
         </div>
       )}
 
@@ -225,55 +200,41 @@ const ReorderLevelsPage = () => {
       <div className="bg-white rounded-lg shadow mb-4">
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex">
-            <button
-              onClick={() => setActiveTab("levels")}
-              className={`py-4 px-6 text-sm font-medium ${
-                activeTab === "levels"
-                  ? "border-b-2 border-orange-500 text-orange-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Reorder Levels
-            </button>
-            <button
-              onClick={() => setActiveTab("alerts")}
-              className={`py-4 px-6 text-sm font-medium ${
-                activeTab === "alerts"
-                  ? "border-b-2 border-orange-500 text-orange-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Alerts ({alerts.length})
-            </button>
-            <button
-<<<<<<< HEAD
-              onClick={() => { setActiveTab("history"); fetchHistory(); }}
-=======
-              onClick={() => setActiveTab("history")}
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
-              className={`py-4 px-6 text-sm font-medium ${
-                activeTab === "history"
-                  ? "border-b-2 border-orange-500 text-orange-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              History
-            </button>
+            {[
+              { key: "levels",  label: "Reorder Levels" },
+              { key: "alerts",  label: `Alerts (${alerts.length})` },
+              { key: "history", label: "History" },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  if (tab.key === "history") fetchHistory();
+                }}
+                className={`py-4 px-6 text-sm font-medium ${
+                  activeTab === tab.key
+                    ? "border-b-2 border-orange-500 text-orange-600"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </nav>
         </div>
       </div>
 
-      {/* Actions */}
+      {/* Actions bar */}
       <div className="bg-white rounded-lg shadow p-4 mb-4 flex justify-between items-center">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">
-            {activeTab === "levels" && "Reorder Levels"}
-            {activeTab === "alerts" && "Reorder Alerts"}
+            {activeTab === "levels"  && "Reorder Levels"}
+            {activeTab === "alerts"  && "Reorder Alerts"}
             {activeTab === "history" && "Reorder History"}
           </h2>
           <p className="text-sm text-gray-500">
-            {activeTab === "levels" && "Manage min-max stock levels and reorder points"}
-            {activeTab === "alerts" && "Products that need immediate attention"}
+            {activeTab === "levels"  && "Manage min-max stock levels and reorder points"}
+            {activeTab === "alerts"  && "Products that need immediate attention"}
             {activeTab === "history" && "Track reorder actions and replenishments"}
           </p>
         </div>
@@ -386,7 +347,6 @@ const ReorderLevelsPage = () => {
       {/* History Table */}
       {activeTab === "history" && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
-<<<<<<< HEAD
           {historyLoading ? (
             <div className="p-8 text-center text-gray-500">Loading history...</div>
           ) : history.length === 0 ? (
@@ -427,17 +387,17 @@ const ReorderLevelsPage = () => {
               </table>
             </div>
           )}
-=======
-          <div className="p-8 text-center text-gray-500">History feature coming soon</div>
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
         </div>
       )}
 
-      {/* Modal */}
+      {/* Add / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4">
-            <TitleBar title={selectedItem ? "Edit Reorder Level" : "Add Reorder Level"} onClose={() => { setShowModal(false); resetForm(); }} />
+            <TitleBar
+              title={selectedItem ? "Edit Reorder Level" : "Add Reorder Level"}
+              onClose={() => { setShowModal(false); resetForm(); }}
+            />
             <div className="p-6">
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-2 gap-4 mb-4">
@@ -512,7 +472,7 @@ const ReorderLevelsPage = () => {
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                    rows="3"
+                    rows={3}
                   />
                 </div>
                 <div className="flex justify-end gap-3 mt-6">
@@ -539,8 +499,4 @@ const ReorderLevelsPage = () => {
   );
 };
 
-<<<<<<< HEAD
 export default ReorderLevelsPage;
-=======
-export default ReorderLevelsPage;
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337

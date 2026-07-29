@@ -52,17 +52,6 @@ const reportRoutes = require('./routes/System/reportRoutes');
 const stockValuationRoutes = require('./routes/Inventory/stockValuation/stockValuation.routes');
 const reorderLevelsRoutes = require('./routes/Inventory/reorderLevels/reorderLevels.routes');
 const twoFactorRoutes = require('./routes/Auth/twoFactorRoutes');
-<<<<<<< HEAD
-=======
-const financialYearRoutes = require('./routes/Inventory/financialYear/financialYear.routes');
-const documentRoutes = require('./routes/Inventory/documents/document.routes');
-const rfqRoutes = require('./routes/Inventory/rfq/rfq.routes');
-const priceListRoutes = require('./routes/Inventory/priceList/priceList.routes');
-const hsnCodeRoutes = require('./routes/Inventory/hsnCode/hsnCode.routes');
-const invoiceMatchRoutes = require('./routes/Inventory/invoiceMatch/invoiceMatch.routes');
-const currencyRoutes = require('./routes/Inventory/currency/currency.routes');
-const accountingRoutes = require('./routes/Inventory/accounting/accounting.routes');
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 const { getDashboardStats } = require('./controllers/InventoryApis/dashboard');
 const apiMonitoringRoutes = require('./routes/System/apiMonitoringRoutes');
 const companySettingsRoutes = require('./routes/System/companySettingsRoutes');
@@ -379,23 +368,10 @@ app.use('/api/serial-numbers', inventoryRoutes.BatchSerialRoutes);
 app.use('/api/erp', inventoryRoutes.erpModulesRoutes);
 app.use('/api/stock-valuation', stockValuationRoutes);
 app.use('/api/reorder-levels', reorderLevelsRoutes);
-<<<<<<< HEAD
 app.use('/api/financial-years', inventoryRoutes.FinancialYearsRoutes);
 app.use('/api/documents', inventoryRoutes.DocumentsRoutes);
 app.use('/api/email', inventoryRoutes.EmailRoutes);
-=======
 
-// New Module Routes
-app.use('/api/financial-years', financialYearRoutes);
-app.use('/api/documents', documentRoutes);
-app.use('/api/rfqs', rfqRoutes);
-app.use('/api/price-lists', priceListRoutes);
-app.use('/api/hsn-codes', hsnCodeRoutes);
-app.use('/api/invoice-matching', invoiceMatchRoutes);
-app.use('/api/currencies', currencyRoutes);
-app.use('/api/accounting', accountingRoutes);
-
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 const dashboardRouter = require('express').Router();
 dashboardRouter.get('/', getDashboardStats);
 app.use('/api/dashboard', dashboardRouter);

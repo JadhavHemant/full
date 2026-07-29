@@ -10,13 +10,10 @@ const StockValuationPage = () => {
   const [costingMethods, setCostingMethods] = useState([]);
   const [selectedMethod, setSelectedMethod] = useState("WeightedAverage");
   const [report, setReport] = useState([]);
-<<<<<<< HEAD
   const [layers, setLayers] = useState([]);
   const [showLayers, setShowLayers] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
-=======
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
 
   const fetchValuations = useCallback(async () => {
     setLoading(true);
@@ -48,7 +45,6 @@ const StockValuationPage = () => {
     }
   };
 
-<<<<<<< HEAD
   const fetchLayers = async (productId) => {
     try {
       const response = await axiosInstance.get(`/stock-valuation/layers/${productId}`);
@@ -59,8 +55,6 @@ const StockValuationPage = () => {
     }
   };
 
-=======
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
   useEffect(() => {
     fetchValuations();
     fetchCostingMethods();
@@ -82,7 +76,6 @@ const StockValuationPage = () => {
     }
   };
 
-<<<<<<< HEAD
   const handleExport = async (format = "csv") => {
     setExportLoading(true);
     try {
@@ -104,8 +97,6 @@ const StockValuationPage = () => {
     }
   };
 
-=======
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
   const totalValue = valuations.reduce((sum, item) => sum + (parseFloat(item.TotalValue) || 0), 0);
   const totalStock = valuations.reduce((sum, item) => sum + (parseInt(item.TotalStock) || 0), 0);
 
@@ -136,7 +127,6 @@ const StockValuationPage = () => {
           <h2 className="text-lg font-semibold text-gray-900">Stock Valuation</h2>
           <p className="text-sm text-gray-500">Manage stock costing and valuation</p>
         </div>
-<<<<<<< HEAD
         <div className="flex gap-2">
           <button
             onClick={() => setShowCalculateModal(true)}
@@ -152,14 +142,6 @@ const StockValuationPage = () => {
             {exportLoading ? "Exporting..." : "Export CSV"}
           </button>
         </div>
-=======
-        <button
-          onClick={() => setShowCalculateModal(true)}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition"
-        >
-          Calculate Valuation
-        </button>
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
       </div>
 
       {/* Valuation Table */}
@@ -178,16 +160,11 @@ const StockValuationPage = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Warehouse</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Stock</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Avg Cost</th>
-<<<<<<< HEAD
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">FIFO Cost</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">LIFO Cost</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Value</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Layers</th>
-=======
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Value</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -198,7 +175,6 @@ const StockValuationPage = () => {
                     <td className="px-4 py-3 text-sm text-gray-600">{item.WarehouseName}</td>
                     <td className="px-4 py-3 text-sm text-right text-gray-900">{item.TotalStock}</td>
                     <td className="px-4 py-3 text-sm text-right text-gray-900">₹{parseFloat(item.AverageCost || 0).toFixed(2)}</td>
-<<<<<<< HEAD
                     <td className="px-4 py-3 text-sm text-right text-gray-900">₹{parseFloat(item.FIFOCost || 0).toFixed(2)}</td>
                     <td className="px-4 py-3 text-sm text-right text-gray-900">₹{parseFloat(item.LIFOCost || 0).toFixed(2)}</td>
                     <td className="px-4 py-3 text-sm text-right font-medium text-green-600">₹{parseFloat(item.TotalValue || 0).toLocaleString()}</td>
@@ -211,10 +187,6 @@ const StockValuationPage = () => {
                         View Layers
                       </button>
                     </td>
-=======
-                    <td className="px-4 py-3 text-sm text-right font-medium text-green-600">₹{parseFloat(item.TotalValue || 0).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{item.CostingMethod}</td>
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
                   </tr>
                 ))}
               </tbody>
@@ -256,7 +228,6 @@ const StockValuationPage = () => {
         )}
       </div>
 
-<<<<<<< HEAD
       {/* FIFO/LIFO Layers Modal */}
       {showLayers && selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -306,8 +277,6 @@ const StockValuationPage = () => {
         </div>
       )}
 
-=======
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
       {/* Calculate Modal */}
       {showCalculateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -355,8 +324,4 @@ const StockValuationPage = () => {
   );
 };
 
-<<<<<<< HEAD
 export default StockValuationPage;
-=======
-export default StockValuationPage;
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337

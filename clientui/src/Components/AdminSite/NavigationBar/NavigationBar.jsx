@@ -218,11 +218,7 @@ export default function NavigationBar() {
           {isSidebarExpanded ? (
             <>
               <div>
-<<<<<<< HEAD
                 <h1 className="text-xl font-bold text-white whitespace-nowrap">Shivani.ERP</h1>
-=======
-                <h1 className="text-xl font-bold text-white whitespace-nowrap">Test</h1>
->>>>>>> 874ff444e83b8c6282f05ae369cd8d0dbff37337
                 <p className="text-[11px] text-gray-400">All in one</p>
               </div>
               <button
