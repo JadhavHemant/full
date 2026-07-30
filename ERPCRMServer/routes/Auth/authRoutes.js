@@ -23,6 +23,7 @@
 const express      = require('express');
 const rateLimit    = require('express-rate-limit');
 const { verifyAccessToken } = require('../../middlewares/authMiddleware');
+const { checkPermission, checkAssignPermission } = require('../../middlewares/rbac');
 const {
   register,
   login,
@@ -95,17 +96,17 @@ router.post('/resend-verification',   emailLimiter, validateResendVerification, 
 
 router.post('/logout',         verifyAccessToken, logout);
 router.post('/logout-all',     verifyAccessToken, logoutAll);
-router.post('/change-password',verifyAccessToken, validateChangePassword, changePassword);
+router.post('/change-password',verifyAccessToken, changePassword);
 router.get( '/me',             verifyAccessToken, getMe);
-router.post('/unlock/:userId', verifyAccessToken, validateUnlockAccount, unlockAccount);
+router.post('/unlock/:userId', verifyAccessToken, checkAssignPermission, validateUnlockAccount, unlockAccount);
 
 // ── Login history / sessions ──────────────────────────────────────────────────
 
-router.get('/login-history',              verifyAccessToken, getLoginHistory);
-router.get('/login-history/failed',       verifyAccessToken, getFailedLogins);
-router.get('/login-history/suspicious',   verifyAccessToken, getSuspiciousLogins);
-router.get('/login-history/stats',        verifyAccessToken, getLoginStats);
-router.get('/active-sessions',            verifyAccessToken, getActiveSessions);
-router.delete('/sessions/:tokenId',       verifyAccessToken, revokeSession);
+router.get('/login-history',              verifyAccessToken, checkPermission('users', 'view'), getLoginHistory);
+router.get('/login-history/failed',       verifyAccessToken, checkPermission('users', 'view'), getFailedLogins);
+router.get('/login-history/suspicious',   verifyAccessToken, checkPermission('users', 'view'), getSuspiciousLogins);
+router.get('/login-history/stats',        verifyAccessToken, checkPermission('users', 'view'), getLoginStats);
+router.get('/active-sessions',            verifyAccessToken, checkPermission('users', 'view'), getActiveSessions);
+router.delete('/sessions/:tokenId',       verifyAccessToken, checkPermission('users', 'delete'), revokeSession);
 
 module.exports = router;

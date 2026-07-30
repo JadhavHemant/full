@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const { verifyAccessToken } = require("../../middlewares/authMiddleware");
+const { checkPermission } = require("../../middlewares/rbac");
 const {
     createTaskType,
     updateTaskType,
@@ -8,10 +10,13 @@ const {
     getTaskTypeById,
     getAllTaskTypes
 } = require("../../controllers/CrmApi/taskTypesController");
-router.post("/", createTaskType);
-router.put("/:id", updateTaskType);
-router.patch("/soft-delete/:id", softDeleteTaskType);
-router.delete("/:id", hardDeleteTaskType);
-router.get("/:id", getTaskTypeById);
-router.get("/", getAllTaskTypes);
+
+router.use(verifyAccessToken);
+
+router.post("/", checkPermission("settings", "create"), createTaskType);
+router.put("/:id", checkPermission("settings", "edit"), updateTaskType);
+router.patch("/soft-delete/:id", checkPermission("settings", "delete"), softDeleteTaskType);
+router.delete("/:id", checkPermission("settings", "delete"), hardDeleteTaskType);
+router.get("/:id", checkPermission("settings", "view"), getTaskTypeById);
+router.get("/", checkPermission("settings", "view"), getAllTaskTypes);
 module.exports = router;

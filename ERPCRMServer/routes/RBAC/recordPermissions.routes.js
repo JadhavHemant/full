@@ -17,10 +17,10 @@ router.use(verifyAccessToken);
 router.get("/", checkPermission('recordPermissions', 'view'), getAllRecordPermissions);
 
 // Get record permissions by role and entity
-router.get("/:roleId/:entityName", getRecordPermissionsByRoleAndEntity);
+router.get("/:roleId/:entityName", checkPermission('recordPermissions', 'view'), getRecordPermissionsByRoleAndEntity);
 
 // Check record access
-router.post("/check", checkRecordAccess);
+router.post("/check", checkPermission('recordPermissions', 'view'), checkRecordAccess);
 
 // Create record permission
 router.post("/", checkPermission('recordPermissions', 'create'), createRecordPermission);

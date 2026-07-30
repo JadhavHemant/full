@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
 import toast, { Toaster } from "react-hot-toast";
 import {
   ArrowPathIcon,
@@ -12,7 +11,6 @@ import {
   TrashIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { getUserFromToken } from "../../../Components/AdminSite/utils/tokenUtils";
 import { getSessionUser, SUPER_ADMIN_ROLE_ID } from "../../../utils/sessionUser";
 import { usePortalAccess } from "../../../utils/portalAccess";
 import { loadUserOptions } from "../services/optionsService";
@@ -29,20 +27,8 @@ const actionToneClasses = {
 };
 
 const isCurrentUserSuperAdmin = () => {
-  try {
-    const cookieUser = Cookies.get("user");
-    if (cookieUser) {
-      const parsedUser = JSON.parse(cookieUser);
-      if (Number(parsedUser?.roleId ?? parsedUser?.RoleId) === SUPER_ADMIN_ROLE_ID) {
-        return true;
-      }
-    }
-  } catch {
-    // Ignore malformed cookie and fall back to token.
-  }
-
-  const tokenUser = getUserFromToken();
-  return Number(tokenUser?.roleId ?? tokenUser?.RoleId) === SUPER_ADMIN_ROLE_ID;
+  const sessionUser = getSessionUser();
+  return Number(sessionUser?.roleId ?? sessionUser?.RoleId) === SUPER_ADMIN_ROLE_ID;
 };
 
 const isEmpty = (value) => value === "" || value === null || value === undefined;

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { useMotionValue, useSpring, useTransform } from "framer-motion";
 import {
   ArrowRight,
   Check,
@@ -77,9 +77,8 @@ const LoginPage = () => {
 
   useEffect(() => {
     const token = Cookies.get("accessToken");
-    const user = Cookies.get("user");
 
-    if (token && user) {
+    if (token) {
       navigate(getDefaultPortalPath(), { replace: true });
     }
   }, [navigate]);

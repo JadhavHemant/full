@@ -1,5 +1,6 @@
 const express = require("express");
 const { verifyAccessToken } = require("../../middlewares/authMiddleware");
+const { checkPermission } = require("../../middlewares/rbac");
 const { appPool } = require("../../config/db");
 const { resolveCompanyScope } = require("../../utils/companyScope");
 
@@ -49,6 +50,6 @@ const router = express.Router();
 
 router.use(verifyAccessToken);
 
-router.get("/", listAssignments);
+router.get("/", checkPermission("assignments", "view"), listAssignments);
 
 module.exports = router;

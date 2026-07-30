@@ -4,42 +4,46 @@ import * as API from "../../Endpoint/Endpoint";
 import toast from "react-hot-toast";
 
 const MODULES = [
-  { key: "dashboard", label: "Dashboard" },
   { key: "users", label: "Users Management" },
   { key: "roles", label: "Roles & Permissions" },
-  { key: "companies", label: "Companies" },
+  { key: "company", label: "Company" },
   { key: "products", label: "Products" },
-  { key: "categories", label: "Product Categories" },
+  { key: "productCategory", label: "Product Categories" },
   { key: "units", label: "Units" },
   { key: "warehouses", label: "Warehouses" },
-  { key: "stock", label: "Product Stock" },
+  { key: "productStock", label: "Product Stock" },
   { key: "stockMovements", label: "Stock Movements" },
-  { key: "suppliers", label: "Suppliers" },
   { key: "purchaseOrders", label: "Purchase Orders" },
-  { key: "purchaseRequisitions", label: "Purchase Requisitions" },
-  { key: "purchaseReturns", label: "Purchase Returns" },
+  { key: "purchaseOrderItems", label: "Purchase Order Items" },
   { key: "salesOrders", label: "Sales Orders" },
-  { key: "salesQuotations", label: "Sales Quotations" },
-  { key: "deliveryChallans", label: "Delivery Challans" },
-  { key: "salesReturns", label: "Sales Returns" },
+  { key: "suppliers", label: "Suppliers" },
   { key: "customers", label: "Customers" },
+  { key: "taxes", label: "Taxes" },
+  { key: "productTaxMap", label: "Product Tax Mapping" },
+  { key: "profitLossReports", label: "Profit & Loss Reports" },
   { key: "brands", label: "Brands" },
-  { key: "bom", label: "BOM" },
-  { key: "productionOrders", label: "Production Orders" },
-  { key: "expenses", label: "Expenses" },
-  { key: "approvals", label: "Approvals" },
-  { key: "dataImportExport", label: "Data Import/Export" },
-  { key: "racks", label: "Warehouse Racks" },
-  { key: "bins", label: "Warehouse Bins" },
+  { key: "stockTransfers", label: "Stock Transfers" },
+  { key: "stockAdjustments", label: "Stock Adjustments" },
+  { key: "grn", label: "GRN" },
+  { key: "batches", label: "Batches" },
+  { key: "serialNumbers", label: "Serial Numbers" },
   { key: "accounts", label: "CRM Accounts" },
   { key: "contacts", label: "CRM Contacts" },
   { key: "leads", label: "CRM Leads" },
   { key: "opportunities", label: "CRM Opportunities" },
+  { key: "opportunityProducts", label: "CRM Opportunity Products" },
+  { key: "activities", label: "CRM Activities" },
+  { key: "quotes", label: "CRM Quotes" },
+  { key: "invoices", label: "CRM Invoices" },
+  { key: "payments", label: "CRM Payments" },
+  { key: "retentions", label: "CRM Retentions" },
   { key: "presales", label: "CRM PreSales" },
   { key: "cases", label: "CRM Cases" },
-  { key: "reports", label: "Reports" },
-  { key: "settings", label: "Settings" },
-  { key: "chat", label: "Chat" },
+  { key: "settings", label: "CRM Settings" },
+  { key: "assignments", label: "CRM Assignments" },
+  { key: "groups", label: "CRM Groups" },
+  { key: "groupMembers", label: "CRM Group Members" },
+  { key: "auditLogs", label: "Audit Logs" },
 ];
 
 const ACTIONS = ["view", "create", "edit", "delete", "export", "import", "approve", "reject", "assign"];
@@ -68,7 +72,7 @@ const RoleAccess = () => {
     MODULES.forEach((mod) => {
       defaults[mod.key] = {};
       ACTIONS.forEach((action) => {
-        defaults[mod.key][action] = mod.key === "dashboard" || mod.key === "chat";
+        defaults[mod.key][action] = false;
       });
     });
     return defaults;

@@ -42,6 +42,7 @@
 
 const express = require('express');
 const { verifyAccessToken } = require('../../middlewares/authMiddleware');
+const { checkPermission, checkAssignPermission } = require('../../middlewares/rbac');
 
 const {
   getModules, getModuleById, createModule, updateModule, deleteModule,
@@ -68,39 +69,39 @@ const router = express.Router();
 router.use(verifyAccessToken);
 
 // ── Modules ───────────────────────────────────────────────────────────────────
-router.get   ('/modules',                    getModules);
-router.get   ('/modules/:moduleId',          validateModuleId,     getModuleById);
-router.post  ('/modules',                    validateCreateModule,  createModule);
-router.put   ('/modules/:moduleId',          validateUpdateModule,  updateModule);
-router.delete('/modules/:moduleId',          validateModuleId,     deleteModule);
+router.get   ('/modules',                    checkPermission('roles', 'view'), validateUserRoleQuery, getModules);
+router.get   ('/modules/:moduleId',          checkPermission('roles', 'view'), validateModuleId,     getModuleById);
+router.post  ('/modules',                    checkAssignPermission, validateCreateModule,  createModule);
+router.put   ('/modules/:moduleId',          checkAssignPermission, validateUpdateModule,  updateModule);
+router.delete('/modules/:moduleId',          checkAssignPermission, validateModuleId,     deleteModule);
 
 // ── Permissions ───────────────────────────────────────────────────────────────
-router.get   ('/permissions',                getAllPermissions);
-router.post  ('/permissions',                validateCreatePermission, createPermission);
-router.delete('/permissions/:permissionId',  validatePermissionId, deletePermission);
+router.get   ('/permissions',                checkPermission('roles', 'view'), getAllPermissions);
+router.post  ('/permissions',                checkAssignPermission, validateCreatePermission, createPermission);
+router.delete('/permissions/:permissionId',  checkAssignPermission, validatePermissionId, deletePermission);
 
 // ── Menus ─────────────────────────────────────────────────────────────────────
-router.get   ('/menus',                      getMenus);
+router.get   ('/menus',                      checkPermission('roles', 'view'), getMenus);
 router.get   ('/menus/my-menus',             getUserMenus);
-router.post  ('/menus',                      validateCreateMenu,   createMenu);
-router.put   ('/menus/:menuId',              validateUpdateMenu,   updateMenu);
-router.delete('/menus/:menuId',              validateMenuId,       deleteMenu);
+router.post  ('/menus',                      checkAssignPermission, validateCreateMenu,   createMenu);
+router.put   ('/menus/:menuId',              checkAssignPermission, validateUpdateMenu,   updateMenu);
+router.delete('/menus/:menuId',              checkAssignPermission, validateMenuId,       deleteMenu);
 
 // ── User Roles ────────────────────────────────────────────────────────────────
-router.get   ('/user-roles',                 validateUserRoleQuery, getUserRoles);
-router.post  ('/user-roles',                 validateAssignRole,   assignRole);
-router.delete('/user-roles/:userRoleId',     validateRevokeRole,   revokeRole);
+router.get   ('/user-roles',                 checkPermission('users', 'view'), validateUserRoleQuery, getUserRoles);
+router.post  ('/user-roles',                 checkAssignPermission, validateAssignRole,   assignRole);
+router.delete('/user-roles/:userRoleId',     checkAssignPermission, validateRevokeRole,   revokeRole);
 
 // ── Role Permissions ──────────────────────────────────────────────────────────
-router.get   ('/roles/:roleId/permissions',                      validateRolePermissionsRoleId, getRolePermissions);
-router.post  ('/roles/:roleId/permissions',                      validateAssignPermissionToRole, assignPermissionsToRole);
-router.delete('/roles/:roleId/permissions/:permissionId',        validateRevokePermissionFromRole, revokePermissionFromRole);
+router.get   ('/roles/:roleId/permissions',                checkPermission('roles', 'view'), validateRolePermissionsRoleId, getRolePermissions);
+router.post  ('/roles/:roleId/permissions',                checkAssignPermission, validateAssignPermissionToRole, assignPermissionsToRole);
+router.delete('/roles/:roleId/permissions/:permissionId',  checkAssignPermission, validateRevokePermissionFromRole, revokePermissionFromRole);
 
 // ── Menu Permissions ──────────────────────────────────────────────────────────
-router.get   ('/roles/:roleId/menu-permissions',  validateMenuPermissionsRoleId, getMenuPermissions);
-router.post  ('/roles/:roleId/menu-permissions',  validateSetMenuPermissions,    setMenuPermissions);
+router.get   ('/roles/:roleId/menu-permissions',  checkPermission('roles', 'view'), validateMenuPermissionsRoleId, getMenuPermissions);
+router.post  ('/roles/:roleId/menu-permissions',  checkAssignPermission, validateSetMenuPermissions,    setMenuPermissions);
 
 // ── User Permission Summary ───────────────────────────────────────────────────
-router.get   ('/users/:userId/permissions',  getUserPermissionsSummary);
+router.get   ('/users/:userId/permissions',  checkPermission('users', 'view'), getUserPermissionsSummary);
 
 module.exports = router;

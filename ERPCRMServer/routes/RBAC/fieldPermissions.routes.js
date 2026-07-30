@@ -18,10 +18,10 @@ router.use(verifyAccessToken);
 router.get("/", checkPermission('fieldPermissions', 'view'), getAllFieldPermissions);
 
 // Get field permissions by role and entity
-router.get("/:roleId/:entityName", getFieldPermissionsByRoleAndEntity);
+router.get("/:roleId/:entityName", checkPermission('fieldPermissions', 'view'), getFieldPermissionsByRoleAndEntity);
 
 // Get field permission matrix for a role
-router.get("/matrix/:roleId", getFieldPermissionMatrix);
+router.get("/matrix/:roleId", checkPermission('fieldPermissions', 'view'), getFieldPermissionMatrix);
 
 // Create field permission
 router.post("/", checkPermission('fieldPermissions', 'create'), createFieldPermission);

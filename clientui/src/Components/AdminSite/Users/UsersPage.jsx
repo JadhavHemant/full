@@ -7,6 +7,7 @@ import { resolveAssetUrl } from "../../../utils/assetUrl";
 import ClassicCorporateOrgChart from "./ClassicCorporateOrgChart";
 import { compressImageFile, formatFileSize } from "../../../utils/imageCompression";
 import Cookies from "js-cookie";
+import { getSessionUser, isSuperAdminUser } from "../../../utils/sessionUser";
 import TitleBar from "../../TitleBar";
 
 const initialForm = {
@@ -224,21 +225,11 @@ const UsersPage = () => {
   const [selectAll, setSelectAll] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
 
-  // Get logged-in user info from cookies
   useEffect(() => {
-    try {
-      const userCookie = Cookies.get("user");
-      if (userCookie) {
-        const parsed = JSON.parse(userCookie);
-        setLoggedInUser(parsed);
-      }
-    } catch (e) {
-      console.error("Error parsing user cookie:", e);
-    }
+    setLoggedInUser(getSessionUser());
   }, []);
 
-  // Determine if the logged-in user is super admin (roleId=1)
-  const isSuperAdmin = loggedInUser && Number(loggedInUser.roleId) === 1;
+  const isSuperAdmin = isSuperAdminUser(loggedInUser);
   // Get the logged-in user's company ID
   const loggedInCompanyId = loggedInUser?.companyId ? String(loggedInUser.companyId) : "";
 
