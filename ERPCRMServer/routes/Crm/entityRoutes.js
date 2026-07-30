@@ -15,15 +15,15 @@ const presalesRoutes = require("./presalesRoutes");
 const retentionRoutes = require("./retentionRoutes");
 
 module.exports = {
-  accountRoutes: createCrudRouter(accountController),
-  contactRoutes: createCrudRouter(contactController),
-  leadRoutes: createCrudRouter(leadController),
+  accountRoutes: createCrudRouter(accountController, "accounts"),
+  contactRoutes: createCrudRouter(contactController, "contacts"),
+  leadRoutes: createCrudRouter(leadController, "leads"),
   opportunityRoutes,
-  opportunityProductRoutes: createCrudRouter(opportunityProductController),
+  opportunityProductRoutes: createCrudRouter(opportunityProductController, "opportunityProducts"),
   activityRoutes,
   quoteRoutes,
-  invoiceRoutes: createCrudRouter(invoiceController),
-  paymentRoutes: createCrudRouter(paymentController),
+  invoiceRoutes: createCrudRouter(invoiceController, "invoices"),
+  paymentRoutes: createCrudRouter(paymentController, "payments"),
   retentionRoutes,
   presalesRoutes,
   caseRoutes,

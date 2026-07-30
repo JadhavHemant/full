@@ -26,7 +26,7 @@ const PaymentsPage = () => (
         { value: "Pending", label: "Pending" },
         { value: "Received", label: "Received" },
         { value: "Failed", label: "Failed" },
-      ]},
+      ], defaultValue: "Received" },
       { name: "Notes", label: "Notes", type: "textarea" },
       { name: "IsActive", label: "Active", type: "checkbox", defaultValue: true },
       { name: "IsDeleted", label: "Deleted", type: "checkbox", defaultValue: false },

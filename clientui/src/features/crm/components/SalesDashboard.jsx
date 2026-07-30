@@ -204,13 +204,7 @@ const phaseBlueprint = [
   },
 ];
 
-const masterDataLinks = [
-  { label: "Task Types", to: "/Admin/CRM/TaskTypes" },
-  { label: "Sales Stages", to: "/Admin/CRM/SalesStages" },
-  { label: "Industries", to: "/Admin/CRM/Industries" },
-  { label: "Follow-up Types", to: "/Admin/CRM/FollowupTypes" },
-  { label: "Lead Sources", to: "/Admin/CRM/LeadSources" },
-];
+
 
 const ErrorPanel = ({ title, message, details }) => (
   <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-5 text-sm text-rose-800 shadow-sm">
@@ -287,7 +281,6 @@ const SectionCard = ({ eyebrow, title, action, children }) => (
 );
 
 function AdminCrmDashboard() {
-  const sessionUser = useMemo(() => getSessionUser() || {}, []);
   const [loading, setLoading] = useState(true);
   const [errorSummary, setErrorSummary] = useState(null);
   const [snapshot, setSnapshot] = useState({
@@ -358,6 +351,20 @@ function AdminCrmDashboard() {
         presales,
       ] = values;
 
+      const totalsByModuleKey = {
+        accounts: accounts.total,
+        contacts: contacts.total,
+        leads: leads.total,
+        opportunities: opportunities.total,
+        activities: activities.total,
+        cases: cases.total,
+        quotes: quotes.total,
+        invoices: invoices.total,
+        payments: payments.total,
+        retentions: retentions.total,
+        presales: presales.total,
+      };
+
       const pipelineValue = opportunities.rows.reduce(
         (sum, row) => sum + Number(row.BudgetAmount || 0),
         0
@@ -366,25 +373,14 @@ function AdminCrmDashboard() {
       const qualifiedLeadRate = leads.total ? (qualifiedLeads.total / leads.total) * 100 : 0;
 
       const phaseCoverage = moduleCatalog.reduce((acc, module) => {
-        const total = values[moduleCatalog.findIndex((item) => item.key === module.key)]?.total || 0;
-        acc[module.key] = total;
+        acc[module.key] = totalsByModuleKey[module.key] || 0;
         return acc;
       }, {});
 
       setSnapshot({
         totals: {
-          accounts: accounts.total,
-          contacts: contacts.total,
-          leads: leads.total,
+          ...totalsByModuleKey,
           qualifiedLeads: qualifiedLeads.total,
-          opportunities: opportunities.total,
-          activities: activities.total,
-          cases: cases.total,
-          quotes: quotes.total,
-          invoices: invoices.total,
-          payments: payments.total,
-          retentions: retentions.total,
-          presales: presales.total,
         },
         recentLeads: leads.rows,
         recentOpportunities: opportunities.rows,
@@ -476,7 +472,8 @@ function AdminCrmDashboard() {
 
         {errorSummary ? <div className="mt-6"><ErrorPanel {...errorSummary} /></div> : null}
       </section> */}
-      
+
+      {errorSummary ? <div className="mt-6"><ErrorPanel {...errorSummary} /></div> : null}
 
       <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => (

@@ -8,33 +8,34 @@ const nonEmpty = (value) => {
   return trimmed ? trimmed : null;
 };
 
-const generateQuoteNumber = async ({ client, companyId }) => {
+const generateDocumentNumber = async ({ client, companyId, tableName, columnName, prefix }) => {
   const now = new Date();
-  const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
-  
+  const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+
   const existing = await client.query(
     `
-    SELECT "QuoteNumber"
-    FROM "Quotes"
+    SELECT "${columnName}"
+    FROM "${tableName}"
     WHERE "CompanyId" = $1
-      AND "QuoteNumber" LIKE $2
-    ORDER BY "QuoteNumber" DESC
+      AND "${columnName}" LIKE $2
+    ORDER BY "${columnName}" DESC
     LIMIT 1;
     `,
-    [companyId, `Q-${yearMonth}-%`]
+    [companyId, `${prefix}-${yearMonth}-%`]
   );
 
-  const lastNumber = existing.rows[0]?.QuoteNumber || null;
+  const lastNumber = existing.rows[0]?.[columnName] || null;
   let nextSeq = 1;
-  
+
   if (lastNumber) {
-    const parts = lastNumber.split('-');
+    const parts = String(lastNumber).split("-");
     if (parts.length === 3) {
-      nextSeq = parseInt(parts[2], 10) + 1;
+      const parsed = Number.parseInt(parts[2], 10);
+      nextSeq = Number.isNaN(parsed) ? 1 : parsed + 1;
     }
   }
 
-  return `Q-${yearMonth}-${String(nextSeq).padStart(5, '0')}`;
+  return `${prefix}-${yearMonth}-${String(nextSeq).padStart(5, "0")}`;
 };
 
 const convertQuoteToInvoice = async (req, res) => {
@@ -81,7 +82,13 @@ const convertQuoteToInvoice = async (req, res) => {
       return res.status(400).json({ message: "Only accepted quotes can be converted to invoices" });
     }
 
-    const invoiceNumber = await generateQuoteNumber({ client, companyId: scope.companyId });
+    const invoiceNumber = await generateDocumentNumber({
+      client,
+      companyId: scope.companyId,
+      tableName: "Invoices",
+      columnName: "InvoiceNumber",
+      prefix: "INV",
+    });
 
     const invoiceInsert = await client.query(
       `
@@ -154,43 +161,24 @@ const convertQuoteToInvoice = async (req, res) => {
   }
 };
 
-const recordPayment = async (req, res) => {
-  const client = await appPool.connect();
-  const invoiceId = toInt(req.params.id);
-  if (!invoiceId) {
-    return res.status(400).json({ message: "Invalid invoice id" });
+const recordPaymentForInvoice = async ({ req, res, client, invoiceId, scope }) => {
+  const invoiceResult = await client.query(
+    `
+    SELECT *
+    FROM "Invoices"
+    WHERE "Id" = $1
+      AND "CompanyId" = $2
+      AND COALESCE("IsDeleted", FALSE) = FALSE
+    LIMIT 1;
+    `,
+    [invoiceId, scope.companyId]
+  );
+
+  const invoice = invoiceResult.rows[0];
+  if (!invoice) {
+    await client.query("ROLLBACK");
+    return res.status(404).json({ message: "Invoice not found" });
   }
-
-  try {
-    await client.query("BEGIN");
-
-    const scope = resolveCompanyScope({
-      req,
-      requestedCompanyId: req.query.companyId,
-      allowAllForSuperAdmin: true,
-    });
-    if (!scope.ok) {
-      await client.query("ROLLBACK");
-      return res.status(scope.status).json({ message: scope.message });
-    }
-
-    const invoiceResult = await client.query(
-      `
-      SELECT *
-      FROM "Invoices"
-      WHERE "Id" = $1
-        AND "CompanyId" = $2
-        AND COALESCE("IsDeleted", FALSE) = FALSE
-      LIMIT 1;
-      `,
-      [invoiceId, scope.companyId]
-    );
-
-    const invoice = invoiceResult.rows[0];
-    if (!invoice) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ message: "Invoice not found" });
-    }
 
     const amount = parseFloat(req.body.amount);
     if (!amount || amount <= 0) {
@@ -205,7 +193,7 @@ const recordPayment = async (req, res) => {
         "ReferenceNumber", "Status", "Notes", "CreatedBy", "UpdatedBy",
         "IsActive", "IsDeleted", "Flag"
       )
-      VALUES ($1, $2, $3, $4, $5, $6, 'Completed', $7, $8, $8, TRUE, FALSE, FALSE)
+      VALUES ($1, $2, $3, $4, $5, $6, 'Received', $7, $8, $8, TRUE, FALSE, FALSE)
       RETURNING *;
       `,
       [
@@ -229,7 +217,7 @@ const recordPayment = async (req, res) => {
       WHERE "InvoiceId" = $1
         AND "CompanyId" = $2
         AND COALESCE("IsDeleted", FALSE) = FALSE
-        AND "Status" = 'Completed';
+        AND "Status" = 'Received';
       `,
       [invoiceId, scope.companyId]
     );
@@ -288,6 +276,29 @@ const recordPayment = async (req, res) => {
       message: "Payment recorded successfully",
       data: { payment, invoice: updatedInvoice.rows[0] },
     });
+};
+
+const recordPayment = async (req, res) => {
+  const client = await appPool.connect();
+  const invoiceId = toInt(req.params.id);
+  if (!invoiceId) {
+    return res.status(400).json({ message: "Invalid invoice id" });
+  }
+
+  try {
+    await client.query("BEGIN");
+
+    const scope = resolveCompanyScope({
+      req,
+      requestedCompanyId: req.query.companyId,
+      allowAllForSuperAdmin: true,
+    });
+    if (!scope.ok) {
+      await client.query("ROLLBACK");
+      return res.status(scope.status).json({ message: scope.message });
+    }
+
+    return await recordPaymentForInvoice({ req, res, client, invoiceId, scope });
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error recording payment:", error);
@@ -297,7 +308,57 @@ const recordPayment = async (req, res) => {
   }
 };
 
+const recordPaymentByQuoteId = async (req, res) => {
+  const client = await appPool.connect();
+  const quoteId = toInt(req.params.id);
+  if (!quoteId) {
+    return res.status(400).json({ message: "Invalid quote id" });
+  }
+
+  try {
+    await client.query("BEGIN");
+
+    const scope = resolveCompanyScope({
+      req,
+      requestedCompanyId: req.query.companyId,
+      allowAllForSuperAdmin: true,
+    });
+    if (!scope.ok) {
+      await client.query("ROLLBACK");
+      return res.status(scope.status).json({ message: scope.message });
+    }
+
+    const invoiceResult = await client.query(
+      `
+      SELECT *
+      FROM "Invoices"
+      WHERE "QuoteId" = $1
+        AND "CompanyId" = $2
+        AND COALESCE("IsDeleted", FALSE) = FALSE
+      ORDER BY "Id" DESC
+      LIMIT 1;
+      `,
+      [quoteId, scope.companyId]
+    );
+
+    const invoice = invoiceResult.rows[0];
+    if (!invoice) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "No invoice found for this quote" });
+    }
+
+    return await recordPaymentForInvoice({ req, res, client, invoiceId: invoice.Id, scope });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error recording quote payment:", error);
+    res.status(500).json({ message: "Failed to record payment" });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   convertQuoteToInvoice,
   recordPayment,
+  recordPaymentByQuoteId,
 };

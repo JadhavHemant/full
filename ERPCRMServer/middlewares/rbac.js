@@ -270,7 +270,7 @@ const canAssignPermissions = (assignerRoleId, targetRoleId, assignerCompanyId, t
 
 const checkAssignPermission = async (req, res, next) => {
   try {
-    const targetRoleId = Number(req.params.id);
+    const targetRoleId = Number(req.params.id || req.params.roleId);
     if (!targetRoleId) return res.status(400).json({ message: 'Invalid role ID' });
 
     const roleRow = await fetchRoleRow(targetRoleId);

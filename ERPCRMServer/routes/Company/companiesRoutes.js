@@ -15,6 +15,7 @@ const {
     exportCompanies
 } = require('../../controllers/CompanyApis/companyController');
 const { verifyAccessToken } = require('../../middlewares/authMiddleware');
+const { checkPermission } = require('../../middlewares/rbac');
 const { uploadCompanyImage, handleUploadError } = require('../../middlewares/upload');
 
 const router = express.Router();
@@ -31,6 +32,7 @@ const router = express.Router();
 router.post(
     '/create',
     verifyAccessToken,
+    checkPermission('company', 'create'),
     uploadCompanyImage.single('logo'),
     handleUploadError,
     createCompany
@@ -42,7 +44,7 @@ router.post(
  * @query   search, page, limit, isActive, state, city, country, sortBy, sortOrder
  * @access  Private
  */
-router.get('/list', verifyAccessToken, getCompanies);
+router.get('/list', verifyAccessToken, checkPermission('company', 'view'), getCompanies);
 
 /**
  * @route   GET /api/companies/active
@@ -56,7 +58,7 @@ router.get('/active', getActiveCompanies);
  * @desc    Get company statistics
  * @access  Private
  */
-router.get('/stats', verifyAccessToken, getCompanyStats);
+router.get('/stats', verifyAccessToken, checkPermission('company', 'view'), getCompanyStats);
 
 /**
  * @route   GET /api/companies/deleted
@@ -64,14 +66,14 @@ router.get('/stats', verifyAccessToken, getCompanyStats);
  * @query   page, limit
  * @access  Private
  */
-router.get('/deleted', verifyAccessToken, getDeletedCompanies);
+router.get('/deleted', verifyAccessToken, checkPermission('company', 'view'), getDeletedCompanies);
 
 /**
  * @route   GET /api/companies/export
  * @desc    Export companies to CSV
  * @access  Private
  */
-router.get('/export', verifyAccessToken, exportCompanies);
+router.get('/export', verifyAccessToken, checkPermission('company', 'export'), exportCompanies);
 
 /**
  * @route   DELETE /api/companies/bulk-delete
@@ -79,14 +81,14 @@ router.get('/export', verifyAccessToken, exportCompanies);
  * @body    { ids: [1, 2, 3] }
  * @access  Private
  */
-router.delete('/bulk-delete', verifyAccessToken, bulkDeleteCompanies);
+router.delete('/bulk-delete', verifyAccessToken, checkPermission('company', 'delete'), bulkDeleteCompanies);
 
 /**
  * @route   GET /api/companies/:id
  * @desc    Get a single company by ID
  * @access  Private
  */
-router.get('/:id', verifyAccessToken, getCompanyById);
+router.get('/:id', verifyAccessToken, checkPermission('company', 'view'), getCompanyById);
 
 /**
  * @route   PUT /api/companies/:id
@@ -96,6 +98,7 @@ router.get('/:id', verifyAccessToken, getCompanyById);
 router.put(
     '/:id',
     verifyAccessToken,
+    checkPermission('company', 'edit'),
     uploadCompanyImage.single('logo'),
     handleUploadError,
     updateCompany
@@ -106,27 +109,27 @@ router.put(
  * @desc    Soft delete a company
  * @access  Private
  */
-router.delete('/delete/:id', verifyAccessToken, softDeleteCompany);
+router.delete('/delete/:id', verifyAccessToken, checkPermission('company', 'delete'), softDeleteCompany);
 
 /**
  * @route   PATCH /api/companies/:id/restore
  * @desc    Restore a deleted company
  * @access  Private
  */
-router.patch('/:id/restore', verifyAccessToken, restoreCompany);
+router.patch('/:id/restore', verifyAccessToken, checkPermission('company', 'edit'), restoreCompany);
 
 /**
  * @route   PATCH /api/companies/:id/toggle-active
  * @desc    Toggle company active status
  * @access  Private
  */
-router.patch('/:id/toggle-active', verifyAccessToken, toggleActiveCompany);
+router.patch('/:id/toggle-active', verifyAccessToken, checkPermission('company', 'edit'), toggleActiveCompany);
 
 /**
  * @route   PATCH /api/companies/:id/toggle-flag
  * @desc    Toggle company flag status
  * @access  Private
  */
-router.patch('/:id/toggle-flag', verifyAccessToken, toggleFlagCompany);
+router.patch('/:id/toggle-flag', verifyAccessToken, checkPermission('company', 'edit'), toggleFlagCompany);
 
 module.exports = router;

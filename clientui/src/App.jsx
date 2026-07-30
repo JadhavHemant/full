@@ -9,6 +9,7 @@ import { Toaster } from 'react-hot-toast'
 // Import GlobalMessageListener for handling real-time chat messages
 import GlobalMessageListener from './Components/chat/GlobalMessageListener'
 import { Moon, Sun } from 'lucide-react'
+import { loadRoleConfig as loadSessionRoleConfig } from './utils/sessionUser'
 
 /**
  * Determine if dark theme should be active based on current hour
@@ -74,6 +75,12 @@ const applyTheme = (themeName) => {
  */
 function App() {
   const [theme, setTheme] = useState(getDefaultTheme)
+
+  useEffect(() => {
+    loadSessionRoleConfig().catch(() => {
+      // Non-blocking: UI falls back to default role IDs if config fetch fails.
+    })
+  }, [])
 
   // Apply theme on mount and whenever theme changes
   useEffect(() => {

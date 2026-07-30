@@ -21,6 +21,18 @@ export const createCrudService = (baseUrl) => ({
     const response = await axiosInstance.delete(`${baseUrl}/${id}`);
     return response.data;
   },
+  async runAction(id, { method = "post", path = "", payload = {}, params = {} } = {}) {
+    const normalizedMethod = String(method || "post").toLowerCase();
+    const normalizedPath = String(path || "").replace(/^\/+/, "");
+    const targetUrl = normalizedPath ? `${baseUrl}/${id}/${normalizedPath}` : `${baseUrl}/${id}`;
+    const response = await axiosInstance({
+      url: targetUrl,
+      method: normalizedMethod,
+      data: payload,
+      params,
+    });
+    return response.data;
+  },
   async listComments(id) {
     const response = await axiosInstance.get(`${baseUrl}/${id}/comments`);
     return response.data;

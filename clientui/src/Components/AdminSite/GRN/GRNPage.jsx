@@ -3,6 +3,12 @@ import axiosInstance from "../utils/axiosInstance";
 import * as API from "../../Endpoint/Endpoint";
 import toast from "react-hot-toast";
 import TitleBar from "../../TitleBar";
+import { getSessionUser } from "../../../utils/sessionUser";
+
+const getSessionCompanyId = () => {
+  const user = getSessionUser();
+  return user?.companyId || user?.CompanyId || "";
+};
 
 const GRNPage = () => {
   const [grns, setGrns] = useState([]);
@@ -20,20 +26,18 @@ const GRNPage = () => {
 
   const fetchGRNs = useCallback(async () => {
     setLoading(true);
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const companyId = user?.companyId || "";
+    const companyId = getSessionCompanyId();
     try {
       const res = await axiosInstance.get(API.GRN.GET_ALL({ page, limit: 10, search, companyId }));
       if (res.data.success) { setGrns(res.data.data); setTotalPages(res.data.pagination.totalPages); }
-    } catch (err) { toast.error("Failed to fetch GRNs"); }
+    } catch { toast.error("Failed to fetch GRNs"); }
     finally { setLoading(false); }
   }, [page, search]);
 
   useEffect(() => { fetchGRNs(); }, [fetchGRNs]);
 
   const openCreateModal = async () => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const companyId = user?.companyId || "";
+    const companyId = getSessionCompanyId();
     try {
       const [supRes, whRes, prodRes] = await Promise.all([
         axiosInstance.get(API.SUPPLIERS.GET_ACTIVE),
@@ -44,13 +48,12 @@ const GRNPage = () => {
       setWarehouses(whRes.data.data || []);
       setProducts(prodRes.data.data || []);
       setShowCreateModal(true);
-    } catch (err) { toast.error("Failed to load reference data"); }
+    } catch { toast.error("Failed to load reference data"); }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const companyId = user?.companyId || "";
+    const companyId = getSessionCompanyId();
     const payload = { ...form, CompanyId: companyId };
     if (!form.SupplierId || !form.WarehouseId) return toast.error("Supplier and Warehouse are required");
     if (!form.items.length || !form.items[0].ProductId) return toast.error("At least one item with product required");
@@ -67,7 +70,7 @@ const GRNPage = () => {
     try {
       const res = await axiosInstance.get(API.GRN.GET_BY_ID(id));
       if (res.data.success) { setDetailData(res.data.data); setShowDetailModal(id); }
-    } catch (err) { toast.error("Failed to fetch details"); }
+    } catch { toast.error("Failed to fetch details"); }
   };
 
   const addItem = () => {

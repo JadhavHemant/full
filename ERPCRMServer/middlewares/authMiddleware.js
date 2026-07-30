@@ -14,7 +14,6 @@
  *                           reject requests without one (public + hybrid routes).
  */
 
-const jwt = require('jsonwebtoken');
 const { verifyAccessToken: verifyWithRevocation } = require('../utils/tokenUtils');
 const { ROLE_IDS, isSuperAdmin } = require('../config/roleConfig');
 

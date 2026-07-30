@@ -14,6 +14,27 @@ const RetentionPage = () => (
     service={retentionService}
     primaryField="Type"
     searchPlaceholder="Search retention records"
+    rowActions={[
+      {
+        label: "Assign",
+        tone: "info",
+        endpoint: "assign",
+        method: "patch",
+        isVisible: (row) => Boolean(row.Id),
+        fields: [
+          {
+            name: "assignedTo",
+            label: "Assign to",
+            type: "select",
+            loadOptions: loadUserOptions,
+            required: true,
+          },
+        ],
+        getInitialValues: (row) => ({ assignedTo: row.AssignedTo || "" }),
+        getPayload: (_row, values) => ({ assignedTo: values.assignedTo }),
+        successMessage: "Retention reassigned",
+      },
+    ]}
     filters={[
       { name: "status", label: "Status", type: "select", options: [
         { value: "Planned", label: "Planned" },

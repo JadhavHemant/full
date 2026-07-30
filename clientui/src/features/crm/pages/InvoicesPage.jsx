@@ -13,6 +13,61 @@ const InvoicesPage = () => (
     service={invoiceService}
     primaryField="InvoiceNumber"
     searchPlaceholder="Search invoices"
+    rowActions={[
+      {
+        label: "Record Payment",
+        tone: "success",
+        endpoint: "",
+        method: "post",
+        isVisible: (row) => Boolean(row.Id) && row.PaymentStatus !== "Paid",
+        fields: [
+          {
+            name: "amount",
+            label: "Amount",
+            type: "number",
+            required: true,
+            min: 0.01,
+            step: "0.01",
+          },
+          {
+            name: "paymentDate",
+            label: "Payment date",
+            type: "date",
+          },
+          {
+            name: "paymentMethod",
+            label: "Payment method",
+            placeholder: "UPI / Bank / Card",
+          },
+          {
+            name: "referenceNumber",
+            label: "Reference number",
+            placeholder: "TXN12345",
+          },
+          {
+            name: "notes",
+            label: "Notes",
+            type: "textarea",
+            placeholder: "Collection details",
+          },
+        ],
+        getInitialValues: (row) => ({
+          amount: row.TotalAmount || "",
+          paymentDate: "",
+          paymentMethod: row.PaymentMethod || "",
+          referenceNumber: "",
+          notes: "",
+        }),
+        getPayload: (_row, values) => ({
+          amount: values.amount,
+          paymentDate: values.paymentDate || undefined,
+          paymentMethod: values.paymentMethod || undefined,
+          referenceNumber: values.referenceNumber || undefined,
+          notes: values.notes || undefined,
+        }),
+        successMessage: "Payment recorded",
+      },
+    ]}
     filters={[
       { name: "paymentStatus", label: "Payment status", type: "select", options: [
         { value: "Pending", label: "Pending" },

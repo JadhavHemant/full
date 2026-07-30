@@ -1,4 +1,5 @@
 import CrmWorkspace from "../components/CrmWorkspace";
+import { getSessionUser } from "../../../utils/sessionUser";
 import { opportunityService } from "../services/entityServices";
 import {
   loadAccountOptions,
@@ -15,6 +16,11 @@ const OPPORTUNITY_STATUS_OPTIONS = [
   { value: "Won", label: "Closed Won" },
   { value: "Lost", label: "Closed Lost" },
 ];
+
+const loadCurrentUserId = () => {
+  const user = getSessionUser();
+  return Number(user?.userId ?? user?.UserId ?? user?.id ?? 0) || null;
+};
 
 const renderProgressBar = (value, row) => {
   const rawValue = value ?? row?.Probability ?? 0;
@@ -62,20 +68,65 @@ const OpportunitiesPage = () => (
     ]}
     rowActions={[
       {
-        label: "Close Won",
+        label: "Move Stage",
         tone: "success",
-        isVisible: (row) => row.Status !== "Won",
-        confirmMessage: () => "Close this opportunity as won?",
-        getPayload: () => ({ Status: "Won" }),
-        successMessage: "Opportunity closed as won",
+        endpoint: "stage",
+        method: "patch",
+        isVisible: (row) => Boolean(row.Id),
+        fields: [
+          {
+            name: "salesStageId",
+            label: "Sales stage",
+            type: "select",
+            loadOptions: loadSalesStageOptions,
+            required: true,
+          },
+          {
+            name: "closeReason",
+            label: "Close reason",
+            type: "textarea",
+            placeholder: "Required when moving to a lost stage",
+          },
+        ],
+        getInitialValues: (row) => ({
+          salesStageId: row.SalesStageId || "",
+          closeReason: row.CloseReason || "",
+        }),
+        getPayload: (_row, values) => ({
+          salesStageId: values.salesStageId,
+          closeReason: values.closeReason || undefined,
+        }),
+        validate: (values) => {
+          const stageValue = String(values?.salesStageId ?? "").toLowerCase();
+          const closeReason = String(values?.closeReason ?? "").trim();
+          const requiresCloseReason = stageValue.includes("lost");
+
+          if (requiresCloseReason && !closeReason) {
+            return { closeReason: "Close reason is required when moving to a lost stage" };
+          }
+
+          return {};
+        },
+        successMessage: "Opportunity stage updated",
       },
       {
-        label: "Close Lost",
-        tone: "danger",
-        isVisible: (row) => row.Status !== "Lost",
-        confirmMessage: () => "Close this opportunity as lost?",
-        getPayload: () => ({ Status: "Lost" }),
-        successMessage: "Opportunity closed as lost",
+        label: "Assign",
+        tone: "info",
+        endpoint: "assign",
+        method: "patch",
+        isVisible: (row) => Boolean(row.Id),
+        fields: [
+          {
+            name: "assignedTo",
+            label: "Assign to",
+            type: "select",
+            loadOptions: loadUserOptions,
+            required: true,
+          },
+        ],
+        getInitialValues: () => ({ assignedTo: loadCurrentUserId() || "" }),
+        getPayload: (_row, values) => ({ assignedTo: values.assignedTo }),
+        successMessage: "Opportunity reassigned",
       },
     ]}
     fields={[

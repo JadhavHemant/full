@@ -5,6 +5,7 @@ const {
 } = require("../../middlewares/rbac");
 const { 
   getRoles, 
+  getRoleConfig,
   getRolePermissions, 
   saveRolePermissions,
   createRole,
@@ -14,11 +15,12 @@ const {
 
 const router = express.Router();
 
+router.get("/config", verifyAccessToken, getRoleConfig);
 router.get("/", verifyAccessToken, getRoles);
 router.get("/:roleId/permissions", verifyAccessToken, getRolePermissions);
-router.post("/:roleId/permissions", verifyAccessToken, saveRolePermissions);
-router.post("/create", verifyAccessToken, createRole);
+router.post("/:roleId/permissions", verifyAccessToken, checkAssignPermission, saveRolePermissions);
+router.post("/create", verifyAccessToken, checkAssignPermission, createRole);
 router.put("/:id", verifyAccessToken, checkAssignPermission, updateRole);
-router.delete("/:id", verifyAccessToken, deleteRole);
+router.delete("/:id", verifyAccessToken, checkAssignPermission, deleteRole);
 
 module.exports = router;

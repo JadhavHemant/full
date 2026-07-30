@@ -13,7 +13,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { getUserFromToken } from "../../../Components/AdminSite/utils/tokenUtils";
-import { getSessionUser } from "../../../utils/sessionUser";
+import { getSessionUser, SUPER_ADMIN_ROLE_ID } from "../../../utils/sessionUser";
 import { usePortalAccess } from "../../../utils/portalAccess";
 import { loadUserOptions } from "../services/optionsService";
 import TitleBar from "../../../Components/TitleBar";
@@ -33,7 +33,7 @@ const isCurrentUserSuperAdmin = () => {
     const cookieUser = Cookies.get("user");
     if (cookieUser) {
       const parsedUser = JSON.parse(cookieUser);
-      if (Number(parsedUser?.roleId) === 1) {
+      if (Number(parsedUser?.roleId ?? parsedUser?.RoleId) === SUPER_ADMIN_ROLE_ID) {
         return true;
       }
     }
@@ -42,7 +42,7 @@ const isCurrentUserSuperAdmin = () => {
   }
 
   const tokenUser = getUserFromToken();
-  return Number(tokenUser?.roleId) === 1;
+  return Number(tokenUser?.roleId ?? tokenUser?.RoleId) === SUPER_ADMIN_ROLE_ID;
 };
 
 const isEmpty = (value) => value === "" || value === null || value === undefined;
@@ -169,6 +169,12 @@ const normalizeValue = (field, value) => {
 
   return value === "" ? null : value;
 };
+
+const emptyActionValues = (fields = []) =>
+  fields.reduce((acc, field) => {
+    acc[field.name] = field.type === "checkbox" ? Boolean(field.defaultValue) : field.defaultValue ?? "";
+    return acc;
+  }, {});
 
 const CrmWorkspace = ({
   title,
@@ -353,6 +359,10 @@ const CrmWorkspace = ({
   const [selectedRow, setSelectedRow] = useState(null);
   const [formData, setFormData] = useState(initialForm);
   const [formErrors, setFormErrors] = useState({});
+  const [activeAction, setActiveAction] = useState(null);
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [actionFormData, setActionFormData] = useState({});
+  const [actionFormErrors, setActionFormErrors] = useState({});
   const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [bulkUpdateValues, setBulkUpdateValues] = useState({});
   const [comments, setComments] = useState([]);
@@ -1000,24 +1010,17 @@ const CrmWorkspace = ({
     }
   };
 
-  const handleCustomRowAction = async (action, row) => {
-    const confirmMessage = typeof action.confirmMessage === "function"
-      ? action.confirmMessage(row)
-      : action.confirmMessage;
-
-    if (confirmMessage && !window.confirm(confirmMessage)) {
-      return;
-    }
-
+  const executeCustomRowAction = async ({ action, row, payload }) => {
     setActionLoadingKey(`${row.Id}-${action.label}`);
     try {
-      const payload = typeof action.getPayload === "function" ? action.getPayload(row) : null;
-      if (!payload || typeof payload !== "object") {
-        toast.error("Invalid action payload");
-        return;
-      }
-
-      const updatedRecord = await service.update(row.Id, payload);
+      const updatedRecord = action.endpoint
+        ? await service.runAction(row.Id, {
+            method: action.method || "post",
+            path: action.endpoint,
+            payload,
+            params: typeof action.getParams === "function" ? action.getParams(row) : action.params,
+          })
+        : await service.update(row.Id, payload);
       toast.success(action.successMessage || `${action.label} completed`);
 
       const nextPath = typeof action.getSuccessNavigation === "function"
@@ -1029,17 +1032,108 @@ const CrmWorkspace = ({
           })
         : null;
 
+      setShowActionModal(false);
+      setActiveAction(null);
+      setActionFormData({});
+      setActionFormErrors({});
+
       if (nextPath) {
         navigate(nextPath);
         return;
       }
 
       await fetchRows(pagination.limit, pagination.offset);
+      await reloadOptions();
     } catch (error) {
       toast.error(error.response?.data?.message || `Unable to apply ${action.label.toLowerCase()}`);
     } finally {
       setActionLoadingKey("");
     }
+  };
+
+  const validateActionForm = (action, values, row) => {
+    const errors = {};
+    const actionFields = Array.isArray(action?.fields) ? action.fields : [];
+
+    actionFields.forEach((field) => {
+      const value = values?.[field.name];
+      if (field.required && isEmpty(value)) {
+        errors[field.name] = `${getFieldLabel(field)} is required`;
+      }
+    });
+
+    if (typeof action?.validate === "function") {
+      const customErrors = action.validate(values || {}, row) || {};
+      Object.assign(errors, customErrors);
+    }
+
+    setActionFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleCustomRowAction = async (action, row) => {
+    const actionFields = Array.isArray(action.fields) ? action.fields : [];
+
+    if (actionFields.length) {
+      const initialActionValues = emptyActionValues(actionFields);
+      const presetValues = typeof action.getInitialValues === "function" ? action.getInitialValues(row) : {};
+      setSelectedRow(row);
+      setActiveAction(action);
+      setActionFormData({ ...initialActionValues, ...(presetValues || {}) });
+      setActionFormErrors({});
+      setShowActionModal(true);
+      return;
+    }
+
+    const confirmMessage = typeof action.confirmMessage === "function"
+      ? action.confirmMessage(row)
+      : action.confirmMessage;
+
+    if (confirmMessage && !window.confirm(confirmMessage)) {
+      return;
+    }
+
+    const payload = typeof action.getPayload === "function" ? action.getPayload(row) : null;
+    if (!payload || typeof payload !== "object") {
+      toast.error("Invalid action payload");
+      return;
+    }
+
+    await executeCustomRowAction({ action, row, payload });
+  };
+
+  const handleActionFieldChange = (field, value) => {
+    setActionFormData((prev) => ({
+      ...prev,
+      [field.name]: normalizeValue(field, value),
+    }));
+
+    if (actionFormErrors[field.name]) {
+      setActionFormErrors((prev) => ({ ...prev, [field.name]: "" }));
+    }
+  };
+
+  const handleActionSubmit = async (event) => {
+    event.preventDefault();
+    if (!activeAction || !selectedRow) {
+      return;
+    }
+
+    if (!validateActionForm(activeAction, actionFormData, selectedRow)) {
+      toast.error("Please fix action validation errors");
+      return;
+    }
+
+    const payload = typeof activeAction.getPayload === "function"
+      ? activeAction.getPayload(selectedRow, actionFormData)
+      : actionFormData;
+
+    if (!payload || typeof payload !== "object") {
+      toast.error("Invalid action payload");
+      return;
+    }
+
+    await executeCustomRowAction({ action: activeAction, row: selectedRow, payload });
   };
 
   const handlePageChange = (newPage) => {
@@ -1696,6 +1790,110 @@ const CrmWorkspace = ({
           </div>
         </div>
       </section>
+
+      {showActionModal && activeAction && selectedRow && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto">
+          <div className="flex items-start justify-center min-h-full p-4 sm:p-8">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8 flex flex-col">
+              <TitleBar
+                title={`${activeAction.label} ${title.replace(/s$/, "")}`}
+                onClose={() => {
+                  setShowActionModal(false);
+                  setActiveAction(null);
+                  setActionFormData({});
+                  setActionFormErrors({});
+                }}
+              />
+
+              <form onSubmit={handleActionSubmit}>
+                <div className="p-6 max-h-[calc(100vh-250px)] overflow-y-auto">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(activeAction.fields || []).map((field) => {
+                      const options = field.loadOptions ? fieldOptions[field.name] || [] : field.options || [];
+                      const inputClass = "border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full";
+                      const value = actionFormData[field.name] ?? "";
+
+                      return (
+                        <div key={`action-${field.name}`} className={field.type === "textarea" ? "col-span-2" : ""}>
+                          <label className="block text-blueGray-600 text-sm font-bold mb-2">
+                            {getFieldLabel(field)} {field.required && <span className="text-red-500">*</span>}
+                          </label>
+
+                          {field.type === "textarea" ? (
+                            <textarea
+                              value={value}
+                              onChange={(event) => handleActionFieldChange(field, event.target.value)}
+                              rows="3"
+                              className={inputClass}
+                            />
+                          ) : field.type === "checkbox" ? (
+                            <input
+                              type="checkbox"
+                              checked={Boolean(actionFormData[field.name])}
+                              onChange={(event) => handleActionFieldChange(field, event.target.checked)}
+                              className="h-4 w-4"
+                            />
+                          ) : field.type === "select" ? (
+                            <select
+                              value={value}
+                              onChange={(event) => handleActionFieldChange(field, event.target.value)}
+                              className={inputClass}
+                            >
+                              <option value="">Select {getFieldLabel(field)}</option>
+                              {options.map((option) => (
+                                <option key={`action-${field.name}-${option.value}`} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type={field.type || "text"}
+                              value={value}
+                              onChange={(event) => handleActionFieldChange(field, event.target.value)}
+                              placeholder={field.placeholder || ""}
+                              min={field.min}
+                              max={field.max}
+                              step={field.step}
+                              className={inputClass}
+                            />
+                          )}
+
+                          {actionFormErrors[field.name] ? (
+                            <p className="mt-1 text-xs text-red-500">{actionFormErrors[field.name]}</p>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 border-t border-blueGray-200 px-6 py-4 bg-blueGray-50 rounded-b-xl">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowActionModal(false);
+                      setActiveAction(null);
+                      setActionFormData({});
+                      setActionFormErrors({});
+                    }}
+                    className="bg-white text-blueGray-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={actionLoadingKey === `${selectedRow.Id}-${activeAction.label}`}
+                    className="bg-blue-500 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md disabled:opacity-50"
+                  >
+                    {actionLoadingKey === `${selectedRow.Id}-${activeAction.label}` ? "Working..." : activeAction.label}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 overflow-y-auto">

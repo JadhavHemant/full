@@ -3,6 +3,12 @@ import axiosInstance from "../utils/axiosInstance";
 import * as API from "../../Endpoint/Endpoint";
 import toast from "react-hot-toast";
 import TitleBar from "../../TitleBar";
+import { getSessionUser } from "../../../utils/sessionUser";
+
+const getSessionCompanyId = () => {
+  const user = getSessionUser();
+  return user?.companyId || user?.CompanyId || "";
+};
 
 const StockTransfersPage = () => {
   const [transfers, setTransfers] = useState([]);
@@ -16,20 +22,18 @@ const StockTransfersPage = () => {
 
   const fetchTransfers = useCallback(async () => {
     setLoading(true);
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const companyId = user?.companyId || "";
+    const companyId = getSessionCompanyId();
     try {
       const res = await axiosInstance.get(API.STOCK_TRANSFERS.GET_ALL({ page, limit: 10, companyId }));
       if (res.data.success) { setTransfers(res.data.data); setTotalPages(res.data.pagination.totalPages); }
-    } catch (err) { toast.error("Failed to fetch transfers"); }
+    } catch { toast.error("Failed to fetch transfers"); }
     finally { setLoading(false); }
   }, [page]);
 
   useEffect(() => { fetchTransfers(); }, [fetchTransfers]);
 
   const openCreateModal = async () => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const companyId = user?.companyId || "";
+    const companyId = getSessionCompanyId();
     try {
       const [whRes, prodRes] = await Promise.all([
         axiosInstance.get(`${API.WAREHOUSES.BASE}?companyId=${companyId}&isActive=true`),
@@ -38,13 +42,12 @@ const StockTransfersPage = () => {
       setWarehouses(whRes.data.data || []);
       setProducts(prodRes.data.data || []);
       setShowCreateModal(true);
-    } catch (err) { toast.error("Failed to load data"); }
+    } catch { toast.error("Failed to load data"); }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const companyId = user?.companyId || "";
+    const companyId = getSessionCompanyId();
     if (!form.FromWarehouseId || !form.ToWarehouseId) return toast.error("Source and destination warehouses required");
     if (form.FromWarehouseId === form.ToWarehouseId) return toast.error("Source and destination must be different");
     if (!form.items.length || !form.items[0].ProductId) return toast.error("At least one item required");
@@ -62,7 +65,7 @@ const StockTransfersPage = () => {
       await axiosInstance.put(API.STOCK_TRANSFERS.UPDATE_STATUS(id), { Status });
       toast.success("Status updated");
       fetchTransfers();
-    } catch (err) { toast.error("Failed to update status"); }
+    } catch { toast.error("Failed to update status"); }
   };
 
   const addItem = () => setForm({ ...form, items: [...form.items, { ProductId: "", Quantity: 1 }] });

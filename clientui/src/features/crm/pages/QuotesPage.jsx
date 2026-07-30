@@ -13,12 +13,54 @@ const QuotesPage = () => (
     service={quoteService}
     primaryField="QuoteNumber"
     searchPlaceholder="Search quotes"
+    rowActions={[
+      {
+        label: "Convert to Invoice",
+        tone: "success",
+        endpoint: "convert-to-invoice",
+        method: "post",
+        isVisible: (row) => row.Status === "Accepted",
+        fields: [
+          {
+            name: "dueDate",
+            label: "Due date",
+            type: "date",
+          },
+          {
+            name: "paymentMethod",
+            label: "Payment method",
+            placeholder: "Bank / UPI / Card",
+          },
+          {
+            name: "notes",
+            label: "Notes",
+            type: "textarea",
+            placeholder: "Invoice notes",
+          },
+        ],
+        getPayload: (_row, values) => ({
+          dueDate: values.dueDate || undefined,
+          paymentMethod: values.paymentMethod || undefined,
+          notes: values.notes || undefined,
+        }),
+        successMessage: "Invoice created from quote",
+        getSuccessNavigation: ({ updatedRecord, isUserPortal }) => {
+          const invoiceId = Number(updatedRecord?.data?.invoice?.Id || 0);
+          if (!invoiceId) {
+            return null;
+          }
+
+          return `${isUserPortal ? "/user/invoices" : "/Admin/Invoices"}?openId=${invoiceId}`;
+        },
+      },
+    ]}
     filters={[
       { name: "status", label: "Status", type: "select", options: [
         { value: "Draft", label: "Draft" },
         { value: "Sent", label: "Sent" },
         { value: "Accepted", label: "Accepted" },
         { value: "Rejected", label: "Rejected" },
+        { value: "Invoiced", label: "Invoiced" },
       ]},
     ]}
     fields={[
@@ -32,6 +74,7 @@ const QuotesPage = () => (
         { value: "Sent", label: "Sent" },
         { value: "Accepted", label: "Accepted" },
         { value: "Rejected", label: "Rejected" },
+        { value: "Invoiced", label: "Invoiced" },
       ]},
       { name: "Subtotal", label: "Subtotal", type: "number", placeholder: "100000" },
       { name: "DiscountAmount", label: "Discount", type: "number", placeholder: "5000" },

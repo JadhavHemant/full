@@ -1,4 +1,5 @@
 import CrmWorkspace from "../components/CrmWorkspace";
+import { getSessionUser } from "../../../utils/sessionUser";
 import { caseService } from "../services/entityServices";
 import {
   loadAccountOptions,
@@ -7,6 +8,11 @@ import {
   loadOpportunityOptions,
   loadUserOptions,
 } from "../services/optionsService";
+
+const loadCurrentUserId = () => {
+  const user = getSessionUser();
+  return Number(user?.userId ?? user?.UserId ?? user?.id ?? 0) || null;
+};
 
 const CasesPage = () => (
   <CrmWorkspace
@@ -50,20 +56,42 @@ const CasesPage = () => (
     ]}
     rowActions={[
       {
-        label: "Close",
+        label: "Resolve",
         tone: "success",
+        endpoint: "resolve",
+        method: "patch",
         isVisible: (row) => row.Status !== "Closed",
-        confirmMessage: () => "Close this case?",
-        getPayload: () => ({ Status: "Closed" }),
-        successMessage: "Case closed",
+        fields: [
+          {
+            name: "resolution",
+            label: "Resolution",
+            type: "textarea",
+            required: true,
+            placeholder: "Describe how this case was resolved",
+          },
+        ],
+        getInitialValues: (row) => ({ resolution: row.Resolution || "" }),
+        getPayload: (_row, values) => ({ resolution: values.resolution }),
+        successMessage: "Case resolved",
       },
       {
-        label: "Reopen",
+        label: "Assign",
         tone: "info",
-        isVisible: (row) => row.Status === "Closed",
-        confirmMessage: () => "Reopen this case?",
-        getPayload: () => ({ Status: "Open" }),
-        successMessage: "Case reopened",
+        endpoint: "assign",
+        method: "patch",
+        isVisible: (row) => Boolean(row.Id),
+        fields: [
+          {
+            name: "assignedTo",
+            label: "Assign to",
+            type: "select",
+            loadOptions: loadUserOptions,
+            required: true,
+          },
+        ],
+        getInitialValues: () => ({ assignedTo: loadCurrentUserId() || "" }),
+        getPayload: (_row, values) => ({ assignedTo: values.assignedTo }),
+        successMessage: "Case reassigned",
       },
     ]}
     fields={[

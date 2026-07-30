@@ -1,5 +1,6 @@
 // Import js-cookie for managing browser cookies
 import Cookies from "js-cookie";
+import { API_BASE_URL } from "../Components/Endpoint/Endpoint";
 // Import token utility functions for JWT management
 import { getUserFromToken } from "../Components/AdminSite/utils/tokenUtils";
 
@@ -42,8 +43,9 @@ export let MANAGER_ROLE_ID = 3;
  */
 export const loadRoleConfig = async () => {
   try {
-    const response = await fetch('/api/roles/config', {
-      headers: { 'Authorization': `Bearer ${getSessionUser()?.token || ''}` }
+    const token = Cookies.get("accessToken");
+    const response = await fetch(`${API_BASE_URL}/roles/config`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
     });
     if (response.ok) {
       const config = await response.json();

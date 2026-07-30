@@ -260,4 +260,43 @@ const deleteRole = async (req, res) => {
   }
 };
 
-module.exports = { getRoles, getRolePermissions, saveRolePermissions, createRole, updateRole, deleteRole };
+const getRoleConfig = async (_req, res) => {
+  try {
+    const result = await appPool.query(`
+      SELECT "Id", "RoleName"
+      FROM "Roles"
+      WHERE COALESCE("IsDeleted", FALSE) = FALSE
+        AND "IsActive" = TRUE
+    `);
+
+    const config = {
+      SUPERADMIN: 1,
+      ADMIN: 2,
+      MANAGER: 3,
+      EMPLOYEE: 4,
+      CUSTOMER: 5,
+    };
+
+    result.rows.forEach((row) => {
+      const normalized = String(row.RoleName || "").trim().toLowerCase().replace(/\s+/g, "");
+      if (normalized === "superadmin") config.SUPERADMIN = row.Id;
+      if (normalized === "admin") config.ADMIN = row.Id;
+      if (normalized === "manager") config.MANAGER = row.Id;
+      if (normalized === "employee") config.EMPLOYEE = row.Id;
+      if (normalized === "customer") config.CUSTOMER = row.Id;
+    });
+
+    res.status(200).json(config);
+  } catch (error) {
+    console.error("Error fetching role config:", error);
+    res.status(200).json({
+      SUPERADMIN: 1,
+      ADMIN: 2,
+      MANAGER: 3,
+      EMPLOYEE: 4,
+      CUSTOMER: 5,
+    });
+  }
+};
+
+module.exports = { getRoles, getRoleConfig, getRolePermissions, saveRolePermissions, createRole, updateRole, deleteRole };

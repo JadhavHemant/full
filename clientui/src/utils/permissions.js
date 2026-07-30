@@ -8,22 +8,27 @@
  * boundary is the backend. Always validate on the server.
  */
 
-import { getSessionUser } from './sessionUser';
+import {
+  getSessionUser,
+  SUPER_ADMIN_ROLE_ID,
+  ADMIN_ROLE_ID,
+  MANAGER_ROLE_ID,
+} from './sessionUser';
 
 // ── Role Constants ─────────────────────────────────────────────────────
 
 export const ROLES = {
-  SUPER_ADMIN: 1,
-  ADMIN: 2,
-  MANAGER: 3,
+  get SUPER_ADMIN() { return SUPER_ADMIN_ROLE_ID; },
+  get ADMIN() { return ADMIN_ROLE_ID; },
+  get MANAGER() { return MANAGER_ROLE_ID; },
   EMPLOYEE: 4,
   CUSTOMER: 5,
 };
 
 export const ROLE_NAMES = {
-  1: 'Super Admin',
-  2: 'Admin',
-  3: 'Manager',
+  [SUPER_ADMIN_ROLE_ID]: 'Super Admin',
+  [ADMIN_ROLE_ID]: 'Admin',
+  [MANAGER_ROLE_ID]: 'Manager',
   4: 'Employee',
   5: 'Customer',
 };
@@ -46,30 +51,30 @@ const DEFAULT_PERMISSIONS = {
   [ROLES.MANAGER]: {
     dashboard: ['view'],
     users: ['view', 'edit'],
-    products: ['view', 'create', 'edit', 'export'],
-    categories: ['view', 'export'],
-    units: ['view', 'export'],
-    brands: ['view', 'export'],
-    warehouses: ['view', 'edit', 'export'],
-    stock: ['view', 'create', 'edit', 'export'],
+    products: ['view', 'create', 'edit', 'export', 'import'],
+    categories: ['view', 'export', 'import'],
+    units: ['view', 'export', 'import'],
+    brands: ['view', 'export', 'import'],
+    warehouses: ['view', 'edit', 'export', 'import'],
+    stock: ['view', 'create', 'edit', 'export', 'import'],
     stockMovements: ['view', 'create', 'edit', 'export'],
-    suppliers: ['view', 'export'],
-    purchaseOrders: ['view', 'create', 'edit', 'export'],
-    purchaseRequisitions: ['view', 'create', 'edit', 'export'],
-    purchaseReturns: ['view', 'create', 'edit', 'export'],
-    salesOrders: ['view', 'create', 'edit', 'export'],
-    salesQuotations: ['view', 'create', 'edit', 'export'],
+    suppliers: ['view', 'export', 'import'],
+    purchaseOrders: ['view', 'create', 'edit', 'export', 'approve', 'reject', 'assign'],
+    purchaseRequisitions: ['view', 'create', 'edit', 'export', 'approve', 'reject', 'assign'],
+    purchaseReturns: ['view', 'create', 'edit', 'export', 'approve', 'reject'],
+    salesOrders: ['view', 'create', 'edit', 'export', 'approve', 'reject', 'assign'],
+    salesQuotations: ['view', 'create', 'edit', 'export', 'approve', 'reject'],
     deliveryChallans: ['view', 'create', 'edit', 'export'],
-    salesReturns: ['view', 'create', 'edit', 'export'],
-    customers: ['view', 'create', 'edit', 'export'],
-    accounts: ['view', 'create', 'edit', 'export'],
-    contacts: ['view', 'create', 'edit', 'export'],
-    leads: ['view', 'create', 'edit', 'export'],
-    opportunities: ['view', 'create', 'edit', 'export'],
-    presales: ['view', 'create', 'edit', 'export'],
-    cases: ['view', 'create', 'edit', 'export'],
+    salesReturns: ['view', 'create', 'edit', 'export', 'approve', 'reject'],
+    customers: ['view', 'create', 'edit', 'export', 'assign'],
+    accounts: ['view', 'create', 'edit', 'export', 'assign'],
+    contacts: ['view', 'create', 'edit', 'export', 'assign'],
+    leads: ['view', 'create', 'edit', 'export', 'approve', 'reject', 'assign'],
+    opportunities: ['view', 'create', 'edit', 'export', 'approve', 'reject', 'assign'],
+    presales: ['view', 'create', 'edit', 'export', 'assign'],
+    cases: ['view', 'create', 'edit', 'export', 'assign'],
     reports: ['view', 'export'],
-    approvals: ['view', 'create', 'edit', 'export'],
+    approvals: ['view', 'create', 'edit', 'export', 'approve', 'reject', 'assign'],
     chat: ['view', 'create', 'edit'],
     notifications: ['view'],
     settings: [],

@@ -6,29 +6,14 @@ import { useMemo } from "react";
 // Import React Router hooks
 import { useLocation } from "react-router-dom";
 // Import session user utilities
-import { getSessionUser } from "./sessionUser";
+import {
+  getSessionUser,
+  isSuperAdminUser,
+  isAdminUser,
+  canAccessAdminPortal,
+} from "./sessionUser";
 
-// Role ID constants - loaded dynamically from backend if available
-let SUPER_ADMIN_ROLE_ID = 1;
-let ADMIN_ROLE_ID = 2;
 
-/**
- * Fetch role configuration from backend API
- */
-export const loadRoleConfig = async () => {
-  try {
-    const response = await fetch('/api/roles/config', {
-      headers: { 'Authorization': `Bearer ${getSessionUser()?.token || ''}` }
-    });
-    if (response.ok) {
-      const config = await response.json();
-      SUPER_ADMIN_ROLE_ID = config.SUPERADMIN || 1;
-      ADMIN_ROLE_ID = config.ADMIN || 2;
-    }
-  } catch (error) {
-    console.warn('Could not load role config from backend, using defaults:', error);
-  }
-};
 
 /**
  * Normalize role name to lowercase string for consistent comparison
@@ -48,12 +33,13 @@ export const getPortalAccess = (pathname = "", user = getSessionUser()) => {
   const roleId = Number(user?.roleId ?? user?.RoleId ?? 0);
   const hierarchyLevel = Number(user?.hierarchyLevel ?? user?.HierarchyLevel ?? -1);
   const roleName = normalizeRoleName(user?.roleName ?? user?.RoleName ?? user?.role);
-  const isSuperAdmin = roleId === SUPER_ADMIN_ROLE_ID || roleName === "super admin";
-  const isAdmin = roleId === ADMIN_ROLE_ID || roleName === "admin";
+  const isSuperAdmin = isSuperAdminUser(user);
+  const isAdmin = isAdminUser(user);
   const isAdminPortal = pathname.startsWith("/Admin");
   const isUserPortal = pathname.startsWith("/user");
+  const hasAdminPortalAccess = canAccessAdminPortal(user);
   const canManageRestrictedActions =
-    isAdminPortal && (isSuperAdmin || (isAdmin && (hierarchyLevel === 1 || hierarchyLevel === 2)));
+    hasAdminPortalAccess && (isSuperAdmin || (isAdmin && (hierarchyLevel === 1 || hierarchyLevel === 2)));
 
   return {
     roleId,
@@ -63,6 +49,7 @@ export const getPortalAccess = (pathname = "", user = getSessionUser()) => {
     isAdmin,
     isAdminPortal,
     isUserPortal,
+    hasAdminPortalAccess,
     canManageRestrictedActions,
   };
 };

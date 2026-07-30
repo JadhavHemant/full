@@ -1,4 +1,5 @@
 import CrmWorkspace from "../components/CrmWorkspace";
+import { getSessionUser } from "../../../utils/sessionUser";
 import { activityService } from "../services/entityServices";
 import {
   loadAccountOptions,
@@ -8,6 +9,11 @@ import {
   loadUserOptions,
 } from "../services/optionsService";
 
+const loadCurrentUserId = () => {
+  const user = getSessionUser();
+  return Number(user?.userId ?? user?.UserId ?? user?.id ?? 0) || null;
+};
+
 const ActivitiesPage = () => (
   <CrmWorkspace
     title="Activities"
@@ -15,6 +21,37 @@ const ActivitiesPage = () => (
     service={activityService}
     primaryField="Subject"
     searchPlaceholder="Search activities"
+    rowActions={[
+      {
+        label: "Complete",
+        tone: "success",
+        endpoint: "complete",
+        method: "patch",
+        isVisible: (row) => row.Status !== "Completed",
+        confirmMessage: () => "Mark this activity as completed?",
+        getPayload: () => ({}),
+        successMessage: "Activity completed",
+      },
+      {
+        label: "Assign",
+        tone: "info",
+        endpoint: "assign",
+        method: "patch",
+        isVisible: (row) => Boolean(row.Id),
+        fields: [
+          {
+            name: "assignedTo",
+            label: "Assign to",
+            type: "select",
+            loadOptions: loadUserOptions,
+            required: true,
+          },
+        ],
+        getInitialValues: () => ({ assignedTo: loadCurrentUserId() || "" }),
+        getPayload: (_row, values) => ({ assignedTo: values.assignedTo }),
+        successMessage: "Activity reassigned",
+      },
+    ]}
     filters={[
       { name: "status", label: "Status", type: "select", options: [
         { value: "Pending", label: "Pending" },

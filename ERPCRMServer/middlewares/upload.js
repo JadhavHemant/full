@@ -5,7 +5,7 @@ const MAX_IMAGE_UPLOAD_SIZE = 15 * 1024 * 1024;
 
 // Create upload directories
 const createUploadDirs = () => {
-    const dirs = ["uploads/users", "uploads/companies", "uploads/products"];
+    const dirs = ["uploads/users", "uploads/companies", "uploads/products", "uploads/chat"];
     dirs.forEach((dir) => {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -78,6 +78,45 @@ const upload = multer({
     limits: { fileSize: MAX_IMAGE_UPLOAD_SIZE }
 });
 
+const chatStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = "uploads/chat";
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        cb(null, "chat-" + uniqueSuffix + path.extname(file.originalname || ""));
+    },
+});
+
+const chatUpload = multer({
+    storage: chatStorage,
+    limits: { fileSize: MAX_IMAGE_UPLOAD_SIZE }
+});
+
+const handleChatUpload = (req, res, next) => {
+    chatUpload.single("file")(req, res, (err) => {
+        if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({
+                message: 'File too large',
+                error: 'Maximum file size is 15MB'
+            });
+        }
+
+        if (err) {
+            return res.status(400).json({
+                message: 'File upload failed',
+                error: err.message
+            });
+        }
+
+        next();
+    });
+};
+
 // Error handler
 const handleUploadError = (err, req, res, next) => {
     if (err instanceof multer.MulterError) {
@@ -107,5 +146,6 @@ module.exports = {
     upload,
     uploadCompanyImage,
     uploadUserImage,
+    handleChatUpload,
     handleUploadError
 };

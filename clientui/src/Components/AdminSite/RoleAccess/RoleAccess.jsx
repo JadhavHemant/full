@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import axiosInstance from "../utils/axiosInstance";
 import * as API from "../../Endpoint/Endpoint";
 import toast from "react-hot-toast";
@@ -42,7 +42,7 @@ const MODULES = [
   { key: "chat", label: "Chat" },
 ];
 
-const ACTIONS = ["view", "create", "edit", "delete", "export"];
+const ACTIONS = ["view", "create", "edit", "delete", "export", "import", "approve", "reject", "assign"];
 
 const ACTION_LABELS = {
   view: "View",
@@ -50,6 +50,10 @@ const ACTION_LABELS = {
   edit: "Edit",
   delete: "Delete",
   export: "Export",
+  import: "Import",
+  approve: "Approve",
+  reject: "Reject",
+  assign: "Assign",
 };
 
 const RoleAccess = () => {
@@ -59,11 +63,18 @@ const RoleAccess = () => {
   const [saving, setSaving] = useState(false);
   const [selectedRole, setSelectedRole] = useState("");
 
-  useEffect(() => {
-    fetchRoles();
+  const getDefaultPermissions = useCallback(() => {
+    const defaults = {};
+    MODULES.forEach((mod) => {
+      defaults[mod.key] = {};
+      ACTIONS.forEach((action) => {
+        defaults[mod.key][action] = mod.key === "dashboard" || mod.key === "chat";
+      });
+    });
+    return defaults;
   }, []);
 
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async () => {
     try {
       const response = await axiosInstance.get(API.ROLES);
       const rolesData = response.data || [];
@@ -77,7 +88,7 @@ const RoleAccess = () => {
             `${API.API_BASE_URL}/roles/${role.Id}/permissions`
           );
           permsMap[role.Id] = permsRes.data?.permissions || {};
-        } catch (err) {
+        } catch {
           // If endpoint doesn't exist yet, initialize empty permissions
           permsMap[role.Id] = getDefaultPermissions();
         }
@@ -90,7 +101,6 @@ const RoleAccess = () => {
     } catch (error) {
       console.error("Error fetching roles:", error);
       toast.error("Failed to load roles");
-      // Set default permissions structure
       if (roles.length > 0) {
         const defaults = {};
         roles.forEach((role) => {
@@ -101,18 +111,13 @@ const RoleAccess = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getDefaultPermissions, roles]);
 
-  const getDefaultPermissions = () => {
-    const defaults = {};
-    MODULES.forEach((mod) => {
-      defaults[mod.key] = {};
-      ACTIONS.forEach((action) => {
-        defaults[mod.key][action] = mod.key === "dashboard" || mod.key === "chat";
-      });
-    });
-    return defaults;
-  };
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
+
+
 
   const handlePermissionChange = (roleId, moduleKey, action) => {
     setPermissions((prev) => ({

@@ -1,7 +1,7 @@
 const express = require("express");
 const { verifyAccessToken } = require("../middlewares/authMiddleware");
 const { validateRequest, schemas } = require("../middlewares/validation");
-const { handleChatUpload } = require("../middleware/upload");
+const { handleChatUpload } = require("../middlewares/upload");
 const {
   createMessage,
   deleteMessage,

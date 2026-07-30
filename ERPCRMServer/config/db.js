@@ -12,6 +12,10 @@ const {
   REMOTE_DB_PASSWORD,
   REMOTE_DB_HOST,
   DATABASE_URL,
+  DB_USER,
+  DB_PASSWORD,
+  DB_HOST,
+  DB_NAME,
 } = process.env;
 
 const cleanEnvValue = (value) => {
@@ -24,10 +28,10 @@ const ensureString = (value, defaultValue = "") => {
   return String(value);
 };
 
-const safeLocalDbName = cleanEnvValue(LOCAL_DB_NAME);
-const safeLocalDbUser = cleanEnvValue(LOCAL_DB_USER);
-const safeLocalDbPassword = cleanEnvValue(LOCAL_DB_PASSWORD);
-const safeLocalDbHost = cleanEnvValue(LOCAL_DB_HOST);
+const safeLocalDbName = cleanEnvValue(LOCAL_DB_NAME ?? DB_NAME);
+const safeLocalDbUser = cleanEnvValue(LOCAL_DB_USER ?? DB_USER);
+const safeLocalDbPassword = cleanEnvValue(LOCAL_DB_PASSWORD ?? DB_PASSWORD);
+const safeLocalDbHost = cleanEnvValue(LOCAL_DB_HOST ?? DB_HOST);
 const safeRemoteDbName = cleanEnvValue(REMOTE_DB_NAME);
 const safeRemoteDbUser = cleanEnvValue(REMOTE_DB_USER);
 const safeRemoteDbPassword = cleanEnvValue(REMOTE_DB_PASSWORD);
@@ -62,10 +66,10 @@ const connectionConfig = safeDatabaseUrl
       ssl: isProd ? { rejectUnauthorized: true } : { rejectUnauthorized: false },
     }
   : {
-      user: useRemoteConnection ? safeRemoteDbUser : safeLocalDbUser,
-      host: useRemoteConnection ? safeRemoteDbHost : safeLocalDbHost,
-      password: ensureString(useRemoteConnection ? safeRemoteDbPassword : safeLocalDbPassword),
-      database: useRemoteConnection ? safeRemoteDbName : safeLocalDbName,
+      user: ensureString(useRemoteConnection ? safeRemoteDbUser : safeLocalDbUser, "postgres"),
+      host: ensureString(useRemoteConnection ? safeRemoteDbHost : safeLocalDbHost, "localhost"),
+      password: ensureString(useRemoteConnection ? safeRemoteDbPassword : safeLocalDbPassword, ""),
+      database: ensureString(useRemoteConnection ? safeRemoteDbName : safeLocalDbName, "ERP"),
       ssl: useRemoteConnection ? (isProd ? { rejectUnauthorized: true } : { rejectUnauthorized: false }) : false,
     };
 
@@ -89,25 +93,33 @@ const getPool = () => {
 const ensureDatabaseExists = async () => {
   if (useRemoteConnection) return;
 
-  const defaultPool = new Pool({
-    user: safeLocalDbUser,
-    host: safeLocalDbHost,
-    password: ensureString(safeLocalDbPassword),
+  const defaultPoolConfig = {
+    user: ensureString(safeLocalDbUser, "postgres"),
+    host: ensureString(safeLocalDbHost, "localhost"),
+    password: ensureString(safeLocalDbPassword, ""),
     database: "postgres",
-  });
+  };
+
+  const defaultPool = new Pool(defaultPoolConfig);
 
   try {
+    const localDatabaseName = ensureString(safeLocalDbName, "ERP");
     const result = await defaultPool.query(`SELECT 1 FROM pg_database WHERE datname = $1`, [
-      safeLocalDbName,
+      localDatabaseName,
     ]);
     if (result.rowCount === 0) {
-      await defaultPool.query(`CREATE DATABASE "${safeLocalDbName}"`);
-      console.log(`Database '${safeLocalDbName}' created.`);
+      await defaultPool.query(`CREATE DATABASE "${localDatabaseName}"`);
+      console.log(`Database '${localDatabaseName}' created.`);
     } else {
-      console.log(`Database '${safeLocalDbName}' already exists.`);
+      console.log(`Database '${localDatabaseName}' already exists.`);
     }
   } catch (err) {
-    console.error("Error checking/creating database:", err);
+    if (err?.message?.includes("client password must be a string")) {
+      console.error("Error checking/creating database: PostgreSQL password is missing or invalid for the configured local database user.");
+      console.error("Set LOCAL_DB_PASSWORD (or DB_PASSWORD) in ERPCRMServer/.env to the actual PostgreSQL password.");
+    } else {
+      console.error("Error checking/creating database:", err);
+    }
   } finally {
     await defaultPool.end();
   }

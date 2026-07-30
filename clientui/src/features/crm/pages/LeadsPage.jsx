@@ -1,4 +1,5 @@
 import CrmWorkspace from "../components/CrmWorkspace";
+import { getSessionUser } from "../../../utils/sessionUser";
 import { leadService } from "../services/entityServices";
 import {
   loadAccountOptions,
@@ -15,7 +16,14 @@ const LEAD_STATUS_OPTIONS = [
   { value: "Contacted", label: "Contacted" },
   { value: "Qualified", label: "Qualified" },
   { value: "Disqualified", label: "Disqualified" },
+  { value: "Converted", label: "Converted" },
+  { value: "Lost", label: "Lost" },
 ];
+
+const loadCurrentUserId = () => {
+  const user = getSessionUser();
+  return Number(user?.userId ?? user?.UserId ?? user?.id ?? 0) || null;
+};
 
 const renderProgressBar = (value) => {
   const progress = Math.max(0, Math.min(100, Number(value || 0)));
@@ -75,14 +83,44 @@ const LeadsPage = () => (
     ]}
     rowActions={[
       {
-        label: "Qualify",
+        label: "Convert",
         tone: "success",
-        isVisible: (row) => row.Status !== "Qualified",
-        confirmMessage: () => "Mark this lead as qualified? This will create the linked account, contact, and opportunity if they do not exist yet.",
-        getPayload: () => ({ Status: "Qualified" }),
-        successMessage: "Lead qualified",
+        endpoint: "convert",
+        method: "post",
+        isVisible: (row) => !["Converted", "Qualified"].includes(row.Status),
+        fields: [
+          {
+            name: "OpportunityName",
+            label: "Opportunity name",
+            required: true,
+            placeholder: "Opportunity name",
+          },
+          {
+            name: "accountId",
+            label: "Account",
+            type: "select",
+            loadOptions: loadAccountOptions,
+          },
+          {
+            name: "contactId",
+            label: "Contact",
+            type: "select",
+            loadOptions: loadContactOptions,
+          },
+        ],
+        getInitialValues: (row) => ({
+          OpportunityName: row.Description || `Opportunity from Lead ${row.Id}`,
+          accountId: row.AccountId || "",
+          contactId: row.ContactId || "",
+        }),
+        getPayload: (_row, values) => ({
+          OpportunityName: values.OpportunityName,
+          accountId: values.accountId || undefined,
+          contactId: values.contactId || undefined,
+        }),
+        successMessage: "Lead converted",
         getSuccessNavigation: ({ updatedRecord, isUserPortal }) => {
-          const opportunityId = Number(updatedRecord?.ConvertedOpportunityId || 0);
+          const opportunityId = Number(updatedRecord?.data?.opportunity?.Id || 0);
           if (!opportunityId) {
             return null;
           }
@@ -91,12 +129,32 @@ const LeadsPage = () => (
         },
       },
       {
-        label: "Disqualify",
+        label: "Mark Lost",
         tone: "danger",
-        isVisible: (row) => row.Status !== "Disqualified",
-        confirmMessage: () => "Mark this lead as disqualified?",
-        getPayload: () => ({ Status: "Disqualified" }),
-        successMessage: "Lead disqualified",
+        endpoint: "lost",
+        method: "patch",
+        isVisible: (row) => !["Lost", "Converted"].includes(row.Status),
+        fields: [
+          {
+            name: "lostReason",
+            label: "Lost reason",
+            type: "textarea",
+            required: true,
+            placeholder: "Why was this lead lost?",
+          },
+        ],
+        getPayload: (_row, values) => ({ lostReason: values.lostReason }),
+        successMessage: "Lead marked as lost",
+      },
+      {
+        label: "Assign to me",
+        tone: "info",
+        endpoint: "assign",
+        method: "patch",
+        isVisible: (row) => Boolean(row.Id),
+        confirmMessage: () => "Assign this lead to you?",
+        getPayload: () => ({ assignedTo: loadCurrentUserId() }),
+        successMessage: "Lead reassigned",
       },
     ]}
     fields={[

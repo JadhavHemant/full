@@ -14,6 +14,27 @@ const PreSalesPage = () => (
     service={presalesService}
     primaryField="ClientName"
     searchPlaceholder="Search presales records"
+    rowActions={[
+      {
+        label: "Assign",
+        tone: "info",
+        endpoint: "assign",
+        method: "patch",
+        isVisible: (row) => Boolean(row.Id),
+        fields: [
+          {
+            name: "assignedTo",
+            label: "Assign to",
+            type: "select",
+            loadOptions: loadUserOptions,
+            required: true,
+          },
+        ],
+        getInitialValues: (row) => ({ assignedTo: row.AssignedTo || "" }),
+        getPayload: (_row, values) => ({ assignedTo: values.assignedTo }),
+        successMessage: "PreSales reassigned",
+      },
+    ]}
     filters={[
       {
         name: "isActive",
