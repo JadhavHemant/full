@@ -868,6 +868,99 @@ export const ERP = {
     },
 };
 
+// ==================== USER MODULE ACCESS ====================
+export const USER_MODULE_ACCESS = {
+    // GET   /users/:userId/module-access  → { userId, modules: { crm, erp } }
+    GET:    (userId) => `${API_BASE_URL}/users/${userId}/module-access`,
+    // PATCH /users/:userId/module-access  body: { modules: { crm, erp } }
+    SET:    (userId) => `${API_BASE_URL}/users/${userId}/module-access`,
+    // DELETE /users/:userId/module-access → resets to role defaults
+    RESET:  (userId) => `${API_BASE_URL}/users/${userId}/module-access`,
+};
+
+// ==================== WMS (Warehouse Management System) ====================
+export const WMS = {
+    // Cycle Counts
+    CYCLE_COUNT: `${API_BASE_URL}/wms/cycle-counts`,
+    CYCLE_COUNT_BY_ID: (id) => `${API_BASE_URL}/wms/cycle-counts/${id}`,
+    CYCLE_COUNT_START: (id) => `${API_BASE_URL}/wms/cycle-counts/${id}/start`,
+    CYCLE_COUNT_COMPLETE: (id) => `${API_BASE_URL}/wms/cycle-counts/${id}/complete`,
+    CYCLE_COUNT_SUBMIT: (id) => `${API_BASE_URL}/wms/cycle-counts/${id}/submit`,
+    // Picking Lists
+    PICKING: `${API_BASE_URL}/wms/picking-lists`,
+    PICKING_BY_ID: (id) => `${API_BASE_URL}/wms/picking-lists/${id}`,
+    PICKING_START: (id) => `${API_BASE_URL}/wms/picking-lists/${id}/start`,
+    PICKING_COMPLETE: (id) => `${API_BASE_URL}/wms/picking-lists/${id}/complete`,
+    PICKING_ITEMS: (id) => `${API_BASE_URL}/wms/picking-lists/${id}/items`,
+    // Putaway
+    PUTAWAY: `${API_BASE_URL}/wms/putaway`,
+    PUTAWAY_BY_ID: (id) => `${API_BASE_URL}/wms/putaway/${id}`,
+    PUTAWAY_COMPLETE: (id) => `${API_BASE_URL}/wms/putaway/${id}/complete`,
+    PUTAWAY_ITEMS: (id) => `${API_BASE_URL}/wms/putaway/${id}/items`,
+    // Racks & Bins (shared with ERP.RACKS / ERP.BINS — aliased here for WMS pages)
+    RACKS: `${API_BASE_URL}/erp/racks`,
+    BINS: `${API_BASE_URL}/erp/bins`,
+};
+
+// ==================== FINANCE ADVANCED ====================
+export const FINANCE = {
+    // Journal Entries
+    JOURNAL: `${API_BASE_URL}/accounts/journal`,
+    JOURNAL_BY_ID: (id) => `${API_BASE_URL}/accounts/journal/${id}`,
+    JOURNAL_POST: (id) => `${API_BASE_URL}/accounts/journal/${id}/post`,
+    // Chart of Accounts
+    CHART_OF_ACCOUNTS: `${API_BASE_URL}/accounts/chart`,
+    CHART_BY_ID: (id) => `${API_BASE_URL}/accounts/chart/${id}`,
+    // Currencies
+    CURRENCIES: `${API_BASE_URL}/finance/currencies`,
+    CURRENCY_BY_ID: (id) => `${API_BASE_URL}/finance/currencies/${id}`,
+    // Financial Years
+    FINANCIAL_YEARS: `${API_BASE_URL}/finance/financial-years`,
+    FY_BY_ID: (id) => `${API_BASE_URL}/finance/financial-years/${id}`,
+    FY_CLOSE: (id) => `${API_BASE_URL}/finance/financial-years/${id}/close`,
+    // HSN Codes
+    HSN_CODES: `${API_BASE_URL}/finance/hsn-codes`,
+    HSN_BY_ID: (id) => `${API_BASE_URL}/finance/hsn-codes/${id}`,
+    // Price Lists
+    PRICE_LISTS: `${API_BASE_URL}/finance/price-lists`,
+    PRICE_LIST_BY_ID: (id) => `${API_BASE_URL}/finance/price-lists/${id}`,
+    // Invoice Matching
+    INVOICE_MATCHING: `${API_BASE_URL}/finance/invoice-matching`,
+    // RFQs (Request for Quotation)
+    RFQS: `${API_BASE_URL}/rfqs`,
+    RFQ_BY_ID: (id) => `${API_BASE_URL}/rfqs/${id}`,
+};
+
+// ==================== SYSTEM / ADMIN ====================
+export const SYSTEM = {
+    // Audit Logs
+    AUDIT_LOGS: `${API_BASE_URL}/audit-logs/detailed`,
+    AUDIT_LOGS_EXPORT: `${API_BASE_URL}/audit-logs/export`,
+    // Documents
+    DOCUMENTS: `${API_BASE_URL}/documents`,
+    DOCUMENT_BY_ID: (id) => `${API_BASE_URL}/documents/${id}`,
+    // Email Logs
+    EMAIL_LOGS: `${API_BASE_URL}/email-logs`,
+    EMAIL_LOG_BY_ID: (id) => `${API_BASE_URL}/email-logs/${id}`,
+    // Record Permissions
+    RECORD_PERMISSIONS: `${API_BASE_URL}/record-permissions`,
+    RECORD_PERMISSION_BY_ID: (id) => `${API_BASE_URL}/record-permissions/${id}`,
+    // 2FA Setup
+    TWO_FA_STATUS: `${API_BASE_URL}/auth/2fa/status`,
+    TWO_FA_ENABLE: `${API_BASE_URL}/auth/2fa/enable`,
+    TWO_FA_DISABLE: `${API_BASE_URL}/auth/2fa/disable`,
+    TWO_FA_VERIFY: `${API_BASE_URL}/auth/2fa/verify`,
+    // Stock advanced reports
+    ABC_ANALYSIS: `${API_BASE_URL}/inventory/abc-analysis`,
+    STOCK_AGING: `${API_BASE_URL}/inventory/stock-aging`,
+    VENDOR_PERFORMANCE: `${API_BASE_URL}/inventory/vendor-performance`,
+    // Notifications
+    NOTIFICATIONS: `${API_BASE_URL}/erp/notifications`,
+    NOTIFICATION_BY_ID: (id) => `${API_BASE_URL}/erp/notifications/${id}`,
+    NOTIFICATIONS_MARK_READ: (id) => `${API_BASE_URL}/erp/notifications/${id}/read`,
+    NOTIFICATIONS_MARK_ALL_READ: (userId) => `${API_BASE_URL}/erp/notifications/user/${userId}/read-all`,
+};
+
 // ==================== DASHBOARD ====================
 export const DASHBOARD = {
     STATS: (companyId = '') => {
@@ -886,6 +979,9 @@ export default {
     PRODUCTS,
     WAREHOUSES,
     PRODUCT_STOCK,
+    WMS,
+    FINANCE,
+    SYSTEM,
     LOGIN_USER,
     FORGOT_PASSWORD,
     RESET_PASSWORD,

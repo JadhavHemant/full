@@ -881,7 +881,9 @@ const CrmWorkspace = ({
     const options = field.loadOptions ? fieldOptions[field.name] || [] : field.options || [];
     const controlClass =
       "mt-2 block w-full rounded border border-blueGray-100 bg-white px-2 py-1 text-[11px] font-normal normal-case text-blueGray-600 shadow-sm focus:outline-none focus:ring";
+    const fieldLabel = getFieldLabel(field);
 
+    // Boolean fields → always a select
     if (field.type === "checkbox") {
       return (
         <select
@@ -889,7 +891,7 @@ const CrmWorkspace = ({
           onChange={(event) => handleColumnFilterChange(field.name, event.target.value)}
           onClick={(event) => event.stopPropagation()}
           className={controlClass}
-          aria-label={`Filter ${field.label}`}
+          aria-label={`Filter ${fieldLabel}`}
         >
           <option value="">All</option>
           <option value="true">Yes</option>
@@ -898,16 +900,19 @@ const CrmWorkspace = ({
       );
     }
 
-    if (field.type === "select" && options.length) {
+    // Select fields → always render a <select> even while options are loading;
+    // shows a disabled placeholder option when the options list is still empty.
+    if (field.type === "select") {
+      const isLoading = field.loadOptions && options.length === 0;
       return (
         <select
           value={value}
           onChange={(event) => handleColumnFilterChange(field.name, event.target.value)}
           onClick={(event) => event.stopPropagation()}
           className={controlClass}
-          aria-label={`Filter ${field.label}`}
+          aria-label={`Filter ${fieldLabel}`}
         >
-          <option value="">All</option>
+          <option value="">{isLoading ? "Loading…" : "All"}</option>
           {options.map((option) => (
             <option key={`column-filter-${field.name}-${option.value}`} value={option.value}>
               {option.label}
@@ -917,6 +922,7 @@ const CrmWorkspace = ({
       );
     }
 
+    // Text / number / date fields → input with field-specific placeholder
     return (
       <input
         type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
@@ -924,8 +930,8 @@ const CrmWorkspace = ({
         onChange={(event) => handleColumnFilterChange(field.name, event.target.value)}
         onClick={(event) => event.stopPropagation()}
         className={controlClass}
-        placeholder="Filter"
-        aria-label={`Filter ${field.label}`}
+        placeholder={`Filter ${fieldLabel}`}
+        aria-label={`Filter ${fieldLabel}`}
       />
     );
   };

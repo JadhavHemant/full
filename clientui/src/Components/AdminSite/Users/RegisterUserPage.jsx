@@ -225,152 +225,269 @@ const RegisterUserPage = () => {
     resetForm();
   };
 
+  // Shared input / select style — full width, focus ring, placeholder colour
+  const inputCls = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition";
+  const selectCls = `${inputCls} disabled:bg-slate-100 disabled:text-slate-500 cursor-pointer`;
+
   return (
-    <div className="space-y-6 p-4 sm:p-6 md:p-8 max-h-screen overflow-y-auto">
-      <section className="rounded-2xl bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-800">Register User</h2>
-            <p className="text-sm text-slate-500">Create a new user from a full-page admin form.</p>
-          </div>
-          <Link to="/Admin/users" className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-            Back To Users
-          </Link>
+    <div className="p-4 sm:p-6 md:p-8">
+      {/* Page header */}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Register User</h2>
+          <p className="text-sm text-slate-500">Create a new user with full details.</p>
         </div>
-      </section>
+        <Link
+          to="/Admin/HR/Users"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+        >
+          ← Back to Users
+        </Link>
+      </div>
 
-      <section className="rounded-2xl bg-white p-6 shadow-sm">
-        {message ? <p className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700">{message}</p> : null}
-        {error ? <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p> : null}
+      {/* Status banners */}
+      {message && (
+        <div className="mb-5 flex items-center gap-3 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+          <span className="text-green-500 text-lg">✓</span> {message}
+        </div>
+      )}
+      {error && (
+        <div className="mb-5 flex items-center gap-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+          <span className="text-red-500 text-lg">✕</span> {error}
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Name</span>
-            <input name="name" value={form.name} onChange={handleChange} required className="rounded-xl border border-slate-300 px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Email</span>
-            <input type="email" name="email" value={form.email} onChange={handleChange} required className="rounded-xl border border-slate-300 px-3 py-2" />
-          </label>
-          <div className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Email Verification OTP</span>
-            <div className="flex gap-2">
+      {/* Form card */}
+      <div className="rounded-2xl bg-white shadow-sm border border-slate-100">
+        {/* Card header */}
+        <div className="border-b border-slate-100 px-6 py-4">
+          <h3 className="text-base font-semibold text-slate-800">User Details</h3>
+          <p className="text-xs text-slate-400 mt-0.5">Fields marked <span className="text-red-500">*</span> are required.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="px-6 py-6">
+
+          {/* ── Section: Account Info ── */}
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">Account Info</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-6">
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Full Name <span className="text-red-500">*</span></span>
               <input
-                name="otp"
-                value={otp}
-                onChange={(event) => setOtp(event.target.value)}
-                placeholder="Enter 6 digit OTP"
-                aria-label="Email verification OTP"
-                className="w-full rounded-xl border border-slate-300 px-3 py-2"
+                name="name" value={form.name} onChange={handleChange}
+                required placeholder="e.g. Priya Sharma"
+                className={inputCls}
               />
-              <button
-                type="button"
-                onClick={handleSendOtp}
-                disabled={sendingOtp || !form.email.trim()}
-                className="whitespace-nowrap rounded-xl border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60"
-              >
-                {sendingOtp ? "Sending..." : otpSentTo ? "Resend OTP" : "Send OTP"}
-              </button>
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Email Address <span className="text-red-500">*</span></span>
+              <input
+                type="email" name="email" value={form.email} onChange={handleChange}
+                required placeholder="user@company.com"
+                className={inputCls}
+              />
+            </label>
+
+            {/* OTP row spans 2 columns */}
+            <div className="flex flex-col gap-1.5 text-sm sm:col-span-2">
+              <span className="font-medium text-slate-700">
+                Email Verification OTP <span className="text-red-500">*</span>
+                {otpSentTo && (
+                  <span className="ml-2 text-xs font-normal text-green-600">— OTP sent to {otpSentTo}</span>
+                )}
+              </span>
+              <div className="flex gap-2">
+                <input
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="Enter 6-digit OTP"
+                  aria-label="Email verification OTP"
+                  className={inputCls}
+                />
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={sendingOtp || !form.email.trim()}
+                  className="whitespace-nowrap rounded-xl border border-blue-400 bg-blue-50 px-4 py-2.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50 transition"
+                >
+                  {sendingOtp ? "Sending…" : otpSentTo ? "Resend OTP" : "Send OTP"}
+                </button>
+              </div>
             </div>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Password <span className="text-red-500">*</span></span>
+              <input
+                type="password" name="password" value={form.password} onChange={handleChange}
+                required placeholder="Set a strong password"
+                className={inputCls}
+              />
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Mobile Number <span className="text-red-500">*</span></span>
+              <input
+                name="mobileNumber" value={form.mobileNumber} onChange={handleChange}
+                required placeholder="+91 98765 43210"
+                className={inputCls}
+              />
+            </label>
+
           </div>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Password</span>
-            <input type="password" name="password" value={form.password} onChange={handleChange} required className="rounded-xl border border-slate-300 px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Mobile Number</span>
-            <input name="mobileNumber" value={form.mobileNumber} onChange={handleChange} required className="rounded-xl border border-slate-300 px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Company</span>
-            <select name="companyId" value={form.companyId} onChange={handleChange} required disabled={!canChooseCompany} className="rounded-xl border border-slate-300 px-3 py-2 disabled:bg-slate-100">
-              <option value="">Select company</option>
-              {companies
-                .filter((company) => canChooseCompany || String(company.Id) === sessionCompanyId)
-                .map((company) => (
-                  <option key={company.Id} value={company.Id}>{company.CompanyName}</option>
+
+          {/* ── Section: Role & Access ── */}
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">Role &amp; Access</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-6">
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Company <span className="text-red-500">*</span></span>
+              <select
+                name="companyId" value={form.companyId} onChange={handleChange}
+                required disabled={!canChooseCompany}
+                className={selectCls}
+              >
+                <option value="">Select company</option>
+                {companies
+                  .filter((c) => canChooseCompany || String(c.Id) === sessionCompanyId)
+                  .map((c) => (
+                    <option key={c.Id} value={c.Id}>{c.CompanyName}</option>
+                  ))}
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Role <span className="text-red-500">*</span></span>
+              <select name="roleId" value={form.roleId} onChange={handleChange} required className={selectCls}>
+                <option value="">Select role</option>
+                {filteredRoles.map((role) => (
+                  <option key={role.Id} value={role.Id}>{role.RoleName}</option>
                 ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Role</span>
-            <select name="roleId" value={form.roleId} onChange={handleChange} required className="rounded-xl border border-slate-300 px-3 py-2">
-              <option value="">Select role</option>
-              {filteredRoles.map((role) => (
-                <option key={role.Id} value={role.Id}>{role.RoleName}</option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Access Type</span>
-            <select name="userTypeId" value={form.userTypeId} onChange={handleChange} className="rounded-xl border border-slate-300 px-3 py-2">
-              <option value="">Select access type</option>
-              {userTypes.map((userType) => (
-                <option key={userType.UserTypeId} value={userType.UserTypeId}>{userType.UserType}</option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Reporting Manager</span>
-            <select name="reportingManagerId" value={form.reportingManagerId} onChange={handleChange} className="rounded-xl border border-slate-300 px-3 py-2">
-              <option value="">Select manager</option>
-              {managerOptions.map((manager) => (
-                <option key={manager.value} value={manager.value}>{manager.label}</option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Department</span>
-            <input type="number" min="1" name="departmentId" value={form.departmentId} onChange={handleChange} className="rounded-xl border border-slate-300 px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Designation</span>
-            <input type="number" min="1" name="designationId" value={form.designationId} onChange={handleChange} className="rounded-xl border border-slate-300 px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Hierarchy Level</span>
-            <input type="number" min="0" max="10" name="hierarchyLevel" value={form.hierarchyLevel} onChange={handleChange} className="rounded-xl border border-slate-300 px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm md:col-span-2">
-            <span className="font-medium text-slate-700">Address</span>
-            <input name="address" value={form.address} onChange={handleChange} className="rounded-xl border border-slate-300 px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">City</span>
-            <input name="city" value={form.city} onChange={handleChange} className="rounded-xl border border-slate-300 px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">State</span>
-            <input name="state" value={form.state} onChange={handleChange} className="rounded-xl border border-slate-300 px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Country</span>
-            <input name="country" value={form.country} onChange={handleChange} className="rounded-xl border border-slate-300 px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Postal Code</span>
-            <input name="postalCode" value={form.postalCode} onChange={handleChange} className="rounded-xl border border-slate-300 px-3 py-2" />
-          </label>
-          <label className="flex flex-col gap-1 text-sm md:col-span-2">
-            <span className="font-medium text-slate-700">Profile Image</span>
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="rounded-xl border border-slate-300 px-3 py-2 text-sm" />
-          </label>
-          <div className="md:col-span-2 flex items-center justify-end gap-3">
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Access Type</span>
+              <select name="userTypeId" value={form.userTypeId} onChange={handleChange} className={selectCls}>
+                <option value="">Select access type</option>
+                {userTypes.map((ut) => (
+                  <option key={ut.UserTypeId} value={ut.UserTypeId}>{ut.UserType}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Reporting Manager</span>
+              <select name="reportingManagerId" value={form.reportingManagerId} onChange={handleChange} className={selectCls}>
+                <option value="">Select manager</option>
+                {managerOptions.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Department</span>
+              <input
+                type="number" min="1" name="departmentId" value={form.departmentId} onChange={handleChange}
+                placeholder="Department ID"
+                className={inputCls}
+              />
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Designation</span>
+              <input
+                type="number" min="1" name="designationId" value={form.designationId} onChange={handleChange}
+                placeholder="Designation ID"
+                className={inputCls}
+              />
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Hierarchy Level</span>
+              <input
+                type="number" min="0" max="10" name="hierarchyLevel" value={form.hierarchyLevel} onChange={handleChange}
+                placeholder="0"
+                className={inputCls}
+              />
+            </label>
+
+          </div>
+
+          {/* ── Section: Address ── */}
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">Address</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-6">
+
+            <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
+              <span className="font-medium text-slate-700">Street Address</span>
+              <input
+                name="address" value={form.address} onChange={handleChange}
+                placeholder="123, MG Road, Bengaluru"
+                className={inputCls}
+              />
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">City</span>
+              <input name="city" value={form.city} onChange={handleChange} placeholder="City" className={inputCls} />
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">State</span>
+              <input name="state" value={form.state} onChange={handleChange} placeholder="State" className={inputCls} />
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Country</span>
+              <input name="country" value={form.country} onChange={handleChange} placeholder="Country" className={inputCls} />
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Postal Code</span>
+              <input name="postalCode" value={form.postalCode} onChange={handleChange} placeholder="PIN / ZIP" className={inputCls} />
+            </label>
+
+          </div>
+
+          {/* ── Section: Profile Image ── */}
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-400">Profile Image</p>
+          <div className="mb-8">
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-slate-700">Upload Photo</span>
+              <input
+                ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-blue-700 hover:file:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+              />
+              <span className="text-xs text-slate-400">JPEG, PNG or WebP — max 5 MB. Image will be compressed automatically.</span>
+            </label>
+          </div>
+
+          {/* ── Action buttons ── */}
+          <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
             {showRegisterAnother && (
               <button
                 type="button"
                 onClick={handleRegisterAnother}
-                className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
               >
-                Register Another
+                + Register Another
               </button>
             )}
-            <button type="submit" disabled={saving} className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">
-              {saving ? "Registering..." : "Register User"}
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 transition"
+            >
+              {saving && (
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              )}
+              {saving ? "Registering…" : "Register User"}
             </button>
           </div>
+
         </form>
-      </section>
+      </div>
     </div>
   );
 };

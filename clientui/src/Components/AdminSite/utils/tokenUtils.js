@@ -125,20 +125,23 @@ export const setAccessTokenWithExpiry = (accessToken, options = {}) => {
             console.warn('⚠️ Token expiry is unusually long (>24h)');
         }
 
-        // ✅ Convert minutes to days for cookie expiry
-        const expiryDays = minutes / 1440;
+        // ✅ Convert minutes to an absolute Date for cookie expiry.
+        // js-cookie treats numeric `expires` as days; fractional values < 1
+        // are unreliable across browsers and treated as session cookies on
+        // some Chromium versions.  Using a Date object is always precise.
+        const expiryDate = new Date(expiryTime);
 
         if (!isProduction) {
-            console.log(`✅ Access token expires in ${Math.round(minutes)} minutes (${expiryDays.toFixed(4)} days)`);
+            console.log(`✅ Access token expires in ${Math.round(minutes)} minutes (${expiryDate.toISOString()})`);
         }
 
-        // ✅ Set cookie with calculated expiry
+        // ✅ Set cookie with absolute expiry date
         Cookies.set('accessToken', accessToken, {
-            expires: expiryDays,
+            expires: expiryDate,
             path: '/',
             sameSite: 'Lax',
-            secure: isProduction, // ✅ HTTPS only in production
-            ...options // Allow custom options override
+            secure: isProduction,
+            ...options
         });
 
         return true;
@@ -146,9 +149,10 @@ export const setAccessTokenWithExpiry = (accessToken, options = {}) => {
     } catch (err) {
         console.error('❌ Token parsing failed. Using fallback 15 mins.', err);
         
-        // ✅ Fallback: 15 minutes expiry
+        // ✅ Fallback: 15 minutes expiry using an absolute Date
+        const fallbackDate = new Date(Date.now() + 15 * 60 * 1000);
         Cookies.set('accessToken', accessToken, {
-            expires: 15 / 1440, // 15 minutes in days
+            expires: fallbackDate,
             path: '/',
             sameSite: 'Lax',
             secure: isProduction,

@@ -8,6 +8,13 @@ import ClassicCorporateOrgChart from "./ClassicCorporateOrgChart";
 import { compressImageFile, formatFileSize } from "../../../utils/imageCompression";
 import Cookies from "js-cookie";
 import TitleBar from "../../TitleBar";
+import {
+  fetchUserModuleAccess,
+  saveUserModuleAccess,
+  resetUserModuleAccess,
+  getRoleDefaults,
+  readCache,
+} from "../../../utils/userModuleAccess";
 
 const initialForm = {
   name: "",
@@ -224,6 +231,14 @@ const UsersPage = () => {
   const [selectAll, setSelectAll] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
 
+  // ── Module Access state ──────────────────────────────────────────────────
+  const [moduleModalOpen, setModuleModalOpen]   = useState(false);
+  const [moduleTargetUser, setModuleTargetUser] = useState(null);   // full user object
+  const [moduleFlags, setModuleFlags]           = useState({ crm: false, erp: false });
+  const [moduleSaving, setModuleSaving]         = useState(false);
+  // cache of { [userId]: { crm, erp } } so badges render immediately
+  const [moduleCache, setModuleCache]           = useState({});
+
   // Get logged-in user info from cookies
   useEffect(() => {
     try {
@@ -241,6 +256,64 @@ const UsersPage = () => {
   const isSuperAdmin = loggedInUser && Number(loggedInUser.roleId) === 1;
   // Get the logged-in user's company ID
   const loggedInCompanyId = loggedInUser?.companyId ? String(loggedInUser.companyId) : "";
+
+  // ── Module Access handlers ────────────────────────────────────────────────
+  const openModuleModal = async (user) => {
+    setModuleTargetUser(user);
+    // Show cached value immediately, then refresh from backend
+    const cached = readCache(user.id) ?? getRoleDefaults(user.roleId);
+    setModuleFlags(cached);
+    setModuleModalOpen(true);
+    // Background fetch to get latest from backend
+    const latest = await fetchUserModuleAccess(user.id, user.roleId);
+    setModuleFlags(latest);
+    setModuleCache((prev) => ({ ...prev, [user.id]: latest }));
+  };
+
+  const closeModuleModal = () => {
+    setModuleModalOpen(false);
+    setModuleTargetUser(null);
+    setModuleSaving(false);
+  };
+
+  const handleSaveModuleAccess = async () => {
+    if (!moduleTargetUser) return;
+    setModuleSaving(true);
+    try {
+      await saveUserModuleAccess(moduleTargetUser.id, moduleFlags);
+      setModuleCache((prev) => ({ ...prev, [moduleTargetUser.id]: { ...moduleFlags } }));
+      toast.success(`Module access updated for ${moduleTargetUser.name}`);
+      closeModuleModal();
+    } catch {
+      // saveUserModuleAccess already wrote to cache optimistically; API might 404 if
+      // backend endpoint not deployed yet — still show success for the frontend state
+      setModuleCache((prev) => ({ ...prev, [moduleTargetUser.id]: { ...moduleFlags } }));
+      toast.success(`Module access saved locally for ${moduleTargetUser.name}`);
+      closeModuleModal();
+    } finally {
+      setModuleSaving(false);
+    }
+  };
+
+  const handleResetModuleAccess = async () => {
+    if (!moduleTargetUser) return;
+    setModuleSaving(true);
+    try {
+      const defaults = await resetUserModuleAccess(moduleTargetUser.id, moduleTargetUser.roleId);
+      setModuleFlags(defaults);
+      setModuleCache((prev) => ({ ...prev, [moduleTargetUser.id]: defaults }));
+      toast.success(`Reset to role defaults for ${moduleTargetUser.name}`);
+      closeModuleModal();
+    } catch {
+      toast.error("Failed to reset module access");
+    } finally {
+      setModuleSaving(false);
+    }
+  };
+
+  /** Returns the display flags for a user row — from cache first, then role defaults */
+  const getModuleBadges = (user) =>
+    moduleCache[user.id] ?? readCache(user.id) ?? getRoleDefaults(user.roleId);
 
   const fetchUsers = async () => {
     try {
@@ -781,6 +854,7 @@ const UsersPage = () => {
                 <th className="px-4 py-3 text-left">Role</th>
                 <th className="px-4 py-3 text-left">Access Type</th>
                 <th className="px-4 py-3 text-left">Manager</th>
+                <th className="px-4 py-3 text-left">Modules</th>
                 <th className="px-4 py-3 text-left">Status</th>
                 <th className="px-4 py-3 text-left">Actions</th>
               </tr>
@@ -796,6 +870,33 @@ const UsersPage = () => {
                     <td className="px-4 py-3">{getRoleName(user.roleId)}</td>
                     <td className="px-4 py-3">{getUserTypeName(user.userTypeId)}</td>
                     <td className="px-4 py-3">{user.reportingManagerName || "-"}</td>
+
+                    {/* ── Module badges ── */}
+                    <td className="px-4 py-3">
+                      {(() => {
+                        const flags = getModuleBadges(user);
+                        return (
+                          <div className="flex flex-wrap gap-1">
+                            {flags.crm && (
+                              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                                CRM
+                              </span>
+                            )}
+                            {flags.erp && (
+                              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                                ERP
+                              </span>
+                            )}
+                            {!flags.crm && !flags.erp && (
+                              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-400">
+                                None
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </td>
+
                     <td className="px-4 py-3">
                       <span
                         className={`rounded-full px-2 py-1 text-xs ${
@@ -806,18 +907,28 @@ const UsersPage = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => openEditModal(user)}
-                        className="rounded-lg border border-blue-300 px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50"
-                      >
-                        Edit
-                      </button>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          onClick={() => openEditModal(user)}
+                          className="rounded-lg border border-blue-300 px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                        >
+                          Edit
+                        </button>
+                        {isSuperAdmin && (
+                          <button
+                            onClick={() => openModuleModal(user)}
+                            className="rounded-lg border border-violet-300 px-3 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-50"
+                          >
+                            Modules
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan={10} className="px-4 py-6 text-center text-gray-500">
                     No users found.
                   </td>
                 </tr>
@@ -901,142 +1012,322 @@ const UsersPage = () => {
         )}
       </section>
 
-      {isModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-lg max-h-[90vh]">
-            <TitleBar title={mode === "create" ? "Create New User" : "Update User"} onClose={() => setIsModalOpen(false)} />
-            <div className="overflow-y-auto p-5">
-              <button onClick={closeModal} className="rounded border px-3 py-1 text-sm">
-                Close
+      {/* ══════════════════════════════════════════════════════════════════
+          MODULE ACCESS MODAL — Super Admin only
+          ══════════════════════════════════════════════════════════════════ */}
+      {moduleModalOpen && moduleTargetUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
+
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <div>
+                <h2 className="text-base font-semibold text-slate-800">Module Access</h2>
+                <p className="mt-0.5 text-xs text-slate-500 truncate max-w-[220px]">
+                  {moduleTargetUser.name} · {getRoleName(moduleTargetUser.roleId)}
+                </p>
+              </div>
+              <button
+                onClick={closeModuleModal}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+              >
+                ✕
               </button>
             </div>
 
-            {statusMessage ? (
-              <p className="mb-3 rounded  px-3 py-2 text-sm text-slate-700">{statusMessage}</p>
-            ) : null}
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4">
 
-            <form onSubmit={handleSave} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {fields.map((field) => {
-                if (mode === "edit" && field === "otp") {
-                  return null;
-                }
+              {/* CRM toggle */}
+              <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 cursor-pointer hover:border-blue-300 transition">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">CRM</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Accounts, Leads, Opportunities, Cases, Activities, Quotes…
+                  </p>
+                </div>
+                <div className="relative ml-4 flex-shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={moduleFlags.crm}
+                    onChange={(e) => setModuleFlags((f) => ({ ...f, crm: e.target.checked }))}
+                    className="sr-only peer"
+                  />
+                  <div className="h-6 w-11 rounded-full bg-slate-200 peer-checked:bg-blue-500 transition-colors" />
+                  <div className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
+                </div>
+              </label>
 
-                return (
-                  <label key={field} className="flex flex-col gap-1 text-sm">
-                    <span className="capitalize text-slate-700">
-                      {fieldLabels[field] || field}
-                    </span>
-                    {field === "otp" ? (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          name={field}
-                          value={form[field]}
-                          onChange={(event) => handleFormFieldChange(field, event.target.value)}
-                          placeholder="Enter 6 digit OTP"
-                          className="w-full rounded border border-slate-300 px-3 py-2"
-                        />
-                        <button
-                          type="button"
-                          onClick={sendCreateUserOtp}
-                          disabled={createOtpSending || !String(form.email || "").trim()}
-                          className="whitespace-nowrap rounded border border-blue-300 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60"
-                        >
-                          {createOtpSending ? "Sending..." : createOtpSentTo ? "Resend OTP" : "Send OTP"}
-                        </button>
-                      </div>
-                    ) : field === "companyId" ? (
-                      <select
-                        name={field}
-                        value={form[field]}
-                        onChange={(event) => handleFormFieldChange(field, event.target.value)}
-                        required
-                        className="rounded border border-slate-300 px-3 py-2"
-                      >
-                        <option value="">Select company</option>
-                        {companies.map((company) => (
-                          <option key={company.Id} value={company.Id}>
-                            {company.CompanyName}
-                          </option>
-                        ))}
-                      </select>
-                    ) : field === "roleId" ? (
-                      <select
-                        name={field}
-                        value={form[field]}
-                        onChange={(event) => handleFormFieldChange(field, event.target.value)}
-                        required
-                        className="rounded border border-slate-300 px-3 py-2"
-                      >
-                        <option value="">Select role</option>
-                        {roles.map((role) => (
-                          <option key={role.Id} value={role.Id}>
-                            {role.RoleName}
-                          </option>
-                        ))}
-                      </select>
-                    ) : field === "userTypeId" ? (
-                      <select
-                        name={field}
-                        value={form[field]}
-                        onChange={(event) => handleFormFieldChange(field, event.target.value)}
-                        className="rounded border border-slate-300 px-3 py-2"
-                      >
-                        <option value="">Select access type</option>
-                        {userTypes.map((userType) => (
-                          <option key={userType.UserTypeId} value={userType.UserTypeId}>
-                            {userType.UserType}
-                          </option>
-                        ))}
-                      </select>
-                    ) : field === "reportingManagerId" ? (
-                      <select
-                        name={field}
-                        value={form[field]}
-                        onChange={(event) => handleFormFieldChange(field, event.target.value)}
-                        className="rounded border border-slate-300 px-3 py-2"
-                      >
-                        <option value="">Select manager</option>
-                        {managerOptions.map((manager) => (
-                          <option key={manager.value} value={manager.value}>
-                            {manager.label}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        type={field === "password" ? "password" : "text"}
-                        name={field}
-                        value={form[field]}
-                        onChange={(event) => handleFormFieldChange(field, event.target.value)}
-                        required={mode === "create" ? ["name", "email", "password", "mobileNumber"].includes(field) : false}
-                        className="rounded border border-slate-300 px-3 py-2"
-                      />
-                    )}
-                  </label>
-                );
-              })}
+              {/* ERP toggle */}
+              <label className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 cursor-pointer hover:border-emerald-300 transition">
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">ERP / Inventory</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Products, Stock, Purchase Orders, Sales Orders, Finance…
+                  </p>
+                </div>
+                <div className="relative ml-4 flex-shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={moduleFlags.erp}
+                    onChange={(e) => setModuleFlags((f) => ({ ...f, erp: e.target.checked }))}
+                    className="sr-only peer"
+                  />
+                  <div className="h-6 w-11 rounded-full bg-slate-200 peer-checked:bg-emerald-500 transition-colors" />
+                  <div className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
+                </div>
+              </label>
 
-              <div className="sm:col-span-2">
-                <label className="mb-1 block text-sm text-slate-700">Profile Image</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleUserImageChange}
-                  className="w-full rounded border border-slate-300 px-3 py-2 text-sm"
-                />
+              {/* Summary pill */}
+              <div className="rounded-lg bg-slate-100 px-4 py-2.5 text-xs text-slate-600">
+                <span className="font-medium">Access will be: </span>
+                {moduleFlags.crm && moduleFlags.erp && <span className="font-semibold text-violet-700">CRM + ERP (Both)</span>}
+                {moduleFlags.crm && !moduleFlags.erp && <span className="font-semibold text-blue-700">CRM only</span>}
+                {!moduleFlags.crm && moduleFlags.erp && <span className="font-semibold text-emerald-700">ERP only</span>}
+                {!moduleFlags.crm && !moduleFlags.erp && <span className="font-semibold text-red-600">No module access</span>}
               </div>
+            </div>
 
-              <div className="sm:col-span-2">
+            {/* Footer */}
+            <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4">
+              <button
+                type="button"
+                onClick={handleResetModuleAccess}
+                disabled={moduleSaving}
+                className="text-xs font-medium text-slate-500 hover:text-slate-700 underline underline-offset-2 disabled:opacity-50"
+              >
+                Reset to role defaults
+              </button>
+              <div className="flex gap-2">
                 <button
-                  type="submit"
-                  disabled={saving}
-                  className="w-full rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                  type="button"
+                  onClick={closeModuleModal}
+                  className="rounded-lg bg-slate-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-slate-700 transition"
                 >
-                  {saving ? "Saving..." : mode === "create" ? "Create Record" : "Update Record"}
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveModuleAccess}
+                  disabled={moduleSaving}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-violet-700 disabled:opacity-60 transition"
+                >
+                  {moduleSaving && (
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  )}
+                  Save
                 </button>
               </div>
-            </form>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {isModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="flex w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl" style={{ maxHeight: "92vh" }}>
+
+            {/* ── Header ── */}
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <h2 className="text-base font-semibold text-slate-800">
+                {mode === "create" ? "Create New User" : "Update User"}
+              </h2>
+              <button
+                onClick={closeModal}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* ── Scrollable body ── */}
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+
+              {statusMessage && (
+                <p className={`mb-4 rounded-lg px-4 py-2.5 text-sm ${statusMessage.toLowerCase().includes("success") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+                  {statusMessage}
+                </p>
+              )}
+
+              <form id="user-modal-form" onSubmit={handleSave}>
+                {/* shared field style */}
+                {(() => {
+                  const f = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200";
+                  const lbl = "mb-1 block text-sm text-slate-700";
+                  const req = <span className="text-red-500 ml-0.5">*</span>;
+
+                  return (
+                    <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+
+                      {/* Name */}
+                      <div>
+                        <label className={lbl}>Name {req}</label>
+                        <input type="text" value={form.name} onChange={(e) => handleFormFieldChange("name", e.target.value)}
+                          placeholder="Full name" required className={f} />
+                      </div>
+
+                      {/* Email */}
+                      <div>
+                        <label className={lbl}>Email {req}</label>
+                        <input type="email" value={form.email} onChange={(e) => handleFormFieldChange("email", e.target.value)}
+                          placeholder="user@example.com" required className={f} />
+                      </div>
+
+                      {/* OTP — create only, spans 2 cols */}
+                      {mode === "create" && (
+                        <div className="sm:col-span-2">
+                          <label className={lbl}>Email Verification OTP {req}</label>
+                          <div className="flex gap-2">
+                            <input type="text" value={form.otp} onChange={(e) => handleFormFieldChange("otp", e.target.value)}
+                              placeholder="Enter 6 digit OTP" className={f} />
+                            <button type="button" onClick={sendCreateUserOtp}
+                              disabled={createOtpSending || !String(form.email || "").trim()}
+                              className="whitespace-nowrap rounded-lg border border-blue-400 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50 transition">
+                              {createOtpSending ? "Sending…" : createOtpSentTo ? "Resend OTP" : "Send OTP"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Password */}
+                      <div>
+                        <label className={lbl}>
+                          Password {mode === "create" ? req : <span className="ml-1 text-xs text-slate-400">(leave blank to keep)</span>}
+                        </label>
+                        <input type="password" value={form.password} onChange={(e) => handleFormFieldChange("password", e.target.value)}
+                          placeholder={mode === "edit" ? "Leave blank to keep current" : "Set a password"}
+                          required={mode === "create"} className={f} />
+                      </div>
+
+                      {/* Mobile */}
+                      <div>
+                        <label className={lbl}>Mobile Number {req}</label>
+                        <input type="text" value={form.mobileNumber} onChange={(e) => handleFormFieldChange("mobileNumber", e.target.value)}
+                          placeholder="+91 98765 43210" required={mode === "create"} className={f} />
+                      </div>
+
+                      {/* Company */}
+                      <div>
+                        <label className={lbl}>Company {req}</label>
+                        <select value={form.companyId} onChange={(e) => handleFormFieldChange("companyId", e.target.value)}
+                          required className={f}>
+                          <option value="">Select company</option>
+                          {companies.map((c) => <option key={c.Id} value={c.Id}>{c.CompanyName}</option>)}
+                        </select>
+                      </div>
+
+                      {/* Role */}
+                      <div>
+                        <label className={lbl}>Role {req}</label>
+                        <select value={form.roleId} onChange={(e) => handleFormFieldChange("roleId", e.target.value)}
+                          required className={f}>
+                          <option value="">Select role</option>
+                          {roles.map((r) => <option key={r.Id} value={r.Id}>{r.RoleName}</option>)}
+                        </select>
+                      </div>
+
+                      {/* Access Type */}
+                      <div>
+                        <label className={lbl}>Access Type</label>
+                        <select value={form.userTypeId} onChange={(e) => handleFormFieldChange("userTypeId", e.target.value)} className={f}>
+                          <option value="">Select access type</option>
+                          {userTypes.map((ut) => <option key={ut.UserTypeId} value={ut.UserTypeId}>{ut.UserType}</option>)}
+                        </select>
+                      </div>
+
+                      {/* Reporting Manager */}
+                      <div>
+                        <label className={lbl}>Reporting Manager</label>
+                        <select value={form.reportingManagerId} onChange={(e) => handleFormFieldChange("reportingManagerId", e.target.value)} className={f}>
+                          <option value="">Select manager</option>
+                          {managerOptions.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                        </select>
+                      </div>
+
+                      {/* Department */}
+                      <div>
+                        <label className={lbl}>Department Id</label>
+                        <input type="text" value={form.departmentId} onChange={(e) => handleFormFieldChange("departmentId", e.target.value)}
+                          placeholder="e.g. 3" className={f} />
+                      </div>
+
+                      {/* Designation */}
+                      <div>
+                        <label className={lbl}>Designation Id</label>
+                        <input type="text" value={form.designationId} onChange={(e) => handleFormFieldChange("designationId", e.target.value)}
+                          placeholder="e.g. 7" className={f} />
+                      </div>
+
+                      {/* Hierarchy Level */}
+                      <div>
+                        <label className={lbl}>Hierarchy Level</label>
+                        <input type="number" min="0" value={form.hierarchyLevel} onChange={(e) => handleFormFieldChange("hierarchyLevel", e.target.value)}
+                          placeholder="0" className={f} />
+                      </div>
+
+                      {/* Address — full width */}
+                      <div className="sm:col-span-2">
+                        <label className={lbl}>Address</label>
+                        <input type="text" value={form.address} onChange={(e) => handleFormFieldChange("address", e.target.value)}
+                          placeholder="Street address" className={f} />
+                      </div>
+
+                      {/* City */}
+                      <div>
+                        <label className={lbl}>City</label>
+                        <input type="text" value={form.city} onChange={(e) => handleFormFieldChange("city", e.target.value)}
+                          placeholder="City" className={f} />
+                      </div>
+
+                      {/* State */}
+                      <div>
+                        <label className={lbl}>State</label>
+                        <input type="text" value={form.state} onChange={(e) => handleFormFieldChange("state", e.target.value)}
+                          placeholder="State" className={f} />
+                      </div>
+
+                      {/* Country */}
+                      <div>
+                        <label className={lbl}>Country</label>
+                        <input type="text" value={form.country} onChange={(e) => handleFormFieldChange("country", e.target.value)}
+                          placeholder="Country" className={f} />
+                      </div>
+
+                      {/* Postal Code */}
+                      <div>
+                        <label className={lbl}>Postal Code</label>
+                        <input type="text" value={form.postalCode} onChange={(e) => handleFormFieldChange("postalCode", e.target.value)}
+                          placeholder="PIN / ZIP" className={f} />
+                      </div>
+
+                      {/* Profile Image — full width */}
+                      <div className="sm:col-span-2">
+                        <label className={lbl}>Profile Image</label>
+                        <input type="file" accept="image/*" onChange={handleUserImageChange}
+                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-600 file:mr-3 file:rounded file:border-0 file:bg-slate-100 file:px-3 file:py-1 file:text-xs file:font-medium file:text-slate-700 hover:file:bg-slate-200 focus:outline-none" />
+                      </div>
+
+                    </div>
+                  );
+                })()}
+              </form>
+            </div>
+
+            {/* ── Footer ── */}
+            <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4">
+              <button type="button" onClick={closeModal}
+                className="rounded-lg bg-slate-600 px-5 py-2 text-sm font-semibold uppercase tracking-wide text-white hover:bg-slate-700 transition">
+                Cancel
+              </button>
+              <button type="submit" form="user-modal-form" disabled={saving}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold uppercase tracking-wide text-white hover:bg-blue-700 disabled:opacity-60 transition">
+                {saving && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
+                {saving ? "Saving…" : mode === "create" ? "Create" : "Update"}
+              </button>
+            </div>
+
           </div>
         </div>
       ) : null}

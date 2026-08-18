@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion, useAnimation, useInView, useScroll, useTransform } from "framer-motion";
 import {
   ArrowTrendingUpIcon,
   BoltIcon,
@@ -247,7 +248,7 @@ const StatusBadge = ({ value }) => (
   </span>
 );
 
-const MetricCard = ({ title, value, note, tone = "dark", icon: Icon }) => {
+const MetricCard = ({ title, value, note, tone = "dark", icon: Icon, delay = 0 }) => {
   const toneClassMap = {
     dark: "bg-slate-950 text-white",
     blue: "bg-sky-600 text-white",
@@ -255,36 +256,111 @@ const MetricCard = ({ title, value, note, tone = "dark", icon: Icon }) => {
     amber: "bg-amber-400 text-slate-950",
   };
 
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, amount: 0.3 });
+
   return (
-    <article className={`${toneClassMap[tone]} rounded-[28px] p-5 shadow-[0_20px_50px_rgba(15,23,42,0.14)]`}>
+    <motion.article
+      ref={ref}
+      initial={{ opacity: 0, y: 30, scale: 0.9 }}
+      animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -8, scale: 1.02, transition: { duration: 0.3 } }}
+      className={`${toneClassMap[tone]} group cursor-pointer rounded-[28px] p-5 shadow-[0_20px_50px_rgba(15,23,42,0.14)] transition-shadow hover:shadow-[0_30px_70px_rgba(15,23,42,0.22)]`}
+    >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium opacity-90">{title}</p>
-          <p className="mt-3 text-3xl font-bold">{value}</p>
-          <p className="mt-2 text-xs opacity-80">{note}</p>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 0.9 } : {}}
+            transition={{ delay: delay + 0.2 }}
+            className="text-sm font-medium"
+          >
+            {title}
+          </motion.p>
+          <motion.p
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={isInView ? { opacity: 1, scale: 1 } : {}}
+            transition={{ delay: delay + 0.3, type: "spring", stiffness: 100 }}
+            className="mt-3 text-3xl font-bold"
+          >
+            {value}
+          </motion.p>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 0.8 } : {}}
+            transition={{ delay: delay + 0.4 }}
+            className="mt-2 text-xs"
+          >
+            {note}
+          </motion.p>
         </div>
-        <div className="rounded-2xl bg-white/15 p-3">
+        <motion.div
+          whileHover={{ rotate: 360, scale: 1.1 }}
+          transition={{ duration: 0.6, ease: "easeInOut" }}
+          className="rounded-2xl bg-white/15 p-3 backdrop-blur-sm"
+        >
           <Icon className="h-6 w-6" />
-        </div>
+        </motion.div>
       </div>
-    </article>
+      
+      {/* Animated gradient overlay on hover */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileHover={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="pointer-events-none absolute inset-0 rounded-[28px] bg-gradient-to-br from-white/10 via-transparent to-transparent"
+      />
+    </motion.article>
   );
 };
 
-const SectionCard = ({ eyebrow, title, action, children }) => (
-  <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        {eyebrow ? (
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">{eyebrow}</p>
-        ) : null}
-        <h2 className="mt-2 text-xl font-semibold text-slate-950">{title}</h2>
+const SectionCard = ({ eyebrow, title, action, children, delay = 0 }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, amount: 0.2 });
+
+  return (
+    <motion.section
+      ref={ref}
+      initial={{ opacity: 0, y: 40 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
+      className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] transition-shadow hover:shadow-[0_25px_70px_rgba(15,23,42,0.1)]"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          {eyebrow ? (
+            <motion.p
+              initial={{ opacity: 0, x: -10 }}
+              animate={isInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ delay: delay + 0.1 }}
+              className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400"
+            >
+              {eyebrow}
+            </motion.p>
+          ) : null}
+          <motion.h2
+            initial={{ opacity: 0, x: -10 }}
+            animate={isInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ delay: delay + 0.2 }}
+            className="mt-2 text-xl font-semibold text-slate-950"
+          >
+            {title}
+          </motion.h2>
+        </div>
+        {action}
       </div>
-      {action}
-    </div>
-    <div className="mt-5">{children}</div>
-  </section>
-);
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={isInView ? { opacity: 1 } : {}}
+        transition={{ delay: delay + 0.3, duration: 0.5 }}
+        className="mt-5"
+      >
+        {children}
+      </motion.div>
+    </motion.section>
+  );
+};
 
 function AdminCrmDashboard() {
   const sessionUser = useMemo(() => getSessionUser() || {}, []);
@@ -301,6 +377,10 @@ function AdminCrmDashboard() {
     qualifiedLeadRate: 0,
     paymentValue: 0,
   });
+
+  const { scrollYProgress } = useScroll();
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.3], [1, 0.6]);
 
   useEffect(() => {
     const loadDashboard = async () => {
@@ -418,6 +498,7 @@ function AdminCrmDashboard() {
       note: "Live demand capture across the CRM.",
       tone: "dark",
       icon: InboxStackIcon,
+      delay: 0,
     },
     {
       title: "Open pipeline",
@@ -425,6 +506,7 @@ function AdminCrmDashboard() {
       note: "Opportunity budget value from current records.",
       tone: "blue",
       icon: CurrencyRupeeIcon,
+      delay: 0.1,
     },
     {
       title: "Qualified lead rate",
@@ -432,6 +514,7 @@ function AdminCrmDashboard() {
       note: "Qualified leads divided by total leads.",
       tone: "green",
       icon: CheckCircleIcon,
+      delay: 0.2,
     },
     {
       title: "Payments received",
@@ -439,96 +522,188 @@ function AdminCrmDashboard() {
       note: "Sum of received payment rows in the latest snapshot.",
       tone: "amber",
       icon: CreditCardIcon,
+      delay: 0.3,
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(125,211,252,0.28),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(251,191,36,0.18),_transparent_25%),linear-gradient(180deg,#f8fafc_0%,#ecfeff_42%,#f8fafc_100%)] p-6">
-      {/* <section className="rounded-[34px] border border-slate-200 bg-white/95 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.08)] backdrop-blur">
-        {/* <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between"> */}
-          {/* <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-sky-600">CRM Control Tower</p>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-950">Phase-wise revenue workspace</h1>
-            <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600">
-              The dashboard now matches the CRM scope you shared: core pipeline execution in Phase 1,
-              commercial operations in Phase 2, retention in Phase 3, and AI-readiness in Phase 4.
-              Every card below is wired to the current CRM routes so the team can move from planning
-              to execution without switching mental models.
-            </p>
-          </div> */}
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-sky-50 to-emerald-50 p-6">
+      {/* Animated background orbs */}
+      <motion.div
+        style={{ y: backgroundY, opacity }}
+        className="pointer-events-none absolute inset-0"
+      >
+        <motion.div
+          animate={{
+            x: [0, 100, 0],
+            y: [0, -80, 0],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute -left-40 top-20 h-96 w-96 rounded-full bg-gradient-to-br from-sky-300/30 to-cyan-300/20 blur-3xl"
+        />
+        <motion.div
+          animate={{
+            x: [0, -120, 0],
+            y: [0, 100, 0],
+            scale: [1, 1.3, 1],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2,
+          }}
+          className="absolute right-0 top-40 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-emerald-300/25 to-teal-300/15 blur-3xl"
+        />
+        <motion.div
+          animate={{
+            x: [0, 80, 0],
+            y: [0, -60, 0],
+            scale: [1, 1.15, 1],
+          }}
+          transition={{
+            duration: 18,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 5,
+          }}
+          className="absolute bottom-20 left-1/3 h-80 w-80 rounded-full bg-gradient-to-br from-amber-300/20 to-yellow-300/10 blur-3xl"
+        />
+      </motion.div>
 
-          {/* <div className="rounded-[26px] border border-sky-100 bg-sky-50 px-5 py-4 text-sm text-slate-700 shadow-sm">
-            Signed in as <span className="font-semibold text-slate-950">{sessionUser.name || sessionUser.Name || "Admin user"}</span>
-          </div> */}
-        {/* </div> */}
-{/* 
-        <div className="mt-6 flex flex-wrap gap-3">
-          {masterDataLinks.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div> 
+      {/* Floating particles */}
+      {[...Array(15)].map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 100 }}
+          animate={{
+            opacity: [0.2, 0.5, 0.2],
+            y: [-20, -100, -20],
+            x: [0, Math.sin(i) * 50, 0],
+          }}
+          transition={{
+            duration: 10 + i * 2,
+            repeat: Infinity,
+            delay: i * 0.5,
+            ease: "easeInOut",
+          }}
+          className="pointer-events-none absolute h-2 w-2 rounded-full bg-sky-400/40"
+          style={{
+            left: `${10 + (i * 6)}%`,
+            bottom: '10%',
+          }}
+        />
+      ))}
 
-        {errorSummary ? <div className="mt-6"><ErrorPanel {...errorSummary} /></div> : null}
-      </section> */}
-      
-
-      <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <motion.section
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        className="relative z-10 mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4"
+      >
         {metrics.map((metric) => (
           <MetricCard key={metric.title} {...metric} />
         ))}
-      </section>
+      </motion.section>
 
-      <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+      <section className="relative z-10 mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <SectionCard
           eyebrow="Implementation Map"
           title="CRM module coverage"
+          delay={0.2}
           action={
-            <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
+              className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600"
+            >
               Live coverage by current routes
-            </div>
+            </motion.div>
           }
         >
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {moduleCatalog.map((module) => {
+            {moduleCatalog.map((module, index) => {
               const Icon = module.icon;
               const total = snapshot.phaseCoverage[module.key] || 0;
 
               return (
-                <Link
+                <motion.div
                   key={module.key}
-                  to={module.adminTo}
-                  className="group rounded-[24px] border border-slate-200 bg-slate-50 p-4 transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-white"
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{
+                    delay: 0.3 + index * 0.05,
+                    duration: 0.5,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
-                      <Icon className="h-6 w-6 text-slate-700" />
-                    </div>
-                    <PhasePill phase={module.phase} />
-                  </div>
-                  <div className="mt-4">
-                    <h3 className="text-base font-semibold text-slate-950 group-hover:text-sky-700">{module.label}</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{module.description}</p>
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Records</span>
-                      <span className="text-lg font-bold text-slate-950">{loading ? "..." : formatNumber(total)}</span>
-                    </div>
-                  </div>
-                </Link>
+                  <Link
+                    to={module.adminTo}
+                    className="group block"
+                  >
+                    <motion.div
+                      whileHover={{ y: -6, scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ duration: 0.2 }}
+                      className="h-full rounded-[24px] border border-slate-200 bg-slate-50 p-4 transition-all hover:border-sky-200 hover:bg-white hover:shadow-lg"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <motion.div
+                          whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
+                          transition={{ duration: 0.5 }}
+                          className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-200"
+                        >
+                          <Icon className="h-6 w-6 text-slate-700 transition-colors group-hover:text-sky-600" />
+                        </motion.div>
+                        <PhasePill phase={module.phase} />
+                      </div>
+                      <div className="mt-4">
+                        <h3 className="text-base font-semibold text-slate-950 transition-colors group-hover:text-sky-700">
+                          {module.label}
+                        </h3>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">{module.description}</p>
+                        <div className="mt-4 flex items-center justify-between">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Records
+                          </span>
+                          <motion.span
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.5 + index * 0.05 }}
+                            className="text-lg font-bold text-slate-950"
+                          >
+                            {loading ? "..." : formatNumber(total)}
+                          </motion.span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </Link>
+                </motion.div>
               );
             })}
           </div>
         </SectionCard>
 
-        <SectionCard eyebrow="Roadmap" title="Phase blueprint">
+        <SectionCard eyebrow="Roadmap" title="Phase blueprint" delay={0.3}>
           <div className="space-y-4">
-            {phaseBlueprint.map((phase) => (
-              <article key={phase.phase} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+            {phaseBlueprint.map((phase, index) => (
+              <motion.article
+                key={phase.phase}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{
+                  delay: 0.4 + index * 0.1,
+                  duration: 0.5,
+                }}
+                whileHover={{ x: 4, transition: { duration: 0.2 } }}
+                className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 transition-all hover:bg-white hover:shadow-md"
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <PhasePill phase={phase.phase} />
@@ -537,28 +712,46 @@ function AdminCrmDashboard() {
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {phase.outcomes.map((outcome) => (
-                    <span key={outcome} className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
+                  {phase.outcomes.map((outcome, idx) => (
+                    <motion.span
+                      key={outcome}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.5 + index * 0.1 + idx * 0.05 }}
+                      className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200"
+                    >
                       {outcome}
-                    </span>
+                    </motion.span>
                   ))}
                 </div>
-              </article>
+              </motion.article>
             ))}
           </div>
         </SectionCard>
       </section>
 
-      <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <section className="relative z-10 mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
         <SectionCard
           eyebrow="Lead Flow"
           title="Recent leads"
-          action={<Link className="text-sm font-semibold text-sky-700" to="/Admin/Leads">Open leads</Link>}
+          delay={0.4}
+          action={
+            <Link className="text-sm font-semibold text-sky-700 transition-colors hover:text-sky-600" to="/Admin/Leads">
+              Open leads
+            </Link>
+          }
         >
           <div className="space-y-4">
             {snapshot.recentLeads.length ? (
-              snapshot.recentLeads.map((lead) => (
-                <div key={lead.Id} className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+              snapshot.recentLeads.map((lead, index) => (
+                <motion.div
+                  key={lead.Id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 + index * 0.1 }}
+                  whileHover={{ x: 4, scale: 1.01 }}
+                  className="rounded-[22px] border border-slate-200 bg-slate-50 p-4 transition-all hover:bg-white hover:shadow-md"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold text-slate-950">
@@ -572,7 +765,7 @@ function AdminCrmDashboard() {
                     <span>Assigned to {lead.AssignedToName || "Unassigned"}</span>
                     <span>{formatPercent(lead.ProgressPercentage)}</span>
                   </div>
-                </div>
+                </motion.div>
               ))
             ) : (
               <p className="text-sm text-slate-500">No leads available yet.</p>
@@ -583,12 +776,24 @@ function AdminCrmDashboard() {
         <SectionCard
           eyebrow="Pipeline"
           title="Recent opportunities"
-          action={<Link className="text-sm font-semibold text-sky-700" to="/Admin/Opportunities">Open pipeline</Link>}
+          delay={0.5}
+          action={
+            <Link className="text-sm font-semibold text-sky-700 transition-colors hover:text-sky-600" to="/Admin/Opportunities">
+              Open pipeline
+            </Link>
+          }
         >
           <div className="space-y-4">
             {snapshot.recentOpportunities.length ? (
-              snapshot.recentOpportunities.map((opportunity) => (
-                <div key={opportunity.Id} className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+              snapshot.recentOpportunities.map((opportunity, index) => (
+                <motion.div
+                  key={opportunity.Id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6 + index * 0.1 }}
+                  whileHover={{ x: 4, scale: 1.01 }}
+                  className="rounded-[22px] border border-slate-200 bg-slate-50 p-4 transition-all hover:bg-white hover:shadow-md"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold text-slate-950">{opportunity.OpportunityName || `Opportunity #${opportunity.Id}`}</p>
@@ -600,7 +805,7 @@ function AdminCrmDashboard() {
                     <span>{opportunity.SalesStageName || "No stage"}</span>
                     <span>{formatCurrency(opportunity.BudgetAmount)}</span>
                   </div>
-                </div>
+                </motion.div>
               ))
             ) : (
               <p className="text-sm text-slate-500">No opportunities available yet.</p>
@@ -611,11 +816,23 @@ function AdminCrmDashboard() {
         <SectionCard
           eyebrow="Commercials"
           title="Recent quotes and activities"
-          action={<Link className="text-sm font-semibold text-sky-700" to="/Admin/Quotes">Open quotes</Link>}
+          delay={0.6}
+          action={
+            <Link className="text-sm font-semibold text-sky-700 transition-colors hover:text-sky-600" to="/Admin/Quotes">
+              Open quotes
+            </Link>
+          }
         >
           <div className="space-y-4">
-            {snapshot.recentQuotes.slice(0, 3).map((quote) => (
-              <div key={`quote-${quote.Id}`} className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+            {snapshot.recentQuotes.slice(0, 3).map((quote, index) => (
+              <motion.div
+                key={`quote-${quote.Id}`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.7 + index * 0.1 }}
+                whileHover={{ x: 4, scale: 1.01 }}
+                className="rounded-[22px] border border-slate-200 bg-slate-50 p-4 transition-all hover:bg-white hover:shadow-md"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold text-slate-950">{quote.QuoteNumber || `Quote #${quote.Id}`}</p>
@@ -624,11 +841,18 @@ function AdminCrmDashboard() {
                   <StatusBadge value={quote.Status || "Draft"} />
                 </div>
                 <p className="mt-3 text-sm font-semibold text-slate-800">{formatCurrency(quote.TotalAmount)}</p>
-              </div>
+              </motion.div>
             ))}
 
-            {snapshot.recentActivities.slice(0, 3).map((activity) => (
-              <div key={`activity-${activity.Id}`} className="rounded-[22px] border border-slate-200 bg-white p-4">
+            {snapshot.recentActivities.slice(0, 3).map((activity, index) => (
+              <motion.div
+                key={`activity-${activity.Id}`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.8 + index * 0.1 }}
+                whileHover={{ x: 4, scale: 1.01 }}
+                className="rounded-[22px] border border-slate-200 bg-white p-4 transition-all hover:shadow-md"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-semibold text-slate-950">{activity.Subject || activity.Type || `Activity #${activity.Id}`}</p>
@@ -636,7 +860,7 @@ function AdminCrmDashboard() {
                   </div>
                   <StatusBadge value={activity.Status || "Pending"} />
                 </div>
-              </div>
+              </motion.div>
             ))}
 
             {!snapshot.recentQuotes.length && !snapshot.recentActivities.length ? (

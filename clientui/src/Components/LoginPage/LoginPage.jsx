@@ -102,11 +102,29 @@ const LoginPage = () => {
 
     setIsLoading(true);
     try {
-      console.log('🔐 Attempting login...');
-      const response = await axios.post(API.LOGIN_USER, { email, password });
+      console.log('🔐 Attempting login...', { 
+        endpoint: API.LOGIN_USER, 
+        email,
+        hasPassword: !!password 
+      });
+      
+      const response = await axios.post(API.LOGIN_USER, { email, password }, {
+        timeout: 30000,
+        withCredentials: true
+      });
+      
+      console.log('📦 Login response received:', { 
+        status: response.status, 
+        hasData: !!response.data,
+        hasAccessToken: !!response.data?.accessToken,
+        hasRefreshToken: !!response.data?.refreshToken,
+        hasUser: !!response.data?.user
+      });
+
       const { accessToken, refreshToken, user } = response.data;
 
       if (!accessToken) {
+        console.error('❌ No accessToken in response:', response.data);
         throw new Error('No access token in login response');
       }
 
@@ -114,25 +132,55 @@ const LoginPage = () => {
       const tokenSet = setAccessTokenWithExpiry(accessToken);
       
       if (!tokenSet) {
+        console.error('❌ Failed to set accessToken cookie');
         throw new Error('Failed to set access token');
       }
 
-      Cookies.set("refreshToken", refreshToken, {
-        expires: rememberMe ? 14 : 7,
-        path: "/",
-        sameSite: "Lax",
-      });
-      Cookies.set("user", JSON.stringify(user), {
-        expires: rememberMe ? 7 : 1,
-        path: "/",
-        sameSite: "Lax",
-      });
+      if (refreshToken) {
+        Cookies.set("refreshToken", refreshToken, {
+          expires: rememberMe ? 14 : 7,
+          path: "/",
+          sameSite: "Lax",
+        });
+        console.log('✅ Refresh token set');
+      }
 
-      console.log('🎯 Navigating to portal...');
+      if (user) {
+        Cookies.set("user", JSON.stringify(user), {
+          expires: rememberMe ? 7 : 1,
+          path: "/",
+          sameSite: "Lax",
+        });
+        console.log('✅ User data set');
+      }
+
+      console.log('🎯 Navigating to portal...', { path: getDefaultPortalPath(user) });
       navigate(getDefaultPortalPath(user), { replace: true });
     } catch (err) {
-      console.error('❌ Login error:', err);
-      setError(err.response?.data?.message || "Login failed. Check your credentials and try again.");
+      console.error('❌ Login error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        isNetworkError: err.message === 'Network Error',
+        isTimeout: err.code === 'ECONNABORTED'
+      });
+
+      let errorMessage = "Login failed. Check your credentials and try again.";
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message === 'Network Error') {
+        errorMessage = "Cannot connect to server. Please check your connection.";
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = "Login request timed out. Please try again.";
+      } else if (err.response?.status === 401) {
+        errorMessage = "Invalid email or password.";
+      } else if (err.response?.status === 500) {
+        errorMessage = "Server error. Please try again later.";
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

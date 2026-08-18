@@ -79,8 +79,33 @@ const RoleAccess       = lazy(() => import("../AdminSite/RoleAccess/RoleAccess")
 const UserTypesPage    = lazy(() => import("../AdminSite/UserTypes/UserTypesPage"));
 
 // ── ERP — Finance ────────────────────────────────────────────────────────────
-const Expenses        = lazy(() => import("../../features/inventory/pages/finance/ExpensesPage"));
-const PurchaseReturns = lazy(() => import("../../features/inventory/pages/finance/PurchaseReturnsPage"));
+const Expenses           = lazy(() => import("../../features/inventory/pages/finance/ExpensesPage"));
+const PurchaseReturns    = lazy(() => import("../../features/inventory/pages/finance/PurchaseReturnsPage"));
+const JournalEntries     = lazy(() => import("../../features/inventory/pages/finance/JournalEntriesPage"));
+
+// ── ERP — Finance Advanced ───────────────────────────────────────────────────
+const ChartOfAccounts    = lazy(() => import("../../features/inventory/pages/ChartOfAccountsPage"));
+const Currencies         = lazy(() => import("../../features/inventory/pages/CurrenciesPage"));
+const FinancialYear      = lazy(() => import("../../features/inventory/pages/FinancialYearsPage"));
+const HSNCodes           = lazy(() => import("../../features/inventory/pages/HSNCodesPage"));
+const PriceLists         = lazy(() => import("../../features/inventory/pages/PriceListsPage"));
+const InvoiceMatching    = lazy(() => import("../../features/inventory/pages/InvoiceMatchingPage"));
+const RFQs               = lazy(() => import("../../features/inventory/pages/RFQsPage"));
+
+// ── WMS ───────────────────────────────────────────────────────────────────────
+const CycleCount         = lazy(() => import("../../features/inventory/pages/wms/CycleCountPage"));
+const PickingLists       = lazy(() => import("../../features/inventory/pages/wms/PickingListsPage"));
+const Putaway            = lazy(() => import("../../features/inventory/pages/wms/PutawayPage"));
+
+// ── System / Analytics ───────────────────────────────────────────────────────
+const AuditLogs          = lazy(() => import("../../features/inventory/pages/AuditLogsPage"));
+const Documents          = lazy(() => import("../../features/inventory/pages/DocumentsPage"));
+const EmailLogs          = lazy(() => import("../../features/inventory/pages/EmailLogsPage"));
+const RecordPermissions  = lazy(() => import("../../features/inventory/pages/RecordPermissionsPage"));
+const TwoFASetup         = lazy(() => import("../../features/inventory/pages/TwoFASetupPage"));
+const ABCAnalysis        = lazy(() => import("../../features/inventory/pages/ABCAnalysisPage"));
+const StockAgingReport   = lazy(() => import("../../features/inventory/pages/StockAgingReportPage"));
+const VendorPerformance  = lazy(() => import("../../features/inventory/pages/VendorPerformancePage"));
 
 // ── ERP — Production ─────────────────────────────────────────────────────────
 const Bom              = lazy(() => import("../../features/inventory/pages/production/BomPage"));
@@ -184,6 +209,19 @@ const MainRouting = () => {
               {/* ERP — Finance */}
               <Route path="ERP/Expenses"              element={<Expenses />} />
               <Route path="ERP/PurchaseReturns"       element={<PurchaseReturns />} />
+              <Route path="ERP/JournalEntries"        element={<JournalEntries />} />
+              <Route path="ERP/ChartOfAccounts"       element={<ChartOfAccounts />} />
+              <Route path="ERP/Currencies"            element={<Currencies />} />
+              <Route path="ERP/FinancialYear"         element={<FinancialYear />} />
+              <Route path="ERP/HSNCodes"              element={<HSNCodes />} />
+              <Route path="ERP/PriceLists"            element={<PriceLists />} />
+              <Route path="ERP/InvoiceMatching"       element={<InvoiceMatching />} />
+              <Route path="ERP/RFQs"                  element={<RFQs />} />
+
+              {/* ERP — WMS */}
+              <Route path="ERP/WMS/CycleCount"        element={<CycleCount />} />
+              <Route path="ERP/WMS/PickingLists"      element={<PickingLists />} />
+              <Route path="ERP/WMS/Putaway"           element={<Putaway />} />
 
               {/* ERP — Production */}
               <Route path="ERP/BOM"                   element={<Bom />} />

@@ -12,10 +12,13 @@ import {
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
   FolderIcon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import LogoutButton from "../LogoutButton/LogoutButton";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { startSessionKeepalive, stopSessionKeepalive } from "../utils/sessionKeepalive";
 import axiosInstance from "../utils/axiosInstance";
 import * as API from "../../Endpoint/Endpoint";
@@ -32,106 +35,149 @@ export default function NavigationBar() {
   const [isHovering, setIsHovering] = useState(false);
   const location = useLocation();
 
-  // Determine if user is super admin from the loaded profile data
   const isSuperAdmin = uData && isSuperAdminUser(uData);
 
-  // Build navigation dynamically based on user role
+  // ── Navigation — original order: Dashboard → CRM → Master → ERP modules → System ──
   const navigation = [
+    // ── TOP LEVEL ──────────────────────────────────────────────
     { name: "Dashboard", href: "/Admin", icon: HomeIcon },
-    ...(isSuperAdmin
-      ? [{ name: "Modules", href: "/Admin/modules", icon: FolderIcon }]
-      : []),
+
+    // ── CRM ────────────────────────────────────────────────────
     {
       name: "CRM",
       icon: FolderIcon,
       children: [
-        { name: "Accounts",        href: "/Admin/Accounts" },
-        { name: "Contacts",        href: "/Admin/Contact" },
-        { name: "Leads",           href: "/Admin/Leads" },
-        { name: "Opportunities",   href: "/Admin/Opportunities" },
-        { name: "Activities",      href: "/Admin/Activities" },
-        { name: "Quotes",          href: "/Admin/Quotes" },
-        { name: "Invoices",        href: "/Admin/Invoices" },
-        { name: "Payments",        href: "/Admin/Payments" },
-        { name: "PreSales",        href: "/Admin/PreSales" },
-        { name: "Cases",           href: "/Admin/Cases" },
-        { name: "Retention",       href: "/Admin/Retentions" },
+        { name: "Accounts",      href: "/Admin/Accounts" },
+        { name: "Contacts",      href: "/Admin/Contact" },
+        { name: "Leads",         href: "/Admin/Leads" },
+        { name: "Opportunities", href: "/Admin/Opportunities" },
+        { name: "Activities",    href: "/Admin/Activities" },
+        { name: "Quotes",        href: "/Admin/Quotes" },
+        { name: "Invoices",      href: "/Admin/Invoices" },
+        { name: "Payments",      href: "/Admin/Payments" },
+        { name: "PreSales",      href: "/Admin/PreSales" },
+        { name: "Cases",         href: "/Admin/Cases" },
+        { name: "Retention",     href: "/Admin/Retentions" },
       ],
     },
+
+    // ── MASTER DATA ────────────────────────────────────────────
     {
-      name: "Master",
+      name: "Master Data",
       icon: FolderIcon,
       children: [
-        { name: "All Master Data",   href: "/Admin/Master" },
-        { name: "Task Types",        href: "/Admin/CRM/TaskTypes" },
-        { name: "Sales Stages",      href: "/Admin/CRM/SalesStages" },
-        { name: "Industries",        href: "/Admin/CRM/Industries" },
-        { name: "Follow-up Types",   href: "/Admin/CRM/FollowupTypes" },
-        { name: "Lead Sources",      href: "/Admin/CRM/LeadSources" },
-        { name: "Roles & Access",    href: "/Admin/HR/Roles" },
-        { name: "User Types",        href: "/Admin/HR/UserTypes" },
-        { name: "Product Categories",href: "/Admin/ERP/ProductCategory" },
-        { name: "Units",             href: "/Admin/ERP/Units" },
-        { name: "Brands",            href: "/Admin/ERP/Brands" },
+        { name: "All Master Data",    href: "/Admin/Master" },
+        { name: "Task Types",         href: "/Admin/CRM/TaskTypes" },
+        { name: "Sales Stages",       href: "/Admin/CRM/SalesStages" },
+        { name: "Industries",         href: "/Admin/CRM/Industries" },
+        { name: "Follow-up Types",    href: "/Admin/CRM/FollowupTypes" },
+        { name: "Lead Sources",       href: "/Admin/CRM/LeadSources" },
+        { name: "Product Categories", href: "/Admin/ERP/ProductCategory" },
+        { name: "Units",              href: "/Admin/ERP/Units" },
+        { name: "Brands",             href: "/Admin/ERP/Brands" },
       ],
     },
+
+    // ── ERP — INVENTORY ────────────────────────────────────────
     {
       name: "Inventory",
       icon: FolderIcon,
       children: [
         { name: "Overview",          href: "/Admin/ERP" },
         { name: "Products",          href: "/Admin/ERP/Products" },
-        { name: "Product Categories",href: "/Admin/ERP/ProductCategory" },
-        { name: "Units",             href: "/Admin/ERP/Units" },
-        { name: "Brands",            href: "/Admin/ERP/Brands" },
         { name: "Warehouse",         href: "/Admin/ERP/Warehouse" },
         { name: "Product Stock",     href: "/Admin/ERP/ProductStock" },
         { name: "Stock Movements",   href: "/Admin/ERP/StockMovements" },
         { name: "Stock Transfers",   href: "/Admin/ERP/StockTransfers" },
         { name: "Stock Adjustments", href: "/Admin/ERP/StockAdjustments" },
+        { name: "Stock Valuation",   href: "/Admin/ERP/StockValuation" },
+        { name: "Reorder Levels",    href: "/Admin/ERP/ReorderLevels" },
         { name: "Batches",           href: "/Admin/ERP/Batches" },
         { name: "Serial Numbers",    href: "/Admin/ERP/SerialNumbers" },
       ],
     },
+
+    // ── ERP — PROCUREMENT ──────────────────────────────────────
     {
       name: "Procurement",
       icon: FolderIcon,
       children: [
-        { name: "Purchase Orders",    href: "/Admin/ERP/PurchaseOrders" },
-        { name: "Purchase Items",     href: "/Admin/ERP/PurchaseOrderItems" },
-        { name: "Requisitions",       href: "/Admin/ERP/PurchaseRequisitions" },
-        { name: "GRN",                href: "/Admin/ERP/GRN" },
-        { name: "Suppliers",          href: "/Admin/ERP/Suppliers" },
+        { name: "Purchase Orders",   href: "/Admin/ERP/PurchaseOrders" },
+        { name: "Purchase Items",    href: "/Admin/ERP/PurchaseOrderItems" },
+        { name: "Requisitions",      href: "/Admin/ERP/PurchaseRequisitions" },
+        { name: "GRN",               href: "/Admin/ERP/GRN" },
+        { name: "Suppliers",         href: "/Admin/ERP/Suppliers" },
+        { name: "RFQs",              href: "/Admin/ERP/RFQs" },
       ],
     },
+
+    // ── ERP — SALES ────────────────────────────────────────────
     {
       name: "Sales",
       icon: FolderIcon,
       children: [
-        { name: "Sales Orders",     href: "/Admin/ERP/SalesOrders" },
-        { name: "Sales Quotations", href: "/Admin/ERP/SalesQuotations" },
+        { name: "Sales Orders",      href: "/Admin/ERP/SalesOrders" },
+        { name: "Sales Quotations",  href: "/Admin/ERP/SalesQuotations" },
         { name: "Delivery Challans", href: "/Admin/ERP/DeliveryChallans" },
-        { name: "Sales Returns",    href: "/Admin/ERP/SalesReturns" },
-        { name: "Sell",             href: "/Admin/ERP/Sell" },
-        { name: "Customers",        href: "/Admin/ERP/Customers" },
+        { name: "Sales Returns",     href: "/Admin/ERP/SalesReturns" },
+        { name: "Sell (POS)",        href: "/Admin/ERP/Sell" },
+        { name: "Customers",         href: "/Admin/ERP/Customers" },
       ],
     },
+
+    // ── ERP — FINANCE ──────────────────────────────────────────
     {
       name: "Finance",
       icon: FolderIcon,
       children: [
-        { name: "Expenses",        href: "/Admin/ERP/Expenses" },
-        { name: "Purchase Returns", href: "/Admin/ERP/PurchaseReturns" },
+        { name: "Expenses",          href: "/Admin/ERP/Expenses" },
+        { name: "Purchase Returns",  href: "/Admin/ERP/PurchaseReturns" },
+        { name: "Journal Entries",   href: "/Admin/ERP/JournalEntries" },
+        { name: "Chart of Accounts", href: "/Admin/ERP/ChartOfAccounts" },
+        { name: "Financial Year",    href: "/Admin/ERP/FinancialYear" },
+        { name: "Currencies",        href: "/Admin/ERP/Currencies" },
+        { name: "HSN Codes",         href: "/Admin/ERP/HSNCodes" },
+        { name: "Price Lists",       href: "/Admin/ERP/PriceLists" },
+        { name: "Invoice Matching",  href: "/Admin/ERP/InvoiceMatching" },
       ],
     },
+
+    // ── ERP — PRODUCTION ───────────────────────────────────────
     {
       name: "Production",
       icon: FolderIcon,
       children: [
-        { name: "Bill of Materials",  href: "/Admin/ERP/BOM" },
-        { name: "Production Orders",  href: "/Admin/ERP/ProductionOrders" },
+        { name: "Bill of Materials", href: "/Admin/ERP/BOM" },
+        { name: "Production Orders", href: "/Admin/ERP/ProductionOrders" },
       ],
     },
+
+    // ── ERP — WMS ──────────────────────────────────────────────
+    {
+      name: "WMS",
+      icon: FolderIcon,
+      children: [
+        { name: "Cycle Count",   href: "/Admin/ERP/WMS/CycleCount" },
+        { name: "Picking Lists", href: "/Admin/ERP/WMS/PickingLists" },
+        { name: "Putaway",       href: "/Admin/ERP/WMS/Putaway" },
+      ],
+    },
+
+    // ── ADMIN / HR ─────────────────────────────────────────────
+    {
+      name: "HR & Admin",
+      icon: FolderIcon,
+      children: [
+        { name: "Users",          href: "/Admin/HR/Users" },
+        { name: "Register User",  href: "/Admin/HR/Users/Register" },
+        { name: "Org Chart",      href: "/Admin/HR/OrgChart" },
+        { name: "Companies",      href: "/Admin/HR/Companies" },
+        { name: "Roles & Access", href: "/Admin/HR/Roles" },
+        { name: "User Types",     href: "/Admin/HR/UserTypes" },
+      ],
+    },
+
+    // ── APPROVALS ──────────────────────────────────────────────
     {
       name: "Approvals",
       icon: FolderIcon,
@@ -139,25 +185,21 @@ export default function NavigationBar() {
         { name: "Approval Requests", href: "/Admin/ERP/Approvals" },
       ],
     },
-    {
-      name: "HR & Admin",
-      icon: FolderIcon,
-      children: [
-        { name: "Users",       href: "/Admin/HR/Users" },
-        { name: "Org Chart",   href: "/Admin/HR/OrgChart" },
-        { name: "Companies",   href: "/Admin/HR/Companies" },
-        { name: "Roles",       href: "/Admin/HR/Roles" },
-      ],
-    },
-    { name: "Chat",      href: "/Admin/Chat",       icon: FolderIcon },
-    { name: "Reports",   href: "/Admin/Reports",    icon: FolderIcon },
+
+    // ── SYSTEM ─────────────────────────────────────────────────
+    { name: "Chat",    href: "/Admin/Chat",    icon: ChatBubbleLeftRightIcon },
+    { name: "Reports", href: "/Admin/Reports", icon: ChartBarIcon },
     {
       name: "Settings",
-      icon: FolderIcon,
+      icon: Cog6ToothIcon,
       children: [
-        { name: "Profile",        href: "/Admin/profile" },
-        { name: "App Settings",   href: "/Admin/settings" },
-        { name: "Import / Export",href: "/Admin/ERP/ImportExport" },
+        { name: "Profile",          href: "/Admin/profile" },
+        { name: "App Settings",     href: "/Admin/settings" },
+        { name: "Import / Export",  href: "/Admin/ERP/ImportExport" },
+        { name: "Audit Logs",       href: "/Admin/ERP/AuditLogs" },
+        { name: "Documents",        href: "/Admin/ERP/Documents" },
+        { name: "Email Logs",       href: "/Admin/ERP/EmailLogs" },
+        { name: "2FA Setup",        href: "/Admin/ERP/TwoFASetup" },
         ...(isSuperAdmin ? [{ name: "System Modules", href: "/Admin/modules" }] : []),
       ],
     },
@@ -214,12 +256,11 @@ export default function NavigationBar() {
         onMouseEnter={() => !isSidebarCollapsed && setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
-        <div className="h-16 bg-gray-800 flex items-center justify-between px-4 border-b border-gray-700 flex-shrink-0">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-700 flex-shrink-0 bg-gray-800">
           {isSidebarExpanded ? (
             <>
-              <div>
-                <h1 className="text-xl font-bold text-white whitespace-nowrap">Shivani.ERP</h1>
-                <p className="text-[11px] text-gray-400">All in one</p>
+              <div className="select-none">
+                <h1 className="text-lg font-bold text-white">Shivani.ERP</h1>
               </div>
               <button
                 onClick={toggleSidebar}
@@ -370,11 +411,11 @@ export default function NavigationBar() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMobileOpen(!isMobileOpen)}
-            className="text-gray-200 hover:bg-gray-700 p-1.5 rounded-md"
+            className="text-gray-400 hover:text-white hover:bg-gray-700 p-1.5 rounded-md"
           >
             {isMobileOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
           </button>
-          <h1 className="text-lg font-bold text-white">CRM System</h1>
+          <h1 className="text-base font-bold text-white">Shivani.ERP</h1>
         </div>
 
         <Menu as="div" className="relative">

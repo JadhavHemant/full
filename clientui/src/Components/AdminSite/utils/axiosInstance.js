@@ -16,8 +16,8 @@ const axiosConfig = {
   baseURL: API.API_BASE_URL || 'http://localhost:5351/api',
   // Include credentials (cookies) in cross-origin requests
   withCredentials: true,
-  // Request timeout in milliseconds (30 seconds)
-  timeout: 30000,
+  // Request timeout in milliseconds (60 seconds) - increased from 30s to prevent premature failures
+  timeout: 60000,
   // Default headers for all requests
   headers: {
     'Content-Type': 'application/json',
@@ -39,6 +39,9 @@ let refreshPromise = null;
 
 // Queue of pending requests waiting for token refresh to complete
 let pendingRefreshQueue = [];
+
+// Debounce flag to prevent multiple simultaneous redirects to login
+let isRedirecting = false;
 
 /**
  * Process the queue of requests that were waiting for token refresh.
@@ -63,6 +66,25 @@ const processPendingQueue = (newAccessToken, refreshError = null) => {
 };
 
 /**
+ * Redirect to login page with debounce protection
+ * Prevents multiple simultaneous redirects when many requests fail at once
+ */
+const redirectToLogin = () => {
+  if (isRedirecting) {
+    return; // Already redirecting, skip duplicate redirect
+  }
+  
+  isRedirecting = true;
+  console.log('🔒 Session expired - redirecting to login page');
+  
+  // Clear all session data before redirect
+  clearSessionTokens();
+  
+  // Use replace to prevent back button issues
+  window.location.replace('/login');
+};
+
+/**
  * Clear all session-related cookies
  * Removes access token, refresh token, and user data from cookies
  */
@@ -81,11 +103,21 @@ const clearSessionTokens = () => {
 const performTokenRefresh = async (refreshToken) => {
   // If a refresh is already in progress, return the existing promise
   if (refreshPromise) {
+    if (!isProduction) {
+      console.log('🔄 Token refresh already in progress, waiting...');
+    }
     return refreshPromise;
   }
 
+  if (!isProduction) {
+    console.log('🔄 Starting token refresh request...');
+  }
+
   refreshPromise = axios
-    .post(`${API.API_BASE_URL}/token/refresh-token`, { refreshToken })
+    .post(`${API.API_BASE_URL}/token/refresh-token`, { refreshToken }, {
+      timeout: 15000,
+      withCredentials: true,
+    })
     .then((response) => {
       const { accessToken, refreshToken: newRefreshToken } = response.data;
 
@@ -94,7 +126,12 @@ const performTokenRefresh = async (refreshToken) => {
       }
 
       // Set new access token with calculated expiry
-      setAccessTokenWithExpiry(accessToken);
+      const tokenSet = setAccessTokenWithExpiry(accessToken);
+      
+      if (!tokenSet) {
+        console.error('❌ Failed to set new access token cookie');
+        throw new Error('Failed to set access token');
+      }
 
       // Update refresh token if a new one is provided (token rotation)
       if (newRefreshToken) {
@@ -104,13 +141,48 @@ const performTokenRefresh = async (refreshToken) => {
           sameSite: 'Lax',
           secure: isProduction,
         });
+        
+        if (!isProduction) {
+          console.log('✅ Refresh token rotated successfully');
+        }
+      }
+
+      if (!isProduction) {
+        console.log('✅ Token refresh completed successfully');
       }
 
       return { accessToken, newRefreshToken };
     })
     .catch((error) => {
-      // Clear all tokens if refresh fails
-      clearSessionTokens();
+      // Enhanced error logging for diagnosis
+      const errorDetails = {
+        message: error.response?.data?.message || error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        isTimeout: error.code === 'ECONNABORTED',
+        isNetworkError: error.message === 'Network Error',
+      };
+
+      console.error('❌ Token refresh failed:', errorDetails);
+
+      // Log specific error types for better diagnosis
+      if (errorDetails.isTimeout) {
+        console.error('❌ Token refresh timed out - backend may be slow or unreachable');
+      } else if (errorDetails.isNetworkError) {
+        console.error('❌ Network error during token refresh - check connection');
+      } else if (errorDetails.status === 401) {
+        console.error('❌ Refresh token is invalid or expired - user needs to re-login');
+      } else if (errorDetails.status === 403) {
+        console.error('❌ Refresh token was revoked or blacklisted');
+      } else if (errorDetails.status >= 500) {
+        console.error('❌ Server error during token refresh - backend issue');
+      }
+
+      // Clear all tokens if refresh fails (except on network/timeout errors where we might retry)
+      if (!errorDetails.isTimeout && !errorDetails.isNetworkError) {
+        clearSessionTokens();
+      }
+      
       throw error;
     })
     .finally(() => {
@@ -294,11 +366,10 @@ axiosInstance.interceptors.response.use(
 
       const savedRefreshToken = Cookies.get('refreshToken');
 
-      // If no refresh token, clear session and redirect to login
+      // If no refresh token, clear session and redirect to login (debounced)
       if (!savedRefreshToken) {
-        console.error('❌ No refresh token available. Logging out user.');
-        clearSessionTokens();
-        window.location.href = '/login';
+        console.error('❌ No refresh token available. Session expired.');
+        redirectToLogin();
         return Promise.reject(error);
       }
 
@@ -310,12 +381,16 @@ axiosInstance.interceptors.response.use(
       }
 
       try {
-        console.log('🔄 Attempting to refresh access token...');
+        if (!isProduction) {
+          console.log('🔄 Attempting to refresh access token...');
+        }
         
         // Perform token refresh (this sets a shared promise to prevent concurrent refreshes)
         const { accessToken } = await performTokenRefresh(savedRefreshToken);
 
-        console.log('✅ Token refreshed successfully');
+        if (!isProduction) {
+          console.log('✅ Token refreshed successfully');
+        }
 
         // Process any queued requests that arrived while we were refreshing
         processPendingQueue(accessToken);
@@ -326,13 +401,13 @@ axiosInstance.interceptors.response.use(
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         // If refresh fails, fail all queued requests and redirect to login
-        console.error('❌ Token refresh failed:', refreshError.message);
+        console.error('❌ Token refresh failed:', refreshError.response?.data?.message || refreshError.message);
         
         // Reject all queued requests
         processPendingQueue(null, refreshError);
         
-        clearSessionTokens();
-        window.location.href = '/';
+        // Redirect to login (debounced to prevent multiple redirects)
+        redirectToLogin();
         return Promise.reject(refreshError);
       }
     }
@@ -345,8 +420,11 @@ axiosInstance.interceptors.response.use(
       );
     }
 
-    // Submit monitoring log for failed requests
-    submitApiExecutionLog({ config: originalRequest, error });
+    // Submit monitoring log for failed requests (skip if 401 to reduce overhead)
+    if (error.response?.status !== 401) {
+      submitApiExecutionLog({ config: originalRequest, error });
+    }
+    
     return Promise.reject(error);
   }
 );

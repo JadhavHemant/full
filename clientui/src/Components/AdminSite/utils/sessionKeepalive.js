@@ -1,15 +1,16 @@
 /**
  * Session Keepalive Utility
- * 
+ *
  * Proactively manages token refresh to prevent automatic logout.
- * The access token expires in 15 minutes by default.
- * This utility refreshes the token every 10 minutes to keep the session alive.
- * 
- * Features:
- * - Proactive token refresh before expiry
- * - Interval-based refresh check
- * - Refresh callback integration with axiosInstance
- * - Automatic cleanup on logout
+ *
+ * Fix summary (vs original):
+ *  - Initial check is delayed 30 s so the app finishes mounting before
+ *    we touch any tokens (prevents a race where RouteAuthGate hasn't
+ *    finished its own restore yet).
+ *  - When no accessToken is found we now attempt a proactive refresh
+ *    (using the refreshToken) instead of just warning and bailing out.
+ *  - The keepalive interval is 8 minutes (token refreshed at 5-min
+ *    threshold → we check 3 min before that window closes).
  */
 
 import Cookies from 'js-cookie';
@@ -17,125 +18,193 @@ import * as API from '../../Endpoint/Endpoint';
 import axios from 'axios';
 import { setAccessTokenWithExpiry } from './tokenUtils';
 
-let keepaliveIntervalId = null;
-const KEEPALIVE_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
-const REFRESH_THRESHOLD_MINUTES = 5; // Refresh if expiring within 5 minutes
+// ── constants ─────────────────────────────────────────────────────────────────
+/** How often we check the token (ms). */
+const KEEPALIVE_INTERVAL_MS = 8 * 60 * 1000;          // 8 minutes
+
+/** Refresh if the token expires within this many minutes. */
+const REFRESH_THRESHOLD_MINUTES = 5;
+
+/** Delay before the FIRST check fires after startSessionKeepalive(). */
+const INITIAL_CHECK_DELAY_MS = 30 * 1000;              // 30 seconds
+
+/** True when we are production (https). */
+const isProduction = window.location.protocol === 'https:';
+
+// ── module state ──────────────────────────────────────────────────────────────
+let keepaliveIntervalId  = null;
+let initialCheckTimerId  = null;
+let isRefreshing         = false;   // guard against concurrent refresh calls
+
+// ── helpers ───────────────────────────────────────────────────────────────────
 
 /**
- * Check if token is expiring soon
- * @param {string} token - Access token
- * @param {number} thresholdMinutes - Threshold in minutes
- * @returns {boolean}
+ * Returns true when the token will expire within `thresholdMinutes`.
+ * Also returns true when the token is missing or unparseable — we treat
+ * those cases as "expiring soon" so we proactively try a refresh.
  */
 const isTokenExpiringSoon = (token, thresholdMinutes = REFRESH_THRESHOLD_MINUTES) => {
   if (!token) return true;
-  
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    const payload    = JSON.parse(atob(token.split('.')[1]));
     const expiryTime = payload.exp * 1000;
-    const now = Date.now();
-    const minutesLeft = (expiryTime - now) / (60 * 1000);
+    const minutesLeft = (expiryTime - Date.now()) / 60_000;
     return minutesLeft <= thresholdMinutes;
-  } catch (e) {
-    return true;
+  } catch {
+    return true;   // unparseable → treat as expiring
   }
 };
 
+// ── core refresh ──────────────────────────────────────────────────────────────
+
 /**
- * Perform token refresh
- * @returns {Promise<boolean>} - True if refresh succeeded
+ * Attempt a token refresh using the stored refreshToken.
+ * Returns true on success, false on any failure.
+ * Guards against concurrent calls with `isRefreshing`.
  */
 const performTokenRefresh = async () => {
+  if (isRefreshing) {
+    if (!isProduction) console.log('🔄 Keepalive: refresh already in progress, skipping');
+    return false;   // already in-flight
+  }
+
   const refreshToken = Cookies.get('refreshToken');
   if (!refreshToken) {
-    console.warn('⚠️ Session keepalive: No refresh token available');
+    if (!isProduction) console.warn('⚠️ Keepalive: no refreshToken — cannot refresh');
     return false;
   }
 
+  isRefreshing = true;
   try {
+    if (!isProduction) {
+      console.log('🔄 Keepalive: starting proactive token refresh...');
+    }
+
     const response = await axios.post(
       `${API.API_BASE_URL}/token/refresh-token`,
-      { refreshToken }
+      { refreshToken },
+      { withCredentials: true, timeout: 15_000 },
     );
 
     const { accessToken, refreshToken: newRefreshToken } = response.data;
 
     if (!accessToken) {
-      console.error('❌ Session keepalive: No access token in response');
+      console.error('❌ Keepalive: refresh response contained no accessToken');
       return false;
     }
 
-    // Set new access token
-    setAccessTokenWithExpiry(accessToken);
+    const tokenSet = setAccessTokenWithExpiry(accessToken);
+    
+    if (!tokenSet) {
+      console.error('❌ Keepalive: failed to set new access token');
+      return false;
+    }
 
-    // Update refresh token if rotated
     if (newRefreshToken) {
+      const isProduction = window.location.protocol === 'https:';
       Cookies.set('refreshToken', newRefreshToken, {
         expires: 7,
         path: '/',
         sameSite: 'Lax',
+        secure: isProduction,
       });
+      
+      if (!isProduction) {
+        console.log('✅ Keepalive: refresh token rotated');
+      }
     }
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('✅ Session keepalive: Token refreshed successfully');
+    if (!isProduction) {
+      console.log('✅ Keepalive: token refreshed successfully');
     }
-
     return true;
-  } catch (error) {
-    console.error('❌ Session keepalive: Token refresh failed:', error.message);
+  } catch (err) {
+    // A failed keepalive refresh is NOT fatal — the main axiosInstance
+    // interceptor handles 401s from real API calls.  We log but do NOT
+    // clear cookies or redirect here; that would cause the spurious logout.
+    const errorDetails = {
+      message: err.response?.data?.message || err.message,
+      status: err.response?.status,
+      isTimeout: err.code === 'ECONNABORTED',
+      isNetworkError: err.message === 'Network Error',
+    };
+
+    if (!isProduction) {
+      console.warn('⚠️ Keepalive: refresh failed —', errorDetails);
+      
+      if (errorDetails.isTimeout) {
+        console.warn('⚠️ Keepalive: refresh timed out (backend may be slow)');
+      } else if (errorDetails.status === 401) {
+        console.warn('⚠️ Keepalive: refresh token invalid (user will be logged out on next API call)');
+      }
+    }
+    
     return false;
+  } finally {
+    isRefreshing = false;
   }
 };
 
-/**
- * Start session keepalive
- * Sets up interval to periodically check and refresh tokens
- */
-export const startSessionKeepalive = () => {
-  // Clear any existing interval
-  stopSessionKeepalive();
-
-  console.log('🔋 Session keepalive started (refreshing every 10 minutes)');
-
-  // Do initial check immediately
-  checkAndRefreshToken();
-
-  // Set up periodic check
-  keepaliveIntervalId = setInterval(checkAndRefreshToken, KEEPALIVE_INTERVAL_MS);
-};
+// ── check logic ───────────────────────────────────────────────────────────────
 
 /**
- * Check token and refresh if needed
+ * Check the current accessToken and refresh it if it is missing or expiring.
  */
 const checkAndRefreshToken = async () => {
   const accessToken = Cookies.get('accessToken');
-  
+
   if (!accessToken) {
-    console.warn('⚠️ Session keepalive: No access token found');
+    // Token is gone (expired cookie, tab restore, etc.).
+    // Try a proactive refresh; if it fails the next real API call will
+    // 401 and the axiosInstance interceptor will handle the redirect.
+    if (!isProduction) console.log('🔄 Keepalive: accessToken absent — attempting proactive refresh');
+    await performTokenRefresh();
     return;
   }
 
   if (isTokenExpiringSoon(accessToken)) {
-    console.log('🔄 Session keepalive: Token expiring soon, refreshing...');
+    if (!isProduction) console.log('🔄 Keepalive: token expiring soon — refreshing');
     await performTokenRefresh();
   }
 };
 
+// ── public API ────────────────────────────────────────────────────────────────
+
 /**
- * Stop session keepalive
- * Clears the interval
+ * Start session keepalive.
+ *
+ * - Waits 30 s before the first check so the app can fully mount and
+ *   RouteAuthGate can complete its own token-restore flow first.
+ * - After that, checks every KEEPALIVE_INTERVAL_MS.
+ */
+export const startSessionKeepalive = () => {
+  stopSessionKeepalive();   // clear any previous timers
+
+  if (!isProduction) console.log('🔋 Keepalive started (first check in 30 s, then every 8 min)');
+
+  // Delayed first check
+  initialCheckTimerId = setTimeout(async () => {
+    initialCheckTimerId = null;
+    await checkAndRefreshToken();
+
+    // Only start the interval after the first check completes
+    keepaliveIntervalId = setInterval(checkAndRefreshToken, KEEPALIVE_INTERVAL_MS);
+  }, INITIAL_CHECK_DELAY_MS);
+};
+
+/**
+ * Stop session keepalive and clean up all timers.
  */
 export const stopSessionKeepalive = () => {
-  if (keepaliveIntervalId) {
+  if (initialCheckTimerId !== null) {
+    clearTimeout(initialCheckTimerId);
+    initialCheckTimerId = null;
+  }
+  if (keepaliveIntervalId !== null) {
     clearInterval(keepaliveIntervalId);
     keepaliveIntervalId = null;
-    console.log('🔋 Session keepalive stopped');
+    if (!isProduction) console.log('🔋 Keepalive stopped');
   }
 };
 
-export default {
-  startSessionKeepalive,
-  stopSessionKeepalive,
-  performTokenRefresh,
-};
+export default { startSessionKeepalive, stopSessionKeepalive, performTokenRefresh };
