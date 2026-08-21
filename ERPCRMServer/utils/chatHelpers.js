@@ -5,7 +5,7 @@ const mapUser = (row) => ({
   name: row.Name || "Unknown user",
   email: row.Email || "",
   roleId: row.RoleId ?? null,
-  avatar: row.userImage || null,
+  avatar: row.ProfileImage || null,
   isOnline: Boolean(row.IsOnline),
   lastSeen: row.LastSeen || null,
 });

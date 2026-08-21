@@ -13,6 +13,7 @@ import { usePortalAccess } from '../../../utils/portalAccess';
 const ProductCategories = () => {
   const { canManageRestrictedActions } = usePortalAccess();
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [pagination, setPagination] = useState({
     total: 0, limit: 10, offset: 0, totalPages: 0, currentPage: 1,
     hasNext: false, hasPrevious: false

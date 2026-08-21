@@ -1004,7 +1004,7 @@ const getCompanyUsers = async (req, res) => {
           "UserTypeId",
           "CompanyId",
           "ReportingManagerId",
-          "userImage"
+          "ProfileImage"
         FROM "Users"
         WHERE "CompanyId" = $1
         AND "IsDelete" = FALSE
