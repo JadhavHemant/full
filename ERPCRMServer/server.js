@@ -23,6 +23,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
 const app = express();
 const http = require("http");
 const { Server } = require("socket.io");
@@ -40,6 +41,8 @@ const moduleMetrics = require("./middlewares/moduleMetrics");
 const { rbacMiddleware } = require("./middlewares/rbac");
 const { startAllCrmJobs } = require("./jobs/crm");
 const { loadRoleIdsFromDb, updateRoleSets } = require("./config/roleConfig");
+const { errorHandler, notFoundHandler } = require('./middleware/errorMiddleware');
+const { loginLimiter, strictLimiter } = require('./config/rateLimiter');
 
 // Route imports
 const companiesRoutes = require('./routes/Company/companiesRoutes');
@@ -79,6 +82,20 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
+
+// Request logging middleware
+if (isDevelopment) {
+  // Development: colored console output
+  app.use(morgan('dev'));
+} else {
+  // Production: combined format to file
+  const fs = require('fs');
+  const accessLogStream = fs.createWriteStream(
+    path.join(__dirname, 'access.log'),
+    { flags: 'a' }
+  );
+  app.use(morgan('combined', { stream: accessLogStream }));
+}
 
 // Rate limiting to prevent brute force attacks
 const limiter = rateLimit({
@@ -330,9 +347,10 @@ app.use(
 app.use('/api', rbacMiddleware);
 
 // Apply stricter rate limiting to authentication endpoints
-app.use('/api/users/login', authLimiter);
-app.use('/api/users/forgot-password', authLimiter);
-app.use('/api/users/reset-password', authLimiter);
+app.use('/api/users/login', loginLimiter);
+app.use('/api/users/forgot-password', strictLimiter);
+app.use('/api/users/reset-password', strictLimiter);
+app.use('/api/users/verify-email', strictLimiter);
 app.use('/api/auth', twoFactorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/token', authLimiter, refreshToken);
@@ -426,49 +444,11 @@ app.use("/api/utils", importRoutes);
 app.use("/api/field-permissions", fieldPermissionRoutes);
 app.use("/api/record-permissions", recordPermissionRoutes);
 
-// Global error handling middleware
-app.use((err, req, res, next) => {
-  // Handle multer errors
-  if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({
-      message: 'File is still too large after optimization. Please choose an image under 15MB.',
-    });
-  }
-  if (err.code === 'LIMIT_FILE_COUNT') {
-    return res.status(400).json({ message: 'Too many files uploaded' });
-  }
-  if (err.code === 'LIMIT_UNEXPECTED_FILE') {
-    return res.status(400).json({ message: 'Unexpected file field' });
-  }
-  
-  // Handle file type errors
-  if (err.message && err.message.includes('Invalid file type')) {
-    return res.status(400).json({ message: err.message });
-  }
-  
-  // Handle rate limit errors
-  if (err.status === 429) {
-    return res.status(429).json({ message: err.message || 'Too many requests' });
-  }
-  
-  // Handle CORS errors
-  if (err.message && err.message.includes('CORS policy')) {
-    return res.status(403).json({ message: err.message });
-  }
+// Centralized error handling middleware (must be last)
+app.use(errorHandler);
 
-  console.error('Unhandled error:', err);
-  
-  // Default error response
-  res.status(err.status || 500).json({
-    message: err.message || 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-});
-
-// Handle 404 errors
-app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
+// Handle 404 errors (must be after error handler)
+app.use(notFoundHandler);
 
 const buildSocketServer = (serverInstance) => {
   io = new Server(serverInstance, {
