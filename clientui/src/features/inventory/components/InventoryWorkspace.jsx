@@ -29,6 +29,7 @@ const InventoryWorkspace = ({
   const [total, setTotal] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [selectedItems, setSelectedItems] = useState([]);
   const limit = 20;
 
   const fetchData = useCallback(async () => {
@@ -78,6 +79,46 @@ const InventoryWorkspace = ({
     } catch (error) {
       toast.error("Failed to delete");
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.length === 0) {
+      toast.error("Please select items to delete");
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to delete ${selectedItems.length} selected item(s)?`)) return;
+    
+    try {
+      if (!endpoint?.DELETE) return;
+      
+      // Delete all selected items
+      const deletePromises = selectedItems.map(id => 
+        axiosInstance.delete(endpoint.DELETE(id))
+      );
+      
+      await Promise.all(deletePromises);
+      toast.success(`${selectedItems.length} item(s) deleted successfully`);
+      setSelectedItems([]);
+      fetchData();
+    } catch (error) {
+      toast.error("Failed to delete some items");
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedItems.length === data.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(data.map(item => item.Id));
+    }
+  };
+
+  const toggleSelectItem = (id) => {
+    setSelectedItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(itemId => itemId !== id)
+        : [...prev, id]
+    );
   };
 
   const handleStatusUpdate = async (id, status) => {
@@ -141,15 +182,30 @@ const InventoryWorkspace = ({
           </h1>
           {description && <p className="text-sm text-[#64748B] mt-1">{description}</p>}
           <p className="text-xs text-blueGray-400 mt-1">{total} total records</p>
+          {selectedItems.length > 0 && (
+            <p className="text-xs text-blue-600 mt-1 font-medium">
+              {selectedItems.length} item(s) selected
+            </p>
+          )}
         </div>
-        {enableCreate && (
-          <button
-            onClick={() => { setEditingItem(null); setShowForm(true); }}
-            className="bg-blue-500 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md transition"
-          >
-            + Add New
-          </button>
-        )}
+        <div className="flex gap-2">
+          {selectedItems.length > 0 && enableDelete && (
+            <button
+              onClick={handleBulkDelete}
+              className="bg-red-500 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md transition"
+            >
+              Delete Selected ({selectedItems.length})
+            </button>
+          )}
+          {enableCreate && (
+            <button
+              onClick={() => { setEditingItem(null); setShowForm(true); }}
+              className="bg-blue-500 text-white font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md transition"
+            >
+              + Add New
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -186,6 +242,16 @@ const InventoryWorkspace = ({
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  {enableDelete && (
+                    <th className="px-4 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.length === data.length && data.length > 0}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
                   {columns.map((col) => (
                     <th key={col.key} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{col.label}</th>
@@ -196,6 +262,16 @@ const InventoryWorkspace = ({
               <tbody className="bg-white divide-y divide-gray-200">
                 {data.map((item, index) => (
                   <tr key={item.Id} className="hover:bg-gray-50">
+                    {enableDelete && (
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedItems.includes(item.Id)}
+                          onChange={() => toggleSelectItem(item.Id)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-sm text-gray-500">{(page - 1) * limit + index + 1}</td>
                     {columns.map((col) => (
                       <td key={col.key} className="px-4 py-3 text-sm">
