@@ -204,13 +204,18 @@ If you did not request this, please ignore this email.
   await sendEmail(normalizedEmail, subject, text);
 };
 
-const getHierarchyRows = async (rootUserId, includeRoot = true, companyId = null) => {
+const getHierarchyRows = async (rootUserId, includeRoot = true, companyId = null, requestingUserRoleId = null) => {
   const rootPredicate = includeRoot
     ? 'u."UserId" = $1'
     : 'u."ReportingManagerId" = $1';
 
   const companyBaseFilter = companyId ? 'AND u."CompanyId" = $2' : "";
   const companyChildFilter = companyId ? 'AND child."CompanyId" = $2' : "";
+  
+  // Hide Super Admin users from non-Super Admin users
+  const superAdminFilter = requestingUserRoleId !== 1 ? 'AND u."RoleId" != 1' : "";
+  const superAdminChildFilter = requestingUserRoleId !== 1 ? 'AND child."RoleId" != 1' : "";
+  
   const params = companyId ? [rootUserId, companyId] : [rootUserId];
 
   const query = `
@@ -230,6 +235,7 @@ const getHierarchyRows = async (rootUserId, includeRoot = true, companyId = null
       FROM "Users" u
       WHERE ${rootPredicate}
       ${companyBaseFilter}
+      ${superAdminFilter}
       AND u."IsDelete" = FALSE
 
       UNION ALL
@@ -251,6 +257,7 @@ const getHierarchyRows = async (rootUserId, includeRoot = true, companyId = null
         ON child."ReportingManagerId" = uh."UserId"
       WHERE child."IsDelete" = FALSE
       ${companyChildFilter}
+      ${superAdminChildFilter}
     )
     SELECT * FROM "UserHierarchy"
     ORDER BY "Level", "ReportingManagerId", "UserId";
@@ -931,6 +938,11 @@ const getAllUsers = async (req, res) => {
       return res.status(companyScope.status).json({ message: companyScope.message });
     }
 
+    // Hide Super Admin users from non-Super Admin users
+    if (req.user.roleId !== 1) {
+      whereClause += ' AND u."RoleId" != 1';
+    }
+
     if (companyScope.companyId != null) {
       values.push(companyScope.companyId);
       whereClause += ` AND u."CompanyId" = $${values.length}`;
@@ -1342,7 +1354,8 @@ const getOrgHierarchy = async (req, res) => {
       const hierarchy = await getHierarchyRows(
         req.user.userId,
         true,
-        companyScope.companyId
+        companyScope.companyId,
+        req.user.roleId
       );
       return res.status(200).json({ hierarchy });
     }
@@ -1365,7 +1378,7 @@ const getOrgHierarchy = async (req, res) => {
       const rootResult = await appPool.query(rootsQuery, [companyScope.companyId]);
       const hierarchy = [];
       for (const root of rootResult.rows) {
-        const rows = await getHierarchyRows(root.UserId, true, companyScope.companyId);
+        const rows = await getHierarchyRows(root.UserId, true, companyScope.companyId, req.user.roleId);
         hierarchy.push(...rows);
       }
       return res.status(200).json({ hierarchy });
@@ -1387,7 +1400,7 @@ const getOrgHierarchy = async (req, res) => {
 
     const hierarchy = [];
     for (const root of rootResult.rows) {
-      const rows = await getHierarchyRows(root.UserId, true, companyScope.companyId);
+      const rows = await getHierarchyRows(root.UserId, true, companyScope.companyId, req.user.roleId);
       hierarchy.push(...rows);
     }
 
@@ -1404,7 +1417,8 @@ const getMyTeamHierarchy = async (req, res) => {
     const hierarchy = await getHierarchyRows(
       userId,
       true,
-      req.user.companyId ? Number(req.user.companyId) : null
+      req.user.companyId ? Number(req.user.companyId) : null,
+      req.user.roleId
     );
     res.status(200).json({ hierarchy });
   } catch (err) {
@@ -1438,6 +1452,7 @@ const getDirectReports = async (req, res) => {
       WHERE "ReportingManagerId" = $1
       AND "CompanyId" = $2
       AND "IsDelete" = FALSE
+      ${req.user.roleId !== 1 ? 'AND "RoleId" != 1' : ''}
       ORDER BY "Name";
     `;
 
@@ -1467,7 +1482,8 @@ const getCompanyOrgChart = async (req, res) => {
       const hierarchy = await getHierarchyRows(
         req.user.userId,
         true,
-        companyScope.companyId
+        companyScope.companyId,
+        req.user.roleId
       );
       return res.status(200).json({ hierarchy });
     }
@@ -1490,7 +1506,7 @@ const getCompanyOrgChart = async (req, res) => {
 
     const hierarchy = [];
     for (const root of rootResult.rows) {
-      const rows = await getHierarchyRows(root.UserId, true, companyScope.companyId);
+      const rows = await getHierarchyRows(root.UserId, true, companyScope.companyId, req.user.roleId);
       hierarchy.push(...rows);
     }
 
