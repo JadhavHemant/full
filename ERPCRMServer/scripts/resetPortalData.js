@@ -296,6 +296,11 @@ const runOperationalReset = async (client, keepUserIds) => {
     "Taxes",
     "Units",
     "ProductTaxMap",
+    "Groups",
+    "GroupMembers",
+    "ChatMessages",
+    "MessageReactions",
+    "MessageReadReceipts",
   ];
 
   const existingTables = await getExistingTables(client, requestedTables);

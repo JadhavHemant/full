@@ -228,6 +228,55 @@ const ErrorPanel = ({ title, message, details }) => (
   </div>
 );
 
+const EmptyState = ({ icon: Icon, title, description, actionLabel, actionTo }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.4 }}
+    className="flex flex-col items-center justify-center rounded-[24px] border-2 border-dashed border-slate-200 bg-slate-50/50 p-8 text-center"
+  >
+    <motion.div
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+      className="rounded-full bg-gradient-to-br from-slate-100 to-slate-200 p-4"
+    >
+      <Icon className="h-8 w-8 text-slate-400" />
+    </motion.div>
+    <motion.h3
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3 }}
+      className="mt-4 text-base font-semibold text-slate-900"
+    >
+      {title}
+    </motion.h3>
+    <motion.p
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4 }}
+      className="mt-2 max-w-sm text-sm text-slate-600"
+    >
+      {description}
+    </motion.p>
+    {actionLabel && actionTo && (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <Link
+          to={actionTo}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+        >
+          <SparklesIcon className="h-4 w-4" />
+          {actionLabel}
+        </Link>
+      </motion.div>
+    )}
+  </motion.div>
+);
+
 const PhasePill = ({ phase }) => (
   <span
     className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
@@ -768,7 +817,13 @@ function AdminCrmDashboard() {
                 </motion.div>
               ))
             ) : (
-              <p className="text-sm text-slate-500">No leads available yet.</p>
+              <EmptyState
+                icon={InboxStackIcon}
+                title="No leads yet"
+                description="Start capturing demand by creating your first lead. Leads help you track potential customers."
+                actionLabel="Create Lead"
+                actionTo="/Admin/Leads"
+              />
             )}
           </div>
         </SectionCard>
@@ -808,7 +863,13 @@ function AdminCrmDashboard() {
                 </motion.div>
               ))
             ) : (
-              <p className="text-sm text-slate-500">No opportunities available yet.</p>
+              <EmptyState
+                icon={BriefcaseIcon}
+                title="No opportunities yet"
+                description="Convert qualified leads into opportunities to track deals through your sales pipeline."
+                actionLabel="View Pipeline"
+                actionTo="/Admin/Opportunities"
+              />
             )}
           </div>
         </SectionCard>
@@ -864,7 +925,13 @@ function AdminCrmDashboard() {
             ))}
 
             {!snapshot.recentQuotes.length && !snapshot.recentActivities.length ? (
-              <p className="text-sm text-slate-500">No quote or activity data available yet.</p>
+              <EmptyState
+                icon={DocumentTextIcon}
+                title="No quotes or activities"
+                description="Create quotes to send proposals to customers, and schedule activities to track follow-ups."
+                actionLabel="View Quotes"
+                actionTo="/Admin/Quotes"
+              />
             ) : null}
           </div>
         </SectionCard>
@@ -1027,7 +1094,13 @@ function UserCrmDashboard({ portal }) {
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-500">No pending activities available.</p>
+              <EmptyState
+                icon={BoltIcon}
+                title="No pending activities"
+                description="You're all caught up! Schedule new activities to stay on top of customer follow-ups."
+                actionLabel="View Activities"
+                actionTo={portal === "admin" ? "/Admin/Activities" : "/user/activities"}
+              />
             )}
           </div>
         </SectionCard>
@@ -1072,7 +1145,13 @@ function UserCrmDashboard({ portal }) {
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-500">No leads available.</p>
+              <EmptyState
+                icon={InboxStackIcon}
+                title="No leads assigned"
+                description="New leads will appear here when assigned to you. Check back soon!"
+                actionLabel="View All Leads"
+                actionTo={portal === "admin" ? "/Admin/Leads" : "/user/leads"}
+              />
             )}
           </div>
         </SectionCard>
