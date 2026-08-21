@@ -34,6 +34,7 @@ const ProductCategories = () => {
     Description: ''
   });
   const [formErrors, setFormErrors] = useState({});
+  const [selectedCategories, setSelectedCategories] = useState([]);
 
   const isInitialMount = useRef(true);
   const isFiltersInitialMount = useRef(true);
@@ -198,6 +199,51 @@ const ProductCategories = () => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedCategories.length === 0) {
+      toast.error('Please select categories to delete');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to delete ${selectedCategories.length} selected categor${selectedCategories.length > 1 ? 'ies' : 'y'}?`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const deletePromises = selectedCategories.map(id =>
+        axiosInstance.delete(PRODUCT_CATEGORY.SOFT_DELETE(id))
+      );
+
+      await Promise.all(deletePromises);
+      
+      toast.success(`${selectedCategories.length} categor${selectedCategories.length > 1 ? 'ies' : 'y'} deleted successfully!`);
+      setSelectedCategories([]);
+      fetchCategories(pagination.limit, pagination.offset, searchTerm);
+    } catch (error) {
+      console.error('❌ Error bulk deleting categories:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete some categories');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedCategories.length === categories.length) {
+      setSelectedCategories([]);
+    } else {
+      setSelectedCategories(categories.map(cat => cat.Id));
+    }
+  };
+
+  const toggleSelectCategory = (id) => {
+    setSelectedCategories(prev =>
+      prev.includes(id)
+        ? prev.filter(catId => catId !== id)
+        : [...prev, id]
+    );
+  };
+
   const handleExport = () => {
     if (categories.length === 0) {
       toast.error('No data to export');
@@ -302,9 +348,24 @@ const ProductCategories = () => {
                   <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                     {pagination.total} Total
                   </span>
+                  {selectedCategories.length > 0 && (
+                    <span className="bg-pink-100 text-pink-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                      {selectedCategories.length} Selected
+                    </span>
+                  )}
                 </div>
                 
                 <div className="flex flex-wrap gap-2 justify-center">
+                  {selectedCategories.length > 0 && canManageRestrictedActions && (
+                    <button
+                      onClick={handleBulkDelete}
+                      className="bg-red-500 text-white active:bg-red-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none ease-linear transition-all duration-150 flex items-center gap-2"
+                      disabled={loading}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                      Delete Selected ({selectedCategories.length})
+                    </button>
+                  )}
                   <button
                     onClick={() => fetchCategories(pagination.limit, pagination.offset, searchTerm)}
                     className="bg-gray-500 text-white active:bg-gray-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none ease-linear transition-all duration-150 flex items-center gap-2"
@@ -406,6 +467,16 @@ const ProductCategories = () => {
               <table className="items-center w-full bg-transparent border-collapse">
                 <thead>
                   <tr>
+                    {canManageRestrictedActions && (
+                      <th className="px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left bg-blueGray-50 text-blueGray-500 border-blueGray-100">
+                        <input
+                          type="checkbox"
+                          checked={selectedCategories.length === categories.length && categories.length > 0}
+                          onChange={toggleSelectAll}
+                          className="w-4 h-4 text-pink-600 bg-gray-100 border-gray-300 rounded focus:ring-pink-500 focus:ring-2"
+                        />
+                      </th>
+                    )}
                     <th className="px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left bg-blueGray-50 text-blueGray-500 border-blueGray-100">
                       ID
                     </th>
@@ -426,7 +497,7 @@ const ProductCategories = () => {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan="5" className="text-center py-8">
+                      <td colSpan={canManageRestrictedActions ? "6" : "5"} className="text-center py-8">
                         <div className="flex justify-center items-center">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
                           <span className="ml-2 text-blueGray-500">Loading...</span>
@@ -435,7 +506,7 @@ const ProductCategories = () => {
                     </tr>
                   ) : categories.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="text-center py-8">
+                      <td colSpan={canManageRestrictedActions ? "6" : "5"} className="text-center py-8">
                         <div className="flex flex-col items-center justify-center text-blueGray-500">
                           <ExclamationTriangleIcon className="h-12 w-12 mb-2 text-blueGray-300" />
                           <p className="text-lg font-semibold">No categories found</p>
@@ -448,6 +519,16 @@ const ProductCategories = () => {
                   ) : (
                     categories.map((category) => (
                       <tr key={category.Id} className="hover:bg-blueGray-50 transition-colors">
+                        {canManageRestrictedActions && (
+                          <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedCategories.includes(category.Id)}
+                              onChange={() => toggleSelectCategory(category.Id)}
+                              className="w-4 h-4 text-pink-600 bg-gray-100 border-gray-300 rounded focus:ring-pink-500 focus:ring-2"
+                            />
+                          </td>
+                        )}
                         <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                           <span className="font-bold text-blueGray-600">{category.Id}</span>
                         </td>
